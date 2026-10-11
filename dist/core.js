@@ -31,7 +31,7 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 1, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 1, merch: 1 }, reputation: 0, upgrades: [], player: { x: 14, y: 13.3 } };
+  return { version: 1, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 1, merch: 1 }, reputation: 0, upgrades: [], player: { x: 21, y: 18, zone: "campus" } };
 }
 
 export function demandFor(price, reference) {

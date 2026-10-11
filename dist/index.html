@@ -35,7 +35,13 @@
         <canvas id="world" aria-label="Interactive Nova campus map"></canvas>
         <div class="sun-glow"></div>
         <div class="world-vignette"></div>
-        <div class="location-banner"><span>◉</span><div><small>YOU ARE HERE</small><strong>Nova SBE · Carcavelos</strong></div></div>
+        <div class="location-banner"><span>◉</span><div><small id="zoneSub">CARCAVELOS OVERWORLD</small><strong id="zoneName">Nova Coast Campus</strong></div></div>
+        <div class="zone-directory" aria-label="World areas">
+          <span data-zone-indicator="campus"><i>01</i> COAST</span>
+          <span data-zone-indicator="mercado"><i>02</i> MERCADO</span>
+          <span data-zone-indicator="academy"><i>03</i> ACADEMIC</span>
+          <span data-zone-indicator="hub"><i>04</i> STUDENT HUB</span>
+        </div>
 
         <section class="mission-card" aria-live="polite">
           <div class="mission-kicker"><span class="live-dot"></span> CURRENT MISSION</div>
@@ -48,7 +54,7 @@
           <div class="mission-progress"><span id="missionProgress"></span></div>
         </section>
 
-        <div class="weather-chip"><span>☀</span><strong>24°</strong><small>13:40 · ATLANTIC BREEZE</small></div>
+        <div class="weather-chip"><span id="weatherIcon">☀</span><strong id="weatherTemp">24°</strong><small id="weatherNote">13:40 · ATLANTIC BREEZE</small></div>
 
         <div class="movement-hud" aria-label="Movement controls">
           <div class="movement-copy"><small>MOVE AROUND CAMPUS</small><strong>Walk to a location to interact</strong></div>
@@ -56,7 +62,7 @@
         </div>
 
         <div class="minimap" aria-hidden="true">
-          <div class="minimap-title">CAMPUS MAP <span>LIVE</span></div>
+          <div class="minimap-title"><b id="miniMapTitle">CAMPUS MAP</b> <span>LIVE</span></div>
           <div class="mini-world"><i class="mini-building"></i><i class="mini-sea"></i><b class="mini-player"></b><em class="mini-spot one"></em><em class="mini-spot two"></em><em class="mini-spot three"></em></div>
         </div>
 

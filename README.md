@@ -8,7 +8,8 @@ A deterministic five-day campus tycoon set on a stylized Nova SBE / Carcavelos w
 - Venue upgrades, product unlocks, reputation, demand-capacity and portfolio views.
 - Five deterministic campus events with optional day objectives and reputation rewards.
 - A live trading sequence with visible customers, venue-by-venue sales and real-time revenue feedback.
-- A layered explorable world with supplier market, courtyard, student hub, promenade, beach stage and venture HQ.
+- A 42×30 coast overworld plus separate Mercado Supply Hall, Academic Wing and Student Hub interiors, each with its own NPCs, props, interactions and return route.
+- A persistent room-aware player location, click-to-move, WASD movement, marked entrances and quick management shortcuts.
 - Immediate autosave for purchases, prices, upgrades, position and completed trading days.
 
 ## Play locally
