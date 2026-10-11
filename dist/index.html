@@ -10,13 +10,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./world.css" />
   </head>
   <body>
     <div id="game" class="game-shell">
       <header class="topbar">
         <a class="brand" href="#" aria-label="Nova Beach Ventures home">
           <span class="brand-mark">NV</span>
-          <span><strong>Nova Beach</strong><small>VENTURES</small></span>
+          <span><strong>Nova Beach Ventures</strong><small>CARCAVELOS · SEASON 01</small></span>
         </a>
         <div class="run-stats" aria-label="Run status">
           <div class="stat"><span>DAY</span><strong id="dayStat">1 / 5</strong></div>
@@ -32,6 +33,8 @@
       <main class="world-wrap">
         <canvas id="world" aria-label="Interactive Nova campus map"></canvas>
         <div class="sun-glow"></div>
+        <div class="world-vignette"></div>
+        <div class="location-banner"><span>◉</span><div><small>YOU ARE HERE</small><strong>Nova SBE · Carcavelos</strong></div></div>
 
         <section class="mission-card" aria-live="polite">
           <div class="mission-kicker"><span class="live-dot"></span> CURRENT MISSION</div>
@@ -40,7 +43,17 @@
           <div class="mission-progress"><span id="missionProgress"></span></div>
         </section>
 
-        <div class="weather-chip"><span>☀</span><strong>24°</strong><small>Carcavelos</small></div>
+        <div class="weather-chip"><span>☀</span><strong>24°</strong><small>13:40 · ATLANTIC BREEZE</small></div>
+
+        <div class="movement-hud" aria-label="Movement controls">
+          <div class="movement-copy"><small>MOVE AROUND CAMPUS</small><strong>Walk to a location to interact</strong></div>
+          <div class="key-grid"><i class="key-w">W</i><i>A</i><i>S</i><i>D</i></div>
+        </div>
+
+        <div class="minimap" aria-hidden="true">
+          <div class="minimap-title">CAMPUS MAP <span>LIVE</span></div>
+          <div class="mini-world"><i class="mini-building"></i><i class="mini-sea"></i><b class="mini-player"></b><em class="mini-spot one"></em><em class="mini-spot two"></em><em class="mini-spot three"></em></div>
+        </div>
 
         <div id="interactionHint" class="interaction-hint hidden">
           <span class="keycap">E</span>
@@ -53,7 +66,7 @@
           <button data-location="board"><span>▤</span><strong>Ledger</strong><small>Review days</small></button>
         </nav>
 
-        <div class="controls-tip"><span>WASD</span> move · <span>E</span> interact · or click a location</div>
+        <div class="controls-tip"><span>W</span> forward · <span>A</span> left · <span>S</span> back · <span>D</span> right · <span>E</span> interact</div>
       </main>
 
       <aside id="drawer" class="drawer" aria-hidden="true">
