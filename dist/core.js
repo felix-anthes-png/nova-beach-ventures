@@ -9,21 +9,21 @@ export const STORES = Object.freeze([
 ]);
 
 export const CATALOGUE = Object.freeze([
-  { id: "coldBrew", storeId: "cafe", name: "Atlantic Cold Brew", short: "Cold Brew", icon: "☕", cost: 200, reference: 400, color: "#e98a55" },
-  { id: "nata", storeId: "cafe", name: "Pastel de Nata", short: "Nata", icon: "✦", cost: 120, reference: 250, color: "#efbd58" },
-  { id: "toastie", storeId: "cafe", name: "Campus Toastie", short: "Toastie", icon: "▰", cost: 300, reference: 650, color: "#d77c4c" },
-  { id: "acai", storeId: "snack", name: "Surf Açaí Cup", short: "Açaí Cup", icon: "◉", cost: 300, reference: 600, color: "#a979bd" },
-  { id: "water", storeId: "snack", name: "Lemon Water", short: "Lemon Water", icon: "◇", cost: 80, reference: 200, color: "#8dcae5" },
-  { id: "bites", storeId: "snack", name: "Energy Bites", short: "Energy Bites", icon: "●", cost: 150, reference: 350, color: "#9fbb55" },
-  { id: "tote", storeId: "merch", name: "Nova Wave Tote", short: "Wave Tote", icon: "▱", cost: 500, reference: 1000, color: "#58bdb4" },
-  { id: "cap", storeId: "merch", name: "Carcavelos Cap", short: "Campus Cap", icon: "⌒", cost: 700, reference: 1500, color: "#5a90ad" },
-  { id: "hoodie", storeId: "merch", name: "Nova Coast Hoodie", short: "Hoodie", icon: "⌂", cost: 1400, reference: 3000, color: "#4a687e" }
+  { id: "coldBrew", storeId: "cafe", tier: 1, name: "Atlantic Cold Brew", short: "Cold Brew", icon: "☕", cost: 200, reference: 400, color: "#e98a55" },
+  { id: "nata", storeId: "cafe", tier: 2, name: "Pastel de Nata", short: "Nata", icon: "✦", cost: 120, reference: 250, color: "#efbd58" },
+  { id: "toastie", storeId: "cafe", tier: 3, name: "Campus Toastie", short: "Toastie", icon: "▰", cost: 300, reference: 650, color: "#d77c4c" },
+  { id: "acai", storeId: "snack", tier: 1, name: "Surf Açaí Cup", short: "Açaí Cup", icon: "◉", cost: 300, reference: 600, color: "#a979bd" },
+  { id: "water", storeId: "snack", tier: 2, name: "Lemon Water", short: "Lemon Water", icon: "◇", cost: 80, reference: 200, color: "#8dcae5" },
+  { id: "bites", storeId: "snack", tier: 3, name: "Energy Bites", short: "Energy Bites", icon: "●", cost: 150, reference: 350, color: "#9fbb55" },
+  { id: "tote", storeId: "merch", tier: 1, name: "Nova Wave Tote", short: "Wave Tote", icon: "▱", cost: 500, reference: 1000, color: "#58bdb4" },
+  { id: "cap", storeId: "merch", tier: 2, name: "Carcavelos Cap", short: "Campus Cap", icon: "⌒", cost: 700, reference: 1500, color: "#5a90ad" },
+  { id: "hoodie", storeId: "merch", tier: 3, name: "Nova Coast Hoodie", short: "Hoodie", icon: "⌂", cost: 1400, reference: 3000, color: "#4a687e" }
 ]);
 
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 1, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], player: { x: 760, y: 690 } };
+  return { version: 1, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 1, merch: 1 }, reputation: 0, upgrades: [], player: { x: 14, y: 13.3 } };
 }
 
 export function demandFor(price, reference) {
@@ -46,6 +46,7 @@ export function buyStock(run, productId, quantity, now = new Date().toISOString(
   if (!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity must be a positive whole number.");
   const product = CATALOGUE.find(item => item.id === productId);
   if (!product) throw new Error("Unknown product.");
+  if ((run.venues?.[product.storeId] || 1) < (product.tier || 1)) throw new Error(`Upgrade this venue to level ${product.tier} to unlock ${product.name}.`);
   const total = product.cost * quantity;
   if (total > run.cash) throw new Error(`You need ${formatEuro(total)} but only have ${formatEuro(run.cash)}.`);
   const next = structuredClone(run);
@@ -84,6 +85,7 @@ export function tradeDay(run, now = new Date().toISOString()) {
     grossProfit: sum.grossProfit + item.grossProfit
   }), { unitsSold: 0, revenue: 0, cogs: 0, grossProfit: 0 });
   next.history.push({ day: run.currentDay, completedAt: now, items, totals, closingCash: next.cash });
+  next.reputation = (next.reputation || 0) + Math.max(1, Math.floor(Math.max(0, totals.grossProfit) / 200));
   if (run.currentDay >= MAX_DAYS) next.completed = true;
   else next.currentDay += 1;
   return next;
@@ -95,3 +97,20 @@ export function inventoryValue(run) {
 
 export function overallResult(run) { return run.cash + inventoryValue(run) - INITIAL_CASH; }
 export function formatEuro(cents) { return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(cents / 100); }
+
+export function upgradeVenue(run, storeId, now = new Date().toISOString()) {
+  if (run.completed) throw new Error("This run is complete. Start a new run to upgrade again.");
+  if (!STORES.some(store => store.id === storeId)) throw new Error("Unknown venue.");
+  const level = run.venues?.[storeId] || 1;
+  if (level >= 3) throw new Error("This venue is already at the maximum level.");
+  const cost = level === 1 ? 1500 : 2500;
+  if (run.cash < cost) throw new Error(`You need ${formatEuro(cost)} to upgrade this venue.`);
+  const next = structuredClone(run);
+  if (!next.venues) next.venues = { cafe: 1, snack: 1, merch: 1 };
+  next.cash -= cost;
+  next.venues[storeId] = level + 1;
+  if (!Array.isArray(next.upgrades)) next.upgrades = [];
+  next.upgrades.push({ at: now, day: run.currentDay, storeId, fromLevel: level, toLevel: level + 1, cost });
+  next.reputation = (next.reputation || 0) + 5;
+  return next;
+}

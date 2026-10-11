@@ -1,6 +1,13 @@
 # Nova Beach Ventures
 
-A deterministic five-day campus pop-up business simulation set on a stylized Nova SBE / Carcavelos waterfront.
+A deterministic five-day campus tycoon set on a stylized Nova SBE / Carcavelos waterfront. Explore an isometric campus with WASD or click-to-move, operate three venues across separate districts, and grow them from level-one pop-ups into flagship businesses.
+
+## Tycoon systems
+
+- Three venues and nine products across café, beach-fuel and campus-merch categories.
+- Venue upgrades, product unlocks, reputation, demand-capacity and portfolio views.
+- A layered explorable world with supplier market, courtyard, student hub, promenade, beach stage and venture HQ.
+- Immediate autosave for purchases, prices, upgrades, position and completed trading days.
 
 ## Play locally
 

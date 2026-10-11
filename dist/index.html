@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./world.css" />
+    <link rel="stylesheet" href="./premium.css" />
   </head>
   <body>
     <div id="game" class="game-shell">
@@ -22,6 +22,7 @@
         <div class="run-stats" aria-label="Run status">
           <div class="stat"><span>DAY</span><strong id="dayStat">1 / 5</strong></div>
           <div class="stat cash"><span>CASH</span><strong id="cashStat">€100.00</strong></div>
+          <div class="stat rep"><span>REPUTATION</span><strong id="repStat">0 ★</strong></div>
           <div class="day-dots" id="dayDots" aria-label="Five-day progress"></div>
         </div>
         <div class="top-actions">
@@ -54,6 +55,13 @@
           <div class="minimap-title">CAMPUS MAP <span>LIVE</span></div>
           <div class="mini-world"><i class="mini-building"></i><i class="mini-sea"></i><b class="mini-player"></b><em class="mini-spot one"></em><em class="mini-spot two"></em><em class="mini-spot three"></em></div>
         </div>
+
+        <section class="world-pulse" aria-label="Campus activity">
+          <div class="pulse-head"><span>LIVE</span><strong>CAMPUS PULSE</strong></div>
+          <div class="pulse-row"><span>Demand capacity</span><b id="pulseDemand">30 units</b></div>
+          <div class="pulse-row"><span>Venue network</span><b id="pulseVenues">3 districts · 3 products</b></div>
+          <div class="pulse-row"><span>Next milestone</span><b id="pulseMilestone">Level up a venue</b></div>
+        </section>
 
         <div id="interactionHint" class="interaction-hint hidden">
           <span class="keycap">E</span>
