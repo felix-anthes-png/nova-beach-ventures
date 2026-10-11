@@ -1,4 +1,4 @@
-import { CATALOGUE, MAX_DAYS, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, tradeDay, inventoryValue, overallResult, formatEuro } from "./core.js";
+import { CATALOGUE, STORES, MAX_DAYS, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, tradeDay, inventoryValue, overallResult, formatEuro } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -15,14 +15,17 @@ let lastTime = 0;
 let walking = false;
 let facing = { x: 0, y: 1 };
 let targetPoint = null;
+let currentSupplierStore = "cafe";
 const camera = { x: 800, y: 610, zoom: 1 };
 const WORLD = { width: 1600, height: 1080, waterline: 870 };
 const WALK_SPEED = 235;
 
 const locations = {
-  supplier: { x: 330, y: 625, label: "Enter Mercado Hub", panel: openSupplier, color: "#ffd05b", title: "MERCADO HUB", sub: "WHOLESALE SUPPLIES" },
-  stand: { x: 870, y: 710, label: "Manage your beach stand", panel: openStand, color: "#ff7357", title: "YOUR POP-UP", sub: "PRICING & TRADE" },
-  board: { x: 1240, y: 590, label: "Open the venture ledger", panel: openLedger, color: "#65d2ca", title: "VENTURE OFFICE", sub: "RESULTS & HISTORY" }
+  supplier: { x: 235, y: 625, label: "Enter Mercado Hub", panel: () => openSupplier(currentSupplierStore), color: "#ffd05b", title: "MERCADO HUB", sub: "WHOLESALE SUPPLIES" },
+  cafe: { x: 610, y: 690, label: "Manage Atlantic Café", panel: () => openStore("cafe"), color: "#ff815d", title: "ATLANTIC CAFÉ", sub: "COFFEE & BAKES" },
+  snack: { x: 890, y: 700, label: "Manage Beach Fuel Bar", panel: () => openStore("snack"), color: "#b3dc65", title: "BEACH FUEL", sub: "FRESH & FAST" },
+  merch: { x: 1160, y: 665, label: "Manage Nova Supply Co.", panel: () => openStore("merch"), color: "#67c7c4", title: "NOVA SUPPLY", sub: "CAMPUS GOODS" },
+  board: { x: 1390, y: 570, label: "Open the venture ledger", panel: openLedger, color: "#65d2ca", title: "VENTURE HQ", sub: "RESULTS & HISTORY" }
 };
 
 function loadRun() {
@@ -30,6 +33,10 @@ function loadRun() {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (parsed && parsed.version === 1 && Array.isArray(parsed.history)) {
       if (!parsed.player || parsed.player.x < 200) parsed.player = { x: 760, y: 690 };
+      CATALOGUE.forEach(product => {
+        if (!Number.isInteger(parsed.stock[product.id])) parsed.stock[product.id] = 0;
+        if (!Number.isInteger(parsed.prices[product.id])) parsed.prices[product.id] = product.reference;
+      });
       return parsed;
     }
   } catch (_) {}
@@ -54,14 +61,14 @@ function updateHUD() {
     return `<span class="day-dot ${day <= run.history.length ? "done" : ""} ${!run.completed && day === run.currentDay ? "current" : ""}"></span>`;
   }).join("");
   const totalStock = Object.values(run.stock).reduce((a, b) => a + b, 0);
-  let title = "Stock your stand", text = "Walk to Mercado Hub and buy your first products.", progress = 8;
+  let title = "Build your first trading plan", text = "Use the Stock tool, then prepare prices across your three venues.", progress = 8;
   if (run.completed) {
     title = overallResult(run) >= 0 ? "Venture complete!" : "A useful first run";
     text = `Your five-day result is ${formatEuro(overallResult(run))}. Open the ledger for the full story.`;
     progress = 100;
   } else if (totalStock > 0) {
     title = `Prepare day ${run.currentDay}`;
-    text = "Check your prices at the stand, then open for the day when you're ready.";
+    text = "Review each venue, balance stock and margins, then open the campus for trading.";
     progress = 15 + run.history.length * 17;
   }
   $("#missionTitle").textContent = title;
@@ -163,7 +170,7 @@ function drawLocation(id) {
   ctx.fillStyle="#f5f0df";ctx.fillRect(-62,-86,124,86);ctx.fillStyle="#c9c8bb";ctx.beginPath();ctx.moveTo(62,-86);ctx.lineTo(80,-72);ctx.lineTo(80,5);ctx.lineTo(62,0);ctx.closePath();ctx.fill();
   ctx.fillStyle="#153c44";ctx.fillRect(-47,-60,94,50);ctx.fillStyle=loc.color;ctx.fillRect(-70,-95,140,16);
   for(let i=0;i<7;i++){ctx.fillStyle=i%2?"#fff8e8":loc.color;ctx.beginPath();ctx.moveTo(-70+i*20,-79);ctx.lineTo(-50+i*20,-79);ctx.lineTo(-55+i*20,-67);ctx.lineTo(-66+i*20,-67);ctx.closePath();ctx.fill();}
-  ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 10px Manrope";ctx.fillText(loc.title,0,-38);ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="500 6px DM Mono";ctx.fillText(id==="stand"?`DAY ${run.currentDay} · YOUR BUSINESS`:loc.sub,0,-24);
+  ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 10px Manrope";ctx.fillText(loc.title,0,-38);ctx.fillStyle="rgba(255,255,255,.6)";ctx.font="500 6px DM Mono";ctx.fillText(STORES.some(store=>store.id===id)?`DAY ${run.currentDay} · OPEN FOR BUSINESS`:loc.sub,0,-24);
   // interaction halo
   if(near){ctx.strokeStyle=loc.color;ctx.lineWidth=3;ctx.setLineDash([8,7]);ctx.beginPath();ctx.ellipse(0,5,92+Math.sin(lastTime*.004)*3,31,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
   // floating location plaque
@@ -217,12 +224,21 @@ function moveTo(id) { const loc=locations[id]; run.player={x:loc.x,y:loc.y+72};c
 function openLocation(id) { activeLocation=id; locations[id].panel(); drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); }
 function closeDrawer() { activeLocation=null; drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); }
 
-function openSupplier() {
+function storeTabs(selected, action="supplier") {
+  return `<div class="store-tabs">${STORES.map(store=>`<button class="store-tab ${selected===store.id?"active":""}" data-store="${store.id}" data-mode="${action}"><span>${store.icon}</span>${store.short}</button>`).join("")}</div>`;
+}
+
+function openSupplier(selectedStore="cafe") {
+  currentSupplierStore=selectedStore;
+  const store=STORES.find(item=>item.id===selectedStore), products=CATALOGUE.filter(product=>product.storeId===selectedStore);
   drawerContent.innerHTML = `
-    <p class="eyebrow">Mercado Hub · supplier</p><h2>Stock up for day ${run.currentDay}</h2>
-    <p class="drawer-intro">Buy only what you can afford. Unsold goods carry over, so every unit is a bet on the week.</p>
+    <p class="eyebrow">Mercado Hub · wholesale market</p><h2>Buy inventory</h2>
+    <p class="drawer-intro">Choose a venue, compare unit economics, and build a portfolio you can actually afford.</p>
     <div class="balance-banner"><span>AVAILABLE CASH</span><strong>${formatEuro(run.cash)}</strong></div>
-    <div class="product-list">${CATALOGUE.map(product => productBuyCard(product)).join("")}</div>`;
+    ${storeTabs(selectedStore)}
+    <div class="section-heading"><div><small>STOCKING</small><strong>${store.name}</strong></div><span>${products.reduce((sum,p)=>sum+run.stock[p.id],0)} units owned</span></div>
+    <div class="product-list">${products.map(product => productBuyCard(product)).join("")}</div>`;
+  drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openSupplier(button.dataset.store)));
   drawerContent.querySelectorAll(".qty-minus,.qty-plus").forEach(button => button.addEventListener("click", () => {
     const input = drawerContent.querySelector(`#qty-${button.dataset.id}`);
     input.value = Math.max(1, Number(input.value || 1) + (button.classList.contains("qty-plus") ? 1 : -1));
@@ -248,20 +264,33 @@ function updateBuyTotal(id) {
   $(`#total-${id}`).textContent = Number.isInteger(quantity) && quantity > 0 ? formatEuro(product.cost*quantity) : "—";
 }
 
-function openStand() {
+function openStore(storeId="cafe") {
+  const store=STORES.find(item=>item.id===storeId), products=CATALOGUE.filter(product=>product.storeId===storeId);
+  const units=products.reduce((sum,p)=>sum+run.stock[p.id],0);
+  const potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
   drawerContent.innerHTML = `
-    <p class="eyebrow">Atlantic Promenade · your pop-up</p><h2>Price for demand</h2>
-    <p class="drawer-intro">Your pricing decides demand. Sales can never exceed the stock you have on hand.</p>
+    <p class="eyebrow">Venue management · ${store.short}</p><h2>${store.name}</h2>
+    <p class="drawer-intro">${store.pitch} Set prices, watch demand, and prepare this venue for day ${run.currentDay}.</p>
+    ${storeTabs(storeId,"store")}
+    <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>DAY POTENTIAL</small><strong>${formatEuro(potential)}</strong><span>revenue</span></div><div><small>PRODUCTS</small><strong>3</strong><span>active</span></div></div>
     <div class="rule-box"><strong>Daily demand rule</strong><div class="rule-grid"><div><b>10 units</b><small>At or below reference</small></div><div><b>5 units</b><small>Above, up to 2×</small></div><div><b>0 units</b><small>Above 2× reference</small></div></div></div>
-    <div class="product-list">${CATALOGUE.map(product => productPriceCard(product)).join("")}</div>
+    <div class="product-list">${products.map(product => productPriceCard(product)).join("")}</div>
     <div class="trade-footer"><button class="action-button secondary" id="visitSupplier">Buy more stock</button><button class="action-button orange" id="tradeButton" ${run.completed ? "disabled" : ""}>Open day ${run.currentDay} →</button></div>`;
+  drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
   drawerContent.querySelectorAll(".price-input").forEach(input => {
     input.addEventListener("input", () => updateDemandPreview(input.dataset.id));
     input.addEventListener("change", () => commitPrice(input.dataset.id));
   });
   drawerContent.querySelectorAll(".set-price").forEach(button => button.addEventListener("click",()=>commitPrice(button.dataset.id)));
-  $("#visitSupplier").addEventListener("click",()=>openLocation("supplier"));
+  $("#visitSupplier").addEventListener("click",()=>{currentSupplierStore=storeId;openLocation("supplier");});
   $("#tradeButton").addEventListener("click", confirmTrade);
+}
+
+function openPortfolio() {
+  drawerContent.innerHTML=`<p class="eyebrow">Portfolio · three campus venues</p><h2>Your business network</h2><p class="drawer-intro">Each venue has its own product mix, stock position, pricing and earning potential.</p><div class="venue-grid">${STORES.map(store=>{
+    const products=CATALOGUE.filter(p=>p.storeId===store.id),units=products.reduce((sum,p)=>sum+run.stock[p.id],0),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
+    return `<button class="venue-card" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${store.icon}</span><div><small>${store.short.toUpperCase()}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${formatEuro(potential)}</b> potential</span></div><em>Manage →</em></button>`}).join("")}</div>`;
+  drawerContent.querySelectorAll(".venue-card").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
 }
 
 function productPriceCard(product) {
@@ -281,12 +310,13 @@ function updateDemandPreview(id) {
 
 function commitPrice(id) {
   try { const cents=parseEuro($(`#price-${id}`).value); save(setPrice(run,id,cents)); toast("Price saved immediately"); beep(440); }
-  catch(error){ toast(error.message,true); openStand(); beep(180); }
+  catch(error){ toast(error.message,true); openStore(CATALOGUE.find(product=>product.id===id)?.storeId || "cafe"); beep(180); }
 }
 
 function confirmTrade() {
   const projections=CATALOGUE.map(product=>({product, demand:demandFor(run.prices[product.id],product.reference), sold:Math.min(run.stock[product.id],demandFor(run.prices[product.id],product.reference))}));
-  modalCard.innerHTML=`<p class="eyebrow">Ready to trade?</p><h2 id="modalTitle">Open day ${run.currentDay}</h2><p>This action will record the day once and advance your five-day run. Based on current prices and stock, you can sell up to <strong>${projections.reduce((s,p)=>s+p.sold,0)} units</strong>.</p><div class="report-grid">${projections.map(p=>`<div><small>${p.product.short}</small><strong>${p.sold} / ${p.demand}</strong></div>`).join("")}</div><div class="modal-actions"><button class="action-button secondary" data-close>Keep planning</button><button class="action-button orange" id="confirmTrade">Open now</button></div>`;
+  const venueForecasts=STORES.map(store=>{const items=projections.filter(item=>item.product.storeId===store.id);return {store,units:items.reduce((s,p)=>s+p.sold,0),revenue:items.reduce((s,p)=>s+p.sold*run.prices[p.product.id],0)}});
+  modalCard.innerHTML=`<p class="eyebrow">Campus opening checklist</p><h2 id="modalTitle">Open day ${run.currentDay}</h2><p>All three venues trade together. This action records the day once and advances the run. Current plans can sell up to <strong>${projections.reduce((s,p)=>s+p.sold,0)} units</strong>.</p><div class="forecast-grid">${venueForecasts.map(v=>`<div style="--venue:${v.store.color}"><span>${v.store.icon}</span><small>${v.store.short}</small><strong>${v.units} units</strong><em>${formatEuro(v.revenue)} forecast revenue</em></div>`).join("")}</div><div class="modal-actions"><button class="action-button secondary" data-close>Keep planning</button><button class="action-button orange" id="confirmTrade">Open all venues</button></div>`;
   showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#confirmTrade").addEventListener("click",executeTrade,{once:true});
 }
 
@@ -308,9 +338,13 @@ function showReport(day, final=false) {
 
 function openLedger() {
   const gain=overallResult(run), inv=inventoryValue(run);
-  drawerContent.innerHTML=`<p class="eyebrow">Venture ledger · saved locally</p><h2>Your five-day story</h2><p class="drawer-intro">Every completed day is recorded once. Close the game whenever you like—your balances, prices and history will be here when you return.</p>
+  const venueResults=STORES.map(store=>{const ids=new Set(CATALOGUE.filter(p=>p.storeId===store.id).map(p=>p.id));const items=run.history.flatMap(day=>day.items).filter(item=>ids.has(item.productId));return {store,units:items.reduce((s,i)=>s+i.unitsSold,0),revenue:items.reduce((s,i)=>s+i.revenue,0),profit:items.reduce((s,i)=>s+i.grossProfit,0)}});
+  drawerContent.innerHTML=`<p class="eyebrow">Company finance · saved locally</p><h2>Portfolio performance</h2><p class="drawer-intro">Compare venues, inspect daily results, and decide where tomorrow's cash should go.</p>
     <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>GAIN / LOSS</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div></div>
-    <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>No trading days yet.<br>Open your stand to write the first entry.</div>`}</div>`;
+    <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>Trading performance</strong></div><span>${run.history.length} / 5 days</span></div>
+    <div class="venue-kpis">${venueResults.map(v=>`<div style="border-top:3px solid ${v.store.color}"><small>${v.store.short.toUpperCase()}</small><strong>${formatEuro(v.profit)}</strong><span>${v.units} sold · ${formatEuro(v.revenue)} revenue</span></div>`).join("")}</div>
+    <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Completed days</strong></div></div>
+    <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>No trading days yet.<br>Prepare your venues and open the campus.</div>`}</div>`;
 }
 
 function historyCard(day) {
@@ -334,7 +368,13 @@ canvas.addEventListener("click",event=>{const rect=canvas.getBoundingClientRect(
 $("#closeDrawer").addEventListener("click",closeDrawer);
 $("#newRunButton").addEventListener("click",confirmNewRun);
 $("#soundButton").addEventListener("click",()=>{soundOn=!soundOn;$("#soundButton").classList.toggle("muted",!soundOn);$("#soundButton").textContent=soundOn?"♪":"×";});
-document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>moveTo(button.dataset.location)));
+document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>{
+  const action=button.dataset.action;
+  if(action==="buy")openLocation("supplier");
+  if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
+  if(action==="trade")confirmTrade();
+  if(action==="ledger")openLocation("board");
+}));
 modal.addEventListener("click",event=>{if(event.target===modal)hideModal();});
 
 resize(); updateHUD(); requestAnimationFrame(loop);
