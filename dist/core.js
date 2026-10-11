@@ -8,6 +8,14 @@ export const STORES = Object.freeze([
   { id: "merch", name: "Nova Supply Co.", short: "Merch", icon: "◆", color: "#67c7c4", pitch: "Campus gear with stronger margins." }
 ]);
 
+export const CAMPUS_DAYS = Object.freeze([
+  { day: 1, id: "lecture-rush", icon: "◷", title: "Lecture Rush", district: "Courtyard", brief: "Students cross the courtyard between morning classes.", objective: { type: "units", target: 5, label: "Sell at least 5 units" } },
+  { day: 2, id: "surf-club", icon: "≈", title: "Surf Club Sign-up", district: "Boardwalk", brief: "The promenade fills up after the club introduction.", objective: { type: "profit", target: 1500, label: "Earn €15.00 gross profit" } },
+  { day: 3, id: "career-fair", icon: "◇", title: "Career Fair", district: "Student Hub", brief: "Visitors circulate between the Hub and main building.", objective: { type: "venues", target: 2, label: "Make sales at 2 venues" } },
+  { day: 4, id: "study-night", icon: "✦", title: "Study Marathon", district: "Learning Center", brief: "A long study session keeps the campus active all day.", objective: { type: "revenue", target: 6000, label: "Reach €60.00 revenue" } },
+  { day: 5, id: "sunset-social", icon: "☀", title: "Sunset Social", district: "Beach Stage", brief: "The season closes with the campus gathered by the ocean.", objective: { type: "cash", target: 10000, label: "Finish with at least €100 cash" } }
+]);
+
 export const CATALOGUE = Object.freeze([
   { id: "coldBrew", storeId: "cafe", tier: 1, name: "Atlantic Cold Brew", short: "Cold Brew", icon: "☕", cost: 200, reference: 400, color: "#e98a55" },
   { id: "nata", storeId: "cafe", tier: 2, name: "Pastel de Nata", short: "Nata", icon: "✦", cost: 120, reference: 250, color: "#efbd58" },
@@ -84,8 +92,16 @@ export function tradeDay(run, now = new Date().toISOString()) {
     cogs: sum.cogs + item.cogs,
     grossProfit: sum.grossProfit + item.grossProfit
   }), { unitsSold: 0, revenue: 0, cogs: 0, grossProfit: 0 });
-  next.history.push({ day: run.currentDay, completedAt: now, items, totals, closingCash: next.cash });
-  next.reputation = (next.reputation || 0) + Math.max(1, Math.floor(Math.max(0, totals.grossProfit) / 200));
+  const campusDay = CAMPUS_DAYS[run.currentDay - 1];
+  const activeVenues = new Set(items.filter(item => item.unitsSold > 0).map(item => CATALOGUE.find(product => product.id === item.productId)?.storeId)).size;
+  const objectiveValue = campusDay.objective.type === "units" ? totals.unitsSold
+    : campusDay.objective.type === "profit" ? totals.grossProfit
+    : campusDay.objective.type === "venues" ? activeVenues
+    : campusDay.objective.type === "revenue" ? totals.revenue
+    : next.cash;
+  const objective = { ...campusDay.objective, value: objectiveValue, completed: objectiveValue >= campusDay.objective.target, reputation: objectiveValue >= campusDay.objective.target ? 4 : 0 };
+  next.history.push({ day: run.currentDay, eventId: campusDay.id, completedAt: now, items, totals, closingCash: next.cash, objective });
+  next.reputation = (next.reputation || 0) + Math.max(1, Math.floor(Math.max(0, totals.grossProfit) / 200)) + objective.reputation;
   if (run.currentDay >= MAX_DAYS) next.completed = true;
   else next.currentDay += 1;
   return next;

@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, MAX_DAYS, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, tradeDay, inventoryValue, overallResult, formatEuro, upgradeVenue } from "./core.js";
+import { CATALOGUE, STORES, CAMPUS_DAYS, MAX_DAYS, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, tradeDay, inventoryValue, overallResult, formatEuro, upgradeVenue } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -16,6 +16,8 @@ let walking = false;
 let facing = { x: 0, y: 1 };
 let targetPoint = null;
 let currentSupplierStore = "cafe";
+let tradingInProgress = false;
+let skipSimulation = false;
 const camera = { x: 14, y: 14, zoom: 1 };
 const WORLD = { width: 28, height: 22, shore: 17 };
 const TILE_W = 76, TILE_H = 38;
@@ -72,6 +74,11 @@ function updateHUD() {
   $("#pulseDemand").textContent = `${demandCapacity} units`;
   $("#pulseVenues").textContent = `3 districts · ${unlockedProducts.length} products`;
   $("#pulseMilestone").textContent = run.completed ? "Season complete" : nextVenue ? `Upgrade ${nextVenue.short}` : "All venues flagship";
+  const campusDay = CAMPUS_DAYS[(run.completed ? MAX_DAYS : run.currentDay) - 1];
+  $("#eventIcon").textContent = campusDay.icon;
+  $("#eventDistrict").textContent = `${run.completed ? "FINAL DAY" : "TODAY"} · ${campusDay.district.toUpperCase()}`;
+  $("#eventTitle").textContent = campusDay.title;
+  $("#eventObjective").textContent = campusDay.objective.label;
   let title = "Build your first trading plan", text = "Use the Stock tool, then prepare prices across your three venues.", progress = 8;
   if (run.completed) {
     title = overallResult(run) >= 0 ? "Venture complete!" : "A useful first run";
@@ -328,21 +335,85 @@ function commitPrice(id) {
 }
 
 function confirmTrade() {
+  if(run.completed || tradingInProgress) return;
   const projections=CATALOGUE.map(product=>({product, demand:demandFor(run.prices[product.id],product.reference), sold:Math.min(run.stock[product.id],demandFor(run.prices[product.id],product.reference))}));
   const venueForecasts=STORES.map(store=>{const items=projections.filter(item=>item.product.storeId===store.id);return {store,units:items.reduce((s,p)=>s+p.sold,0),revenue:items.reduce((s,p)=>s+p.sold*run.prices[p.product.id],0)}});
-  modalCard.innerHTML=`<p class="eyebrow">Campus opening checklist</p><h2 id="modalTitle">Open day ${run.currentDay}</h2><p>All three venues trade together. This action records the day once and advances the run. Current plans can sell up to <strong>${projections.reduce((s,p)=>s+p.sold,0)} units</strong>.</p><div class="forecast-grid">${venueForecasts.map(v=>`<div style="--venue:${v.store.color}"><span>${v.store.icon}</span><small>${v.store.short}</small><strong>${v.units} units</strong><em>${formatEuro(v.revenue)} forecast revenue</em></div>`).join("")}</div><div class="modal-actions"><button class="action-button secondary" data-close>Keep planning</button><button class="action-button orange" id="confirmTrade">Open all venues</button></div>`;
+  const campusDay=CAMPUS_DAYS[run.currentDay-1];
+  modalCard.className="modal-card";
+  modalCard.innerHTML=`<p class="eyebrow">Campus opening checklist · day ${run.currentDay}</p><h2 id="modalTitle">${campusDay.icon} ${campusDay.title}</h2><p>${campusDay.brief} All three venues trade together and the day is recorded exactly once.</p><div class="event-objective"><span>DAY OBJECTIVE</span><strong>${campusDay.objective.label}</strong><em>+4 reputation</em></div><div class="forecast-grid">${venueForecasts.map(v=>`<div style="--venue:${v.store.color}"><span>${v.store.icon}</span><small>${v.store.short}</small><strong>${v.units} units</strong><em>${formatEuro(v.revenue)} forecast revenue</em></div>`).join("")}</div><div class="forecast-total"><span>PLAN FORECAST</span><strong>${projections.reduce((s,p)=>s+p.sold,0)} units · ${formatEuro(venueForecasts.reduce((sum,venue)=>sum+venue.revenue,0))}</strong></div><div class="modal-actions"><button class="action-button secondary" data-close>Keep planning</button><button class="action-button orange" id="confirmTrade">Open campus →</button></div>`;
   showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#confirmTrade").addEventListener("click",executeTrade,{once:true});
 }
 
-function executeTrade() {
-  try { const next=tradeDay(run); save(next); closeDrawer(); showReport(next.history.at(-1),next.completed); beep(690); }
-  catch(error){ hideModal(); toast(error.message,true); }
+const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+async function executeTrade() {
+  if(tradingInProgress) return;
+  let next, day;
+  try {
+    tradingInProgress=true; skipSimulation=false;
+    next=tradeDay(run); day=next.history.at(-1); const campusDay=CAMPUS_DAYS[day.day-1];
+    const saleQueue=day.items.flatMap(item=>Array.from({length:item.unitsSold},()=>item));
+    const venueTotals=Object.fromEntries(STORES.map(store=>[store.id,{units:0,revenue:0}]));
+    closeDrawer();
+    modalCard.className="modal-card trading-card";
+    modalCard.innerHTML=`<div class="sim-top"><div><p class="eyebrow">LIVE · DAY ${day.day}</p><h2 id="modalTitle">${campusDay.title}</h2><span id="simPhase">Campus gates opening…</span></div><div class="sim-total"><small>LIVE REVENUE</small><strong id="simRevenue">€0.00</strong><em id="simSold">0 sold</em></div></div><div class="sim-progress"><span id="simProgress"></span></div><div class="sim-scene"><div class="sim-campus"><span>NOVA SBE</span><small id="simClock">08:30</small></div><div class="sim-crowd" id="simCrowd"></div><div class="sim-lanes">${STORES.map(store=>`<article class="sim-venue" data-store="${store.id}" style="--venue:${store.color}"><div class="sim-awning"></div><span>${store.icon}</span><small>${store.short}</small><strong id="simUnits-${store.id}">0 sold</strong><em id="simMoney-${store.id}">€0.00</em><div class="sim-meter"><i id="simFill-${store.id}"></i></div></article>`).join("")}</div></div><div class="sim-footer"><div><span class="live-dot"></span><strong id="simMessage">Students are arriving across campus</strong></div><button class="sim-skip" id="simSkip">Skip to results</button></div>`;
+    showModal();
+    $("#simSkip").addEventListener("click",()=>{skipSimulation=true;});
+    await wait(450);
+    if(saleQueue.length===0){
+      $("#simPhase").textContent="Campus trading · no purchases yet";
+      $("#simMessage").textContent="Students browsed, but no stocked offer converted";
+      for(let i=0;i<5&&!skipSimulation;i++){spawnCustomer(null,i,false);await wait(180);}
+      await wait(skipSimulation?50:700);
+    } else {
+      for(let index=0;index<saleQueue.length;index++){
+        if(skipSimulation) break;
+        const item=saleQueue[index], product=CATALOGUE.find(entry=>entry.id===item.productId), store=STORES.find(entry=>entry.id===product.storeId);
+        const progress=(index+1)/saleQueue.length;
+        venueTotals[store.id].units+=1; venueTotals[store.id].revenue+=item.price;
+        $("#simPhase").textContent=progress<.34?"Morning rush":progress<.72?"Midday trading":"Final campus rush";
+        $("#simClock").textContent=progress<.34?"10:15":progress<.72?"13:40":"17:20";
+        $("#simProgress").style.width=`${Math.max(6,progress*100)}%`;
+        $("#simRevenue").textContent=formatEuro(Object.values(venueTotals).reduce((sum,value)=>sum+value.revenue,0));
+        $("#simSold").textContent=`${index+1} sold`;
+        $(`#simUnits-${store.id}`).textContent=`${venueTotals[store.id].units} sold`;
+        $(`#simMoney-${store.id}`).textContent=formatEuro(venueTotals[store.id].revenue);
+        $(`#simFill-${store.id}`).style.width=`${Math.min(100,venueTotals[store.id].units/Math.max(1,day.items.filter(entry=>CATALOGUE.find(product=>product.id===entry.productId)?.storeId===store.id).reduce((sum,entry)=>sum+entry.unitsSold,0))*100)}%`;
+        $("#simMessage").textContent=`${product.short} sold at ${store.short} · +${formatEuro(item.price)}`;
+        spawnCustomer(store,index,true,product.icon);
+        if(index%3===0) beep(420+index%5*35);
+        await wait(Math.max(55,Math.min(135,1900/saleQueue.length)));
+      }
+      Object.entries(venueTotals).forEach(([storeId,value])=>{const storeItems=day.items.filter(entry=>CATALOGUE.find(product=>product.id===entry.productId)?.storeId===storeId);value.units=storeItems.reduce((sum,item)=>sum+item.unitsSold,0);value.revenue=storeItems.reduce((sum,item)=>sum+item.revenue,0);$("#simUnits-"+storeId).textContent=`${value.units} sold`;$("#simMoney-"+storeId).textContent=formatEuro(value.revenue);$("#simFill-"+storeId).style.width=value.units?"100%":"0%";});
+      $("#simProgress").style.width="100%"; $("#simRevenue").textContent=formatEuro(day.totals.revenue); $("#simSold").textContent=`${day.totals.unitsSold} sold`; $("#simPhase").textContent="Campus closed · reconciling results";
+      await wait(skipSimulation?100:500);
+    }
+    save(next); tradingInProgress=false; beep(690); showReport(day,next.completed);
+  } catch(error){
+    console.error("Trading simulation failed",error);
+    tradingInProgress=false;
+    if(next&&day){save(next);showReport(day,next.completed);toast("Trading completed; the live view was skipped.",true);}
+    else{hideModal();toast(error.message,true);}
+  }
+}
+
+function spawnCustomer(store,index,purchased=true,productIcon="") {
+  const crowd=$("#simCrowd"); if(!crowd) return;
+  const customer=document.createElement("div");
+  customer.className=`sim-customer ${store?.id||"wander"} ${purchased?"purchased":"browsing"}`;
+  customer.style.setProperty("--customer",["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f"][index%5]);
+  customer.style.setProperty("--lane",store?STORES.findIndex(item=>item.id===store.id):index%3);
+  customer.innerHTML=`<i></i><b>${purchased?`+ ${productIcon}`:"?"}</b>`;
+  crowd.append(customer); requestAnimationFrame(()=>customer.classList.add("go")); setTimeout(()=>customer.remove(),1050);
 }
 
 function showReport(day, final=false) {
   const value=overallResult(run), inv=inventoryValue(run);
+  const campusDay=CAMPUS_DAYS[day.day-1], objective=day.objective;
   const resultTitle=final ? "Your final score" : day.totals.grossProfit>0 ? "A profitable trading day" : day.totals.revenue>0 ? "Campus doors closed" : "A quiet day";
+  modalCard.className="modal-card";
   modalCard.innerHTML=`<p class="eyebrow">${final ? "Five-day run complete" : `Day ${day.day} closed`}</p><h2 id="modalTitle">${resultTitle}</h2>
+    <div class="objective-result ${objective?.completed?"completed":"missed"}"><span>${objective?.completed?"✓":"○"}</span><div><small>${campusDay.title.toUpperCase()} · DAY OBJECTIVE</small><strong>${objective?.label||campusDay.objective.label}</strong></div><em>${objective?.completed?"+4 reputation":"Try again next run"}</em></div>
     <div class="report-hero"><small>${final ? "OVERALL GAIN / LOSS" : "TODAY'S GROSS PROFIT"}</small><strong class="${(final?value:day.totals.grossProfit)>=0?"":"result-negative"}">${formatEuro(final?value:day.totals.grossProfit)}</strong></div>
     <table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")}</tbody><tfoot><tr><td><strong>Total</strong></td><td><strong>${day.totals.unitsSold}</strong></td><td><strong>${formatEuro(day.totals.revenue)}</strong></td><td><strong>${formatEuro(day.totals.cogs)}</strong></td><td><strong>${formatEuro(day.totals.grossProfit)}</strong></td></tr></tfoot></table>
     ${final?`<div class="report-grid"><div><small>FINAL CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK AT COST</small><strong>${formatEuro(inv)}</strong></div><div><small>STARTED WITH</small><strong>€100.00</strong></div></div>`:""}
@@ -353,9 +424,10 @@ function showReport(day, final=false) {
 
 function openLedger() {
   const gain=overallResult(run), inv=inventoryValue(run);
+  const objectives=run.history.filter(day=>day.objective?.completed).length;
   const venueResults=STORES.map(store=>{const ids=new Set(CATALOGUE.filter(p=>p.storeId===store.id).map(p=>p.id));const items=run.history.flatMap(day=>day.items).filter(item=>ids.has(item.productId));return {store,units:items.reduce((s,i)=>s+i.unitsSold,0),revenue:items.reduce((s,i)=>s+i.revenue,0),profit:items.reduce((s,i)=>s+i.grossProfit,0)}});
   drawerContent.innerHTML=`<p class="eyebrow">Company finance · saved locally</p><h2>Portfolio performance</h2><p class="drawer-intro">Compare venues, inspect daily results, and decide where tomorrow's cash should go.</p>
-    <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>GAIN / LOSS</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div></div>
+    <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>GAIN / LOSS</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div><div><small>OBJECTIVES</small><strong>${objectives} / ${run.history.length||5}</strong></div></div>
     <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>Trading performance</strong></div><span>${run.history.length} / 5 days</span></div>
     <div class="venue-kpis">${venueResults.map(v=>`<div style="border-top:3px solid ${v.store.color}"><small>${v.store.short.toUpperCase()}</small><strong>${formatEuro(v.profit)}</strong><span>${v.units} sold · ${formatEuro(v.revenue)} revenue</span></div>`).join("")}</div>
     <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Completed days</strong></div></div>
@@ -363,10 +435,12 @@ function openLedger() {
 }
 
 function historyCard(day) {
-  return `<details class="history-day"><summary><strong>Day ${day.day} · ${day.totals.unitsSold} units sold</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail"><table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")}</tbody></table></div></details>`;
+  const campusDay=CAMPUS_DAYS[day.day-1];
+  return `<details class="history-day"><summary><strong>Day ${day.day} · ${campusDay.title}</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail"><div class="history-objective ${day.objective?.completed?"done":""}">${day.objective?.completed?"✓":"○"} ${day.objective?.label||campusDay.objective.label}</div><table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")}</tbody></table></div></details>`;
 }
 
 function confirmNewRun() {
+  modalCard.className="modal-card";
   modalCard.innerHTML=`<p class="eyebrow">Replace current run?</p><h2 id="modalTitle">Start from day one</h2><p>This replaces your saved run with <strong>€100.00 cash</strong>, zero stock, reference prices and an empty history. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace run</button></div>`;
   showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{save(createRun());hideModal();closeDrawer();toast("Fresh venture started");beep(610);});
 }
@@ -377,7 +451,7 @@ function toast(message,error=false){const el=document.createElement("div");el.cl
 function beep(frequency){if(!soundOn)return;try{const audio=new AudioContext();const osc=audio.createOscillator(),gain=audio.createGain();osc.frequency.value=frequency;gain.gain.setValueAtTime(.05,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.12);osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+.12);}catch(_){} }
 
 window.addEventListener("resize",resize);
-window.addEventListener("keydown",event=>{if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(event.key.toLowerCase())){keys.add(event.key.toLowerCase());targetPoint=null;event.preventDefault();}if(event.key.toLowerCase()==="e"&&modal.classList.contains("hidden")){const near=nearestLocation();if(near)openLocation(near[0]);}if(event.key==="Escape"){hideModal();closeDrawer();}});
+window.addEventListener("keydown",event=>{if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(event.key.toLowerCase())){keys.add(event.key.toLowerCase());targetPoint=null;event.preventDefault();}if(event.key.toLowerCase()==="e"&&modal.classList.contains("hidden")){const near=nearestLocation();if(near)openLocation(near[0]);}if(event.key==="Escape"&&!tradingInProgress){hideModal();closeDrawer();}});
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
 canvas.addEventListener("click",event=>{const rect=canvas.getBoundingClientRect(),cp=isoPoint(camera.x,camera.y);const ix=(event.clientX-rect.left-canvas.clientWidth/2)/camera.zoom+cp.x,iy=(event.clientY-rect.top-canvas.clientHeight/2)/camera.zoom+cp.y;const x=iy/TILE_H+ix/TILE_W,y=iy/TILE_H-ix/TILE_W;const hit=Object.entries(locations).find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else targetPoint={x:Math.max(1,Math.min(WORLD.width-1,x)),y:Math.max(8.2,Math.min(18.3,y))};});
 $("#closeDrawer").addEventListener("click",closeDrawer);
@@ -390,6 +464,6 @@ document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventLi
   if(action==="trade")confirmTrade();
   if(action==="ledger")openLocation("board");
 }));
-modal.addEventListener("click",event=>{if(event.target===modal)hideModal();});
+modal.addEventListener("click",event=>{if(event.target===modal&&!tradingInProgress)hideModal();});
 
 resize(); updateHUD(); requestAnimationFrame(loop);
