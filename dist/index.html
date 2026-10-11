@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#072b36" />
+    <meta name="description" content="Build a five-day campus pop-up business on Lisbon's Carcavelos waterfront." />
+    <title>Nova Beach Ventures</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="game" class="game-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Nova Beach Ventures home">
+          <span class="brand-mark">NV</span>
+          <span><strong>Nova Beach</strong><small>VENTURES</small></span>
+        </a>
+        <div class="run-stats" aria-label="Run status">
+          <div class="stat"><span>DAY</span><strong id="dayStat">1 / 5</strong></div>
+          <div class="stat cash"><span>CASH</span><strong id="cashStat">€100.00</strong></div>
+          <div class="day-dots" id="dayDots" aria-label="Five-day progress"></div>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" id="soundButton" aria-label="Toggle sound" title="Sound">♪</button>
+          <button class="outline-button" id="newRunButton">New run</button>
+        </div>
+      </header>
+
+      <main class="world-wrap">
+        <canvas id="world" aria-label="Interactive Nova campus map"></canvas>
+        <div class="sun-glow"></div>
+
+        <section class="mission-card" aria-live="polite">
+          <div class="mission-kicker"><span class="live-dot"></span> CURRENT MISSION</div>
+          <h1 id="missionTitle">Stock your stand</h1>
+          <p id="missionText">Walk to Mercado Hub and buy your first products.</p>
+          <div class="mission-progress"><span id="missionProgress"></span></div>
+        </section>
+
+        <div class="weather-chip"><span>☀</span><strong>24°</strong><small>Carcavelos</small></div>
+
+        <div id="interactionHint" class="interaction-hint hidden">
+          <span class="keycap">E</span>
+          <div><small>INTERACT</small><strong id="interactionName">Open</strong></div>
+        </div>
+
+        <nav class="quick-nav" aria-label="Campus locations">
+          <button data-location="supplier"><span>▦</span><strong>Mercado</strong><small>Buy stock</small></button>
+          <button data-location="stand"><span>◆</span><strong>Your stand</strong><small>Set prices</small></button>
+          <button data-location="board"><span>▤</span><strong>Ledger</strong><small>Review days</small></button>
+        </nav>
+
+        <div class="controls-tip"><span>WASD</span> move · <span>E</span> interact · or click a location</div>
+      </main>
+
+      <aside id="drawer" class="drawer" aria-hidden="true">
+        <div class="drawer-handle"></div>
+        <button id="closeDrawer" class="close-button" aria-label="Close panel">×</button>
+        <div id="drawerContent"></div>
+      </aside>
+
+      <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-card" id="modalCard"></div>
+      </div>
+
+      <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
