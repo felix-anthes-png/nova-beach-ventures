@@ -16,7 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "dist" / "assets"
 SOURCE = ROOT / "art-source"
 OUTPUT = ASSETS / "v3"
+EXTRACTED = SOURCE / "sprites-v3"
 OUTPUT.mkdir(parents=True, exist_ok=True)
+EXTRACTED.mkdir(parents=True, exist_ok=True)
 
 
 def components(image: Image.Image, expected: int, downsample: int = 3):
@@ -82,6 +84,7 @@ def extract(source: str, names: list[str]):
     image = Image.open(SOURCE / source).convert("RGBA")
     found, labels = components(image, len(names))
     pixels = np.asarray(image).copy()
+    sprites = {}
 
     for item, name in zip(found, names):
         x0, y0, x1, y1 = item["bbox"]
@@ -93,12 +96,36 @@ def extract(source: str, names: list[str]):
         isolated = pixels.copy()
         isolated[:, :, 3] = np.minimum(isolated[:, :, 3], np.asarray(component))
         sprite = Image.fromarray(isolated[y0:y1, x0:x1], mode="RGBA")
-        sprite.save(OUTPUT / f"{name}.webp", "WEBP", quality=86, method=4, exact=True)
+        sprite.save(EXTRACTED / f"{name}.webp", "WEBP", quality=88, method=4, exact=True)
+        sprites[name] = sprite
+    return sprites
 
 
-extract(
+def pack(sprites, names, columns, cell_width, cell_height, filename):
+    rows = (len(names) + columns - 1) // columns
+    sheet = Image.new("RGBA", (columns * cell_width, rows * cell_height), (0, 0, 0, 0))
+    for index, name in enumerate(names):
+        sprite = sprites[name]
+        scale = min((cell_width - 16) / sprite.width, (cell_height - 12) / sprite.height)
+        size = (max(1, round(sprite.width * scale)), max(1, round(sprite.height * scale)))
+        resized = sprite.resize(size, Image.Resampling.LANCZOS)
+        column, row = index % columns, index // columns
+        x = column * cell_width + (cell_width - resized.width) // 2
+        y = (row + 1) * cell_height - resized.height - 5
+        sheet.alpha_composite(resized, (x, y))
+    sheet.save(OUTPUT / filename, "WEBP", quality=88, method=5, exact=True)
+
+
+building_names = ["campus", "library", "mercado", "hub", "cafe", "snack"]
+buildings = extract(
     "campus-atlas-v2.png",
-    ["campus", "library", "mercado", "hub", "cafe", "snack"],
+    building_names,
 )
-extract("student-atlas-v2.png", [f"student-{index}" for index in range(1, 9)])
-extract("merch-manager-atlas-v2.png", ["merch", "manager"])
+student_names = [f"student-{index}" for index in range(1, 9)]
+students = extract("student-atlas-v2.png", student_names)
+feature_names = ["merch", "manager"]
+features = extract("merch-manager-atlas-v2.png", feature_names)
+
+pack(buildings, building_names, 3, 400, 320, "buildings.webp")
+pack(students, student_names, 4, 128, 180, "characters.webp")
+pack(features, feature_names, 2, 500, 420, "features.webp")
