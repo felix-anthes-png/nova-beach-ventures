@@ -56,10 +56,66 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0 }, reputation: 0, upgrades: [], facilities: [], staff: { caretaker:0, technician:0, host:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0 }, reputation: 0, upgrades: [], facilities: [], staff: { caretaker:0, technician:0, host:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
-function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,products:{}};}
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};}
+
+const GUEST_RELIEF = Object.freeze({
+  bench:{energy:42,mood:10}, water:{thirst:70}, restroom:{bladder:78}, foodGarden:{hunger:62,mood:16},
+  scenery:{mood:18}, experience:{mood:62,energy:-8}, cafe:{hunger:35,energy:46,thirst:12},
+  snack:{hunger:48,thirst:36}, merch:{mood:28}, academy:{mood:8}, hub:{mood:22}, forum:{mood:26}
+});
+
+function guestNeed(needs,key,fallback=35){const value=Number(needs?.[key]);return Number.isFinite(value)?Math.max(0,Math.min(100,value)):fallback;}
+
+export function guestDestinationOptions(run,needs={},seed=0){
+  const hunger=guestNeed(needs,"hunger"),thirst=guestNeed(needs,"thirst"),bladder=guestNeed(needs,"bladder"),energy=guestNeed(needs,"energy"),mood=guestNeed(needs,"mood");
+  const options=[
+    {kind:"landmark",id:"academy",label:"Academic Wing",score:18+((seed+1)%7)},
+    {kind:"landmark",id:"hub",label:"Student Hub",score:13+mood*.34+((seed+3)%6)},
+    {kind:"landmark",id:"forum",label:"Sunset Forum",score:12+mood*.4+((seed+5)%8)}
+  ];
+  for(const facility of run.facilities||[]){
+    let score=8;
+    if(facility.type==="bench")score+=energy*1.08+mood*.18;
+    else if(facility.type==="water")score+=thirst*1.35;
+    else if(facility.type==="restroom")score+=bladder*1.5;
+    else if(facility.type==="foodGarden")score+=hunger*1.28+mood*.22;
+    else if(facility.type==="experience")score+=mood*1.08+attractionStats(facility.modules).excitement*.42;
+    else if(facility.type==="scenery")score+=mood*.48;
+    else if(facility.type==="path")continue;
+    else score+=12;
+    options.push({kind:"facility",id:facility.id,type:facility.type,label:facility.name,score});
+  }
+  for(const store of STORES){
+    if((run.venues?.[store.id]??0)<1)continue;
+    const products=CATALOGUE.filter(product=>product.storeId===store.id&&run.stock?.[product.id]>0);
+    if(!products.length)continue;
+    let score=10;
+    if(store.id==="cafe")score+=hunger*.68+energy*.82+thirst*.18;
+    else if(store.id==="snack")score+=hunger*.92+thirst*.6;
+    else score+=mood*.52+12;
+    options.push({kind:"store",id:store.id,label:store.name,score,productIds:products.map(product=>product.id)});
+  }
+  return options.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
+}
+
+export function applyGuestNeedRelief(needs={},destinationType){
+  const next={hunger:guestNeed(needs,"hunger",0),thirst:guestNeed(needs,"thirst",0),bladder:guestNeed(needs,"bladder",0),energy:guestNeed(needs,"energy",0),mood:guestNeed(needs,"mood",0)};
+  for(const [key,value] of Object.entries(GUEST_RELIEF[destinationType]||{}))next[key]=Math.max(0,Math.min(100,next[key]-value));
+  return next;
+}
+
+export function recordGuestActivity(run,destination){
+  if(!destination?.id||!destination.kind)throw new Error("Choose a valid guest destination.");
+  const next=structuredClone(run);if(!next.today)next.today=createToday();if(!next.today.activities)next.today.activities={};
+  const key=`${destination.kind}:${destination.id}`;next.today.activities[key]=(next.today.activities[key]||0)+1;
+  next.totalCampusInteractions=(next.totalCampusInteractions||0)+1;
+  if(destination.kind==="facility"){if(!next.facilityUsage)next.facilityUsage={};next.facilityUsage[destination.id]=(next.facilityUsage[destination.id]||0)+1;}
+  if(destination.kind==="store"){if(!next.venueVisits)next.venueVisits={};next.venueVisits[destination.id]=(next.venueVisits[destination.id]||0)+1;}
+  return next;
+}
 
 export function attractionStats(moduleIds=[]) {
   const modules=moduleIds.map(id=>EXPERIENCE_MODULES.find(item=>item.id===id)).filter(Boolean);
@@ -211,7 +267,7 @@ export function advanceTycoon(run,minutes){
 
 function ensureTycoonState(run){
   if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
-  if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};
+  if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
@@ -236,7 +292,7 @@ function processSlice(run,minutes){
 function closeTycoonDay(run){
   const metrics=campusMetrics(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
   const totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,grossProfit:run.today.revenue-run.today.cogs};
-  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,campus:{...metrics,guests:run.today.visitors}});
+  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,campus:{...metrics,guests:run.today.visitors,activities:{...(run.today.activities||{})}}});
   run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.grossProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
   if(run.history.length>60)run.history=run.history.slice(-60);
 }

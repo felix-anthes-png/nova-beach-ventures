@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff } from "./core.js?v=15-smart-build";
+import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=16-living-guests";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -32,9 +32,17 @@ let simulationElapsed = 0;
 let lastPersistAt = 0;
 let lastSaleCount = run.totalSales || 0;
 let saleFeedTimer = null;
+let guestAgents = [];
+let guestSequence = 0;
+let guestSpawnAccumulator = 0;
+let activityPulse = null;
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
+const GUEST_SPEED = 1.45;
+const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3}];
+const GUEST_NAMES = ["Inês","Tomás","Maya","Luca","Beatriz","Rafael","Sofia","Noah","Leonor","Mateo","Clara","Tiago","Amélia","Hugo","Nina","Martim"];
+const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",exit:"↗"};
 const RESERVED_BUILD_AREAS = [
   {kind:"rect",x:1.8,y:8,w:9.7,h:6.3,label:"Mercado building"},
   {kind:"rect",x:13.3,y:7.2,w:14.6,h:6.8,label:"Academic complex"},
@@ -78,10 +86,14 @@ function loadRun() {
       parsed.version=2;parsed.completed=false;
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
-      if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{}};
+      if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};
+      if(!parsed.today.activities)parsed.today.activities={};
       if(!parsed.salesProgress)parsed.salesProgress={};
       if(!Number.isInteger(parsed.totalSales))parsed.totalSales=parsed.history.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0);
       if(!Number.isInteger(parsed.totalVisitors))parsed.totalVisitors=parsed.history.reduce((sum,day)=>sum+(day.campus?.guests||0),0);
+      if(!Number.isInteger(parsed.totalCampusInteractions))parsed.totalCampusInteractions=0;
+      if(!parsed.facilityUsage)parsed.facilityUsage={};
+      if(!parsed.venueVisits)parsed.venueVisits={};
       return parsed;
     }
   } catch (_) {}
@@ -114,14 +126,15 @@ function updateHUD() {
   $("#timeStat").textContent = formatClock(run.clockMinutes);
   $("#cashStat").textContent = formatEuro(run.cash);
   $("#repStat").textContent = `${run.reputation || 0} ★`;
-  $("#guestStat").textContent = `${campus.guests}`;
+  $("#guestStat").textContent = `${guestAgents.length||campus.guests}`;
   $("#ratingStat").textContent = `${campus.rating}%`;
   const totalStock = Object.values(run.stock).reduce((a, b) => a + b, 0);
   const unlockedProducts = CATALOGUE.filter(product => (run.venues?.[product.storeId] ?? 0) >= (product.tier || 1));
   const demandCapacity = unlockedProducts.reduce((sum, product) => sum + demandFor(run.prices[product.id], product.reference), 0);
   const lockedVenue=STORES.find(store=>(run.venues?.[store.id]??0)===0),openCount=STORES.filter(store=>(run.venues?.[store.id]??0)>0).length;
   $("#pulseDemand").textContent = `${Math.round(demandCapacity*Math.max(.45,campus.guests/24))} potential sales`;
-  $("#pulseVenues").textContent = `${campus.guests} on campus · ${openCount}/3 shops`;
+  const activeGuests=guestAgents.length||campus.guests,usingGuests=guestAgents.filter(guest=>guest.state==="using"||guest.state==="queueing").length;
+  $("#pulseVenues").textContent = `${activeGuests} live · ${usingGuests} at destinations`;
   $("#pulseMilestone").textContent = lockedVenue?`Open ${lockedVenue.short} · ${formatEuro(STORE_UNLOCKS[lockedVenue.id])}`:"Grow every shop to level 3";
   $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="evening"?"★":"·";
   $("#eventDistrict").textContent = `LIVE · ${formatClock(run.clockMinutes)}`;
@@ -129,7 +142,7 @@ function updateHUD() {
   $("#eventObjective").textContent = peak.multiplier>1?`${peak.multiplier.toFixed(1)}× customer flow`:"Quiet planning window";
   const focusStoreId=run.venuePurchases?.at(-1)?.storeId||"cafe",focusStore=STORES.find(store=>store.id===focusStoreId),focusStock=CATALOGUE.filter(product=>product.storeId===focusStoreId).reduce((sum,product)=>sum+run.stock[product.id],0);
   let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory and students will purchase automatically.`, progress = Math.min(100,openCount*22+campus.rating*.34);
-  if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${campus.guests} students are on campus. Better amenities raise footfall and increase sales.`;}
+  if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${activeGuests} students are navigating the campus. Watch them queue, use amenities and react to what you build.`;}
   else if(focusStock===0&&focusStoreId!=="cafe"){text=`Your new ${focusStore.short} needs stock before its first queue can form.`;}
   if(lockedVenue&&run.cash>=STORE_UNLOCKS[lockedVenue.id]){title=`You can open ${lockedVenue.name}`;text="Reinvest your profits in the next district, then stock its first product.";}
   $("#missionTitle").textContent = title;
@@ -218,7 +231,6 @@ function drawWorld(t) {
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
-    ...students.map((student,i)=>({depth:student[0]+student[1],draw:()=>drawStudent(student,t,i)})),
     ...liveCrowd(t)
   ]:drawRoomActors(t);
   const actors=[...worldActors,
@@ -430,22 +442,64 @@ function drawFurniture(x,y,w,h,z,color,index){
 function drawBlock(x,y,w,h,z,top,right,left){const a=isoPoint(x,y,z),b=isoPoint(x+w,y,z),c=isoPoint(x+w,y+h,z),d=isoPoint(x,y+h,z),ba=isoPoint(x,y),bb=isoPoint(x+w,y),bc=isoPoint(x+w,y+h),bd=isoPoint(x,y+h);ctx.fillStyle=left;ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(c.x,c.y);ctx.lineTo(bc.x,bc.y);ctx.lineTo(bd.x,bd.y);ctx.closePath();ctx.fill();ctx.fillStyle=right;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(bc.x,bc.y);ctx.lineTo(bb.x,bb.y);ctx.closePath();ctx.fill();ctx.fillStyle=top;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.strokeStyle="rgba(15,35,40,.22)";ctx.stroke();}
 
 const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,.76],[29,19,.88],[32,9,.83],[39,12,.92],[37,19,.8],[6,21,.75],[24,22,.72],[40,21,.86]];
-const students=[[6.8,11.9,"#f4b858",.2],[10.5,18.6,"#dc6958",1.1],[16.2,16.3,"#75c0c8",2],[24.8,12.1,"#8b74bd",2.8],[33.3,18.7,"#ff8060",4.2],[37.4,12.2,"#bce65f",5.8]];
 const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
+const guestTargetPoints={cafe:{x:20.45,y:13.75},snack:{x:27.65,y:21.05},merch:{x:34.15,y:15.25},academy:{x:20,y:13.35},hub:{x:34.5,y:15.2},forum:{x:20.5,y:21.15}};
+
+function guestRandom(seed,offset=0){const value=Math.sin((seed+1)*91.733+offset*37.119)*43758.5453;return value-Math.floor(value);}
+function createGuestAgent(){
+  const id=++guestSequence,entry=GUEST_ENTRIES[id%GUEST_ENTRIES.length],guest={id,name:GUEST_NAMES[id%GUEST_NAMES.length],x:entry.x,y:entry.y,color:crowdColors[id%crowdColors.length],phase:guestRandom(id,1)*6,direction:1,state:"arriving",activity:"Arriving on campus",thought:"Let’s see what is happening today.",age:0,visits:0,route:[],routeIndex:0,target:null,remove:false,needs:{hunger:28+Math.round(guestRandom(id,2)*68),thirst:24+Math.round(guestRandom(id,3)*72),bladder:12+Math.round(guestRandom(id,4)*72),energy:20+Math.round(guestRandom(id,5)*68),mood:18+Math.round(guestRandom(id,6)*65)}};
+  sendGuestToNextActivity(guest);return guest;
+}
+
+function targetPointFor(option){if(option.kind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===option.id);if(!facility)return null;return {x:facility.x+.38,y:facility.y+.42};}return guestTargetPoints[option.id]||null;}
+function guestRoute(start,target){const lane=target.y>18.2?20.35:target.y>15.8?17.15:14.72,points=[{x:start.x,y:lane},{x:target.x,y:lane},{x:target.x,y:target.y}];return points.filter((point,index)=>index===0||Math.hypot(point.x-points[index-1].x,point.y-points[index-1].y)>.12);}
+function sendGuestToNextActivity(guest){
+  const options=guestDestinationOptions(run,guest.needs,guest.id+guest.visits*7).filter(option=>!guest.lastTarget||option.id!==guest.lastTarget||option.kind!==guest.lastKind),pick=options[Math.min(options.length-1,(guest.id+guest.visits)%Math.min(3,Math.max(1,options.length)))]||{kind:"landmark",id:"forum",label:"Sunset Forum"},point=targetPointFor(pick);
+  if(!point){sendGuestHome(guest);return;}
+  guest.target={...pick,x:point.x,y:point.y};guest.route=guestRoute(guest,point);guest.routeIndex=0;guest.state="walking";guest.activity=`Walking to ${pick.label}`;guest.thought=guestThoughtForTarget(pick,guest.needs);
+}
+function sendGuestHome(guest){const exit=[...GUEST_ENTRIES].sort((a,b)=>Math.hypot(guest.x-a.x,guest.y-a.y)-Math.hypot(guest.x-b.x,guest.y-b.y))[0];guest.target={kind:"exit",id:"exit",label:"Campus exit",x:exit.x,y:exit.y};guest.route=guestRoute(guest,exit);guest.routeIndex=0;guest.state="leaving";guest.activity="Heading home";guest.thought="Time to head out.";}
+function guestThoughtForTarget(target,needs){if(target.id==="water")return `I really need a drink.`;if(target.id==="restroom")return `Where is the nearest restroom?`;if(target.id==="bench")return `A short break would be perfect.`;if(target.id==="foodGarden")return `I need something to eat.`;if(target.kind==="store")return `I might buy something at ${target.label}.`;if(target.id==="experience")return `That attraction looks fun.`;return `I want to visit ${target.label}.`;}
+
+function beginGuestActivity(guest){
+  if(guest.target.kind==="exit"){guest.remove=true;return;}
+  if(guest.target.kind==="store"){guest.state="queueing";guest.timer=1.35+guestRandom(guest.id,guest.visits+9)*1.2;guest.activity=`In line at ${guest.target.label}`;guest.thought="I hope the queue moves quickly.";return;}
+  guest.state="using";guest.timer=2.4+guestRandom(guest.id,guest.visits+11)*2.8;guest.activity=`Using ${guest.target.label}`;guest.thought=guest.target.kind==="facility"?`This is exactly what the campus needed.`:`Taking a little time at ${guest.target.label}.`;
+}
+
+function completeGuestActivity(guest){
+  const type=guest.target.type||guest.target.id;run=recordGuestActivity(run,guest.target);guest.needs=applyGuestNeedRelief(guest.needs,type);guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.visits+=1;activityPulse={x:guest.x,y:guest.y,text:`${guest.name} used ${guest.target.label}`,until:performance.now()+1700};
+  Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+7+Math.round(guestRandom(guest.id,guest.visits*3)*8)));
+  if(guest.visits>=3||guest.age>62||guestRandom(guest.id,guest.visits+20)>.82)sendGuestHome(guest);else sendGuestToNextActivity(guest);
+}
+
+function moveGuestToward(guest,point,step){const dx=point.x-guest.x,dy=point.y-guest.y,distance=Math.hypot(dx,dy);if(distance<=step){guest.x=point.x;guest.y=point.y;return true;}guest.x+=dx/distance*step;guest.y+=dy/distance*step;guest.direction=dx-dy>=0?1:-1;return false;}
+
+function updateCampusGuests(dt){
+  const speed=Math.max(0,run.speed||0);if(!speed)return;const peak=crowdPeak(run.clockMinutes),metrics=campusMetrics(run),desired=Math.min(34,Math.max(6,Math.round(metrics.guests*(.28+peak.multiplier*.2))));guestSpawnAccumulator+=dt*speed;
+  while(guestAgents.length<desired&&guestSpawnAccumulator>.34){guestAgents.push(createGuestAgent());guestSpawnAccumulator-=.34;}
+  if(guestAgents.length>desired){guestAgents.filter(guest=>guest.state!=="leaving").sort((a,b)=>b.age-a.age).slice(0,guestAgents.length-desired).forEach(sendGuestHome);}
+  for(const guest of guestAgents){
+    if(guest.target?.kind==="facility"){const point=targetPointFor(guest.target);if(!point){sendGuestToNextActivity(guest);}else if(guest.state==="walking"){guest.target.x=point.x;guest.target.y=point.y;}}
+    guest.age+=dt*speed;Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+dt*speed*(key==="mood"?.18:.3)));
+    if(guest.state==="walking"||guest.state==="leaving"){const point=guest.route[guest.routeIndex];if(!point){beginGuestActivity(guest);continue;}if(moveGuestToward(guest,point,GUEST_SPEED*dt*Math.min(2.2,Math.sqrt(speed)))){guest.routeIndex+=1;if(guest.routeIndex>=guest.route.length)beginGuestActivity(guest);}}
+    else if(guest.state==="using"){guest.timer-=dt*speed;if(guest.timer<=0)completeGuestActivity(guest);}
+  }
+  const queues=new Map();for(const guest of guestAgents.filter(item=>item.state==="queueing")){const key=guest.target.id;if(!queues.has(key))queues.set(key,[]);queues.get(key).push(guest);}
+  for(const queue of queues.values()){queue.sort((a,b)=>a.id-b.id);queue.forEach((guest,index)=>{const diagonal=guest.target.id!=="snack",point={x:guest.target.x-index*(diagonal?.48:.52),y:guest.target.y+index*(diagonal?.48:.2)};moveGuestToward(guest,point,GUEST_SPEED*dt*1.4);guest.activity=index?`Waiting · ${index+1} in line`:`Being served at ${guest.target.label}`;if(index===0){guest.timer-=dt*speed;if(guest.timer<=0){guest.thought="Got it — where next?";completeGuestActivity(guest);}}});}
+  guestAgents=guestAgents.filter(guest=>!guest.remove);
+}
 
 function liveCrowd(t){
-  const peak=crowdPeak(run.clockMinutes),metrics=campusMetrics(run),actors=[],queueAnchors={cafe:[20.5,13.8],snack:[27.7,21.1],merch:[34.2,15.3]};
-  const roaming=Math.min(30,Math.max(5,Math.round(metrics.guests*peak.multiplier*.34)));
-  const routes=[[[3.4,14.8],[38.2,14.8]],[[7.2,17.2],[35.5,17.2]],[[12.2,10.2],[31.2,13.4]],[[6.2,20.4],[31.5,20.4]],[[15.2,12.7],[36.8,10.9]]];
-  for(let i=0;i<roaming;i++){
-    const route=routes[i%routes.length],reverse=i%4===1,phase=(i*.173)%1,speed=.000018+(i%5)*.0000018,u=(phase+t*speed)%1,eased=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2,start=reverse?route[1]:route[0],end=reverse?route[0]:route[1];
-    const x=start[0]+(end[0]-start[0])*eased,y=start[1]+(end[1]-start[1])*eased,person=[x,y,crowdColors[i%crowdColors.length],i*.67,true,end[0]>=start[0]?1:-1];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+30)});
-  }
-  STORES.filter(store=>(run.venues?.[store.id]??0)>0).forEach((store,storeIndex)=>{const anchor=queueAnchors[store.id],stock=CATALOGUE.filter(product=>product.storeId===store.id).reduce((sum,product)=>sum+run.stock[product.id],0),count=stock?Math.min(8,Math.max(1,Math.round(peak.multiplier*2.4))):0;for(let i=0;i<count;i++){const diagonal=store.id!=="snack",x=anchor[0]-i*(diagonal ? .48 : .52),y=anchor[1]+i*(diagonal ? .48 : .2),person=[x,y,crowdColors[(i+storeIndex*2)%crowdColors.length],2+i*.21,false,1];actors.push({depth:x+y+i*.01,draw:()=>drawStudent(person,t,i+70+storeIndex*10)});}if(count)actors.push({depth:anchor[0]+anchor[1]-.1,draw:()=>drawQueueLabel(anchor[0],anchor[1],store.short,count)});});
+  const actors=guestAgents.map((guest,index)=>({depth:guest.x+guest.y,draw:()=>drawGuestAgent(guest,t,index)})),groups=new Map();
+  for(const guest of guestAgents.filter(item=>item.state==="queueing"||item.state==="using")){const key=`${guest.target.kind}:${guest.target.id}`;if(!groups.has(key))groups.set(key,{target:guest.target,count:0});groups.get(key).count+=1;}
+  for(const {target,count} of groups.values()){if(count<1)continue;const point=targetPointFor(target)||target;actors.push({depth:point.x+point.y-.1,draw:()=>drawQueueLabel(point.x,point.y,target.kind==="store"?target.label:`${count} USING`,count,target.kind!=="store")});}
+  if(activityPulse&&activityPulse.until>t)actors.push({depth:activityPulse.x+activityPulse.y+.2,draw:()=>drawActivityPulse(activityPulse,t)});
   return actors;
 }
 
-function drawQueueLabel(x,y,label,count){const p=isoPoint(x,y,62);roundedRect(p.x-44,p.y-10,88,20,4,"rgba(10,37,46,.92)");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${label.toUpperCase()} · ${count} IN LINE`,p.x,p.y+3);}
+function drawQueueLabel(x,y,label,count,using=false){const p=isoPoint(x,y,62);roundedRect(p.x-49,p.y-10,98,20,4,"rgba(10,37,46,.92)");ctx.fillStyle=using?"#64cbc8":"#bce65f";ctx.textAlign="center";ctx.font="700 6.5px DM Mono";ctx.fillText(using?`${label}`:`${label.toUpperCase()} · ${count} IN LINE`,p.x,p.y+3);}
+function drawActivityPulse(pulse,t){const p=isoPoint(pulse.x,pulse.y,86),alpha=Math.max(0,Math.min(1,(pulse.until-t)/600));ctx.save();ctx.globalAlpha=alpha;roundedRect(p.x-62,p.y-10,124,20,10,"rgba(7,29,37,.92)");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="700 6px DM Mono";ctx.fillText(pulse.text.toUpperCase(),p.x,p.y+2);ctx.restore();}
 
 function drawTree(x,y,scale,t){const p=isoPoint(x,y,4),sway=Math.sin(t*.001)*2;ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.fillStyle="rgba(10,45,38,.16)";ctx.beginPath();ctx.ellipse(7,4,27,8,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#76563b";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-2,-30,sway,-64);ctx.stroke();ctx.strokeStyle="rgba(255,210,145,.34)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-2,-3);ctx.quadraticCurveTo(-4,-31,sway-2,-61);ctx.stroke();ctx.translate(sway,-65);for(let a=0;a<7;a++){ctx.save();ctx.rotate(a*Math.PI*2/7+Math.sin(t*.0007+a)*.035);ctx.fillStyle=a%2?"#2f8358":"#3d9668";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(18,-7,37,0);ctx.quadraticCurveTo(19,8,0,3);ctx.closePath();ctx.fill();ctx.restore();}ctx.fillStyle="#87633f";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();}
 
@@ -574,6 +628,10 @@ function drawPersonFigure(x,y,t,index,options={}){
 }
 
 function drawStudent(s,t,i){drawPersonFigure(s[0],s[1],t,i,{color:s[2],phase:s[3],moving:s[4],direction:s[5]||((i%5)===0?-1:1)});}
+function drawGuestAgent(guest,t,index){
+  const moving=guest.state==="walking"||guest.state==="leaving";drawPersonFigure(guest.x,guest.y,t,index+20,{color:guest.color,phase:guest.phase,moving,direction:guest.direction});
+  if(guest.state==="queueing"||guest.state==="using"){const p=isoPoint(guest.x,guest.y,58),icon=GUEST_ICONS[guest.target.type||guest.target.id]||"·";ctx.save();ctx.fillStyle="rgba(255,255,255,.96)";ctx.beginPath();ctx.arc(p.x,p.y,8.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=guest.state==="queueing"?"#bce65f":"#64cbc8";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font=icon==="WC"?"800 4.5px DM Mono":"800 7px Manrope";ctx.fillText(icon,p.x,p.y+2.5);ctx.restore();}
+}
 
 function drawStorePod(id,loc,level,locked){
   const size=1.7+Math.max(1,level)*.17,accent=locked?"#7d8b8c":loc.color,x=loc.x-size/2,y=loc.y-size*.38,z=42+Math.max(1,level)*5;
@@ -627,6 +685,7 @@ function loop(t) {
   const dt = Math.min((t-lastTime)/1000 || 0, .04); lastTime=t;
   simulationElapsed+=dt;
   if(simulationElapsed>=.5){const elapsed=simulationElapsed;simulationElapsed=0;tickTycoon(elapsed);}
+  updateCampusGuests(dt);
   let dx=0,dy=0;
   if(keys.has("w")||keys.has("arrowup")){dx--;dy--;}
   if(keys.has("s")||keys.has("arrowdown")){dx++;dy++;}
@@ -792,10 +851,14 @@ function openBuildPanel() {
 function experienceVerdict(stats){if(stats.intensity>78)return "Too intense — most students will avoid it.";if(stats.excitement<24)return "Too gentle — add a stronger headline module.";if(stats.comfort<35)return "Exciting, but comfort is hurting its appeal.";if(stats.excitement>65&&stats.intensity<70)return "Flagship potential — exciting without becoming punishing.";return "Balanced campus attraction with broad appeal.";}
 
 function openGuestPanel() {
-  activeLocation=null;const metrics=campusMetrics(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"};
+  activeLocation=null;const metrics=campusMetrics(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"},live=guestAgents.length,walking=guestAgents.filter(guest=>guest.state==="walking"||guest.state==="leaving").length,queueing=guestAgents.filter(guest=>guest.state==="queueing").length,using=guestAgents.filter(guest=>guest.state==="using").length,hotspots=guestHotspots();
   const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];
-  drawerContent.innerHTML=`<p class="eyebrow">Guest intelligence · live campus sample</p><h2>Students & staff</h2><p class="drawer-intro">Guests stay longer when their needs are met. Build the right amenities and hire a compact operations crew.</p>
-    <div class="guest-hero"><div><small>LIVE CAMPUS GUESTS</small><strong>${metrics.guests}</strong><em>More guests = more buyers</em></div><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong><em>Directly boosts demand</em></div><div><small>SATISFACTION</small><strong>${metrics.satisfaction}%</strong><em>Weakest: ${needLabels[weakest[0]]}</em></div></div>
+  drawerContent.innerHTML=`<p class="eyebrow">Guest intelligence · individual simulation</p><h2>Students using the campus</h2><p class="drawer-intro">Every visible guest now has personal needs, walks to a real destination, waits in line, uses the facility and decides where to go next.</p>
+    <div class="guest-hero"><div><small>LIVE GUESTS</small><strong>${live}</strong><em>${walking} moving across campus</em></div><div><small>AT DESTINATIONS</small><strong>${using+queueing}</strong><em>${queueing} currently queueing</em></div><div><small>TOTAL INTERACTIONS</small><strong>${run.totalCampusInteractions||0}</strong><em>Persisted across sessions</em></div></div>
+    <div class="section-heading"><div><small>LIVE ACTIVITY</small><strong>Where guests are right now</strong></div><span>Updates as they move</span></div>
+    <div class="guest-hotspots">${hotspots.length?hotspots.map(item=>`<div><span>${GUEST_ICONS[item.type||item.id]||"·"}</span><strong>${item.label}</strong><small>${item.live} live · ${item.visits} visits</small></div>`).join(""):`<div class="build-empty">Students are arriving and choosing their first destinations.</div>`}</div>
+    <div class="section-heading"><div><small>INDIVIDUAL GUESTS</small><strong>Follow a student journey</strong></div><span>Click a guest in the world</span></div>
+    <div class="guest-roster">${guestAgents.slice(0,8).map(guest=>`<button data-guest-id="${guest.id}"><i style="--guest:${guest.color}"></i><span><strong>${guest.name}</strong><small>${guest.activity}</small></span><em>${Math.round(guest.needs.mood)}% mood</em></button>`).join("")||`<div class="build-empty">The next wave is entering campus.</div>`}</div>
     <div class="section-heading"><div><small>GUEST NEEDS</small><strong>What students are feeling</strong></div><span>Updated instantly</span></div>
     <div class="needs-grid">${Object.entries(metrics.needs).map(([key,value])=>`<div><span>${needLabels[key]} <b>${value}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div>
     <div class="guest-thought"><span>☺</span><div><small>LATEST GUEST THOUGHT</small><strong>“${guestThought(metrics,needLabels)}”</strong></div></div>
@@ -803,8 +866,13 @@ function openGuestPanel() {
     <div class="staff-grid">${STAFF_CATALOGUE.map(role=>`<article><span>${role.icon}</span><div><strong>${role.name}</strong><p>${role.description}</p><small>${run.staff[role.id]||0} hired</small></div><button data-hire="${role.id}" ${run.cash<role.cost?"disabled":""}>Hire · ${formatEuro(role.cost)}</button></article>`).join("")}</div>
     <div class="section-heading"><div><small>BEST ATTRACTION</small><strong>Excitement ${metrics.attraction.excitement} · Intensity ${metrics.attraction.intensity} · Comfort ${metrics.attraction.comfort}</strong></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
+  drawerContent.querySelectorAll("[data-guest-id]").forEach(button=>button.addEventListener("click",()=>{const guest=guestAgents.find(item=>item.id===Number(button.dataset.guestId));if(guest)openGuestProfile(guest);}));
   drawerContent.querySelectorAll("[data-hire]").forEach(button=>button.addEventListener("click",()=>{try{save(hireStaff(run,button.dataset.hire));toast("Staff member hired for the run");beep(630);openGuestPanel();}catch(error){toast(error.message,true);}}));
 }
+
+function activityName(kind,id){if(kind==="store")return STORES.find(item=>item.id===id)?.name||id;const facility=(run.facilities||[]).find(item=>item.id===id);if(facility)return facility.name;return id==="academy"?"Academic Wing":id==="hub"?"Student Hub":id==="forum"?"Sunset Forum":id;}
+function guestHotspots(){const rows=new Map();for(const guest of guestAgents.filter(item=>item.target&&item.target.kind!=="exit")){const key=`${guest.target.kind}:${guest.target.id}`,row=rows.get(key)||{...guest.target,live:0,visits:run.today?.activities?.[key]||0};row.live+=1;rows.set(key,row);}for(const [key,visits] of Object.entries(run.today?.activities||{})){if(rows.has(key))continue;const split=key.indexOf(":"),kind=key.slice(0,split),id=key.slice(split+1),facility=(run.facilities||[]).find(item=>item.id===id);rows.set(key,{kind,id,type:facility?.type,label:activityName(kind,id),live:0,visits});}return [...rows.values()].sort((a,b)=>b.live-a.live||b.visits-a.visits).slice(0,6);}
+function openGuestProfile(guest){const labels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Mood"};drawerContent.innerHTML=`<p class="eyebrow">Live guest · #${String(guest.id).padStart(3,"0")}</p><div class="guest-profile-head"><i style="--guest:${guest.color}"></i><div><h2>${guest.name}</h2><p>${guest.activity}</p></div><span>${guest.visits} visits</span></div><div class="guest-quote">“${guest.thought}”</div><div class="section-heading"><div><small>PERSONAL NEEDS</small><strong>What drives the next decision</strong></div></div><div class="needs-grid">${Object.entries(guest.needs).map(([key,value])=>`<div><span>${labels[key]} <b>${Math.round(value)}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div><div class="guest-journey"><small>CURRENT JOURNEY</small><strong>${guest.target?.label||"Exploring campus"}</strong><p>${guest.state==="queueing"?"Waiting for service before choosing another destination.":guest.state==="using"?"Actively using this part of the campus.":guest.state==="leaving"?"Leaving after a complete campus visit.":"Following the campus promenade to the selected destination."}</p></div><button class="action-button secondary" id="backToGuests">Back to all guests</button>`;drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");$("#backToGuests").addEventListener("click",openGuestPanel);}
 
 function guestThought(metrics,labels){const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];if(metrics.attraction.intensity>78)return "That attraction looks much too intense for me.";if(weakest[1]<50)return `I wish there were better ${labels[weakest[0]].toLowerCase()} facilities.`;if(metrics.attraction.excitement<20)return "The campus is pleasant, but it needs a headline experience.";return "There is plenty to do here and the campus feels cared for.";}
 
@@ -840,13 +908,13 @@ function openLedger() {
 }
 
 function historyCard(day) {
-  return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied</div>`:""}<table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
+  const interactions=Object.values(day.campus?.activities||{}).reduce((sum,value)=>sum+value,0);return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied${interactions?` · ${interactions} campus uses`:""}</div>`:""}<table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
 }
 
 function confirmNewRun() {
   modalCard.className="modal-card";
   modalCard.innerHTML=`<p class="eyebrow">Replace your tycoon?</p><h2 id="modalTitle">Start a new campus company</h2><p>This replaces your saved business with <strong>€100.00 cash</strong>, Atlantic Café at level one, zero stock, no construction and an empty ledger. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace company</button></div>`;
-  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
+  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;guestAgents=[];guestSpawnAccumulator=0;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
 }
 
 function showModal(){modal.classList.remove("hidden");}
@@ -860,7 +928,7 @@ window.addEventListener("keydown",event=>{const key=event.key.toLowerCase();if(k
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
 canvas.addEventListener("mousemove",event=>{if(pendingBuild){const point=canvasWorldPoint(event);updateBuildCursor(point.x,point.y);}});
 canvas.addEventListener("mouseleave",()=>{if(pendingBuild){buildCursor=null;refreshBuildNotice();}});
-canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
+canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}if(currentZone==="campus"){const guest=[...guestAgents].sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(guest&&Math.hypot(guest.x-x,guest.y-y)<.62){openGuestProfile(guest);return;}}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
 $("#closeDrawer").addEventListener("click",closeDrawer);
 $("#rotateBuild").addEventListener("click",rotatePendingBuild);
 $("#cancelBuild").addEventListener("click",cancelBuildMode);
