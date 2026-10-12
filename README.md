@@ -9,6 +9,7 @@ An open-ended campus tycoon set on a stylized Nova SBE / Carcavelos waterfront. 
 - Venue upgrades, product unlocks, reputation, demand-capacity and portfolio views.
 - Accelerated continuous days from 07:30 to 19:30 with pause, 1×, 2× and 4× speed controls.
 - Automatic live sales, persistent daily ledgers, visible customer queues, and morning, lunch and after-class rushes.
+- A production 2.5D art pass with isometric low-poly campus architecture, eight varied student sprites, a dedicated player character and depth-sorted venue art.
 - A 42×30 coast overworld plus separate Mercado Supply Hall, Academic Wing and Student Hub interiors, each with its own NPCs, props, interactions and return route.
 - A persistent room-aware player location, click-to-move, WASD movement, marked entrances and quick management shortcuts.
 - Buildable paths, scenery, amenities, staff and custom attractions; campus quality increases guest count, which directly increases sales demand.
