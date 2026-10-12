@@ -888,15 +888,37 @@ function experiencePreview(moduleIds){
   </div><p>${moduleIds.map(id=>EXPERIENCE_MODULES.find(item=>item.id===id)?.name).filter(Boolean).join(" + ")}</p></div>`;
 }
 
+const FACILITY_PRESENTATION={
+  path:{code:"RT-01",category:"INFRASTRUCTURE",caption:"Campus paving system"},
+  scenery:{code:"LS-02",category:"LANDSCAPE",caption:"Native coastal planting"},
+  bench:{code:"CM-03",category:"COMFORT",caption:"Timber social seating"},
+  bin:{code:"SV-04",category:"CAMPUS SERVICE",caption:"Dual-stream waste point"},
+  water:{code:"SV-05",category:"CAMPUS SERVICE",caption:"Public hydration station"},
+  restroom:{code:"AM-06",category:"AMENITY",caption:"Modular service building"},
+  foodGarden:{code:"DS-07",category:"DESTINATION",caption:"Covered social food court"}
+};
+const NEED_LABELS={mood:"MOOD",energy:"ENERGY",cleanliness:"CLEAN",thirst:"THIRST",bladder:"RELIEF",hunger:"HUNGER"};
+function facilityPreviewMarkup(type){return `<span class="facility-preview facility-${type}" aria-hidden="true"><i></i><b></b><em></em><u></u></span>`;}
+function facilityEffectMarkup(item){const effects=Object.entries(item.needs||{}).map(([key,value])=>`<span>+${value} ${NEED_LABELS[key]||key.toUpperCase()}</span>`);return effects.length?effects.join(""):`<span>WALKABLE ROUTE</span>`;}
+function facilityCard(item,progress){
+  const meta=FACILITY_PRESENTATION[item.id],size=facilityFootprint(item.id,0),levelRequired=item.id==="foodGarden"?3:1,locked=progress.level<levelRequired;
+  return `<article class="build-card facility-${item.id}-card ${locked?"progress-locked":""}" style="--build:${item.color}">
+    <div class="facility-card-head"><span>${meta.code} · ${meta.category}</span><em>${size.width.toFixed(1)} × ${size.height.toFixed(1)} TILES</em></div>
+    ${facilityPreviewMarkup(item.id)}
+    <div class="build-card-copy"><small>${meta.caption}</small><strong>${item.name}</strong><p>${item.description}</p><div class="facility-effects">${facilityEffectMarkup(item)}</div></div>
+    <button data-build="${item.id}" ${run.cash<item.cost||locked?"disabled":""}><span>${locked?`LEVEL ${levelRequired}`:"CONSTRUCT"}</span><strong>${locked?"LOCKED":formatEuro(item.cost)}</strong><em>→</em></button>
+  </article>`;
+}
+
 function openBuildPanel() {
   activeLocation=null;
   const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost,progress=progressionState(run);
   drawerContent.innerHTML=`<p class="eyebrow">Campus construction · ${run.facilities.length} placed</p><h2>Build the campus</h2><p class="drawer-intro">Place paths, scenery and guest facilities directly in the world. Every build changes student needs and your campus rating.</p>
     <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
     <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
-    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>{const levelRequired=item.id==="foodGarden"?3:1,locked=progress.level<levelRequired;return `<article class="build-card ${locked?"progress-locked":""}" style="--build:${item.color}"><span class="facility-preview facility-${item.id}"><i></i></span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost||locked?"disabled":""}>${locked?`Unlock at level ${levelRequired}`:`Build · ${formatEuro(item.cost)}`}</button></article>`}).join("")}</div>
+    <div class="build-grid facility-catalogue">${FACILITY_CATALOGUE.map(item=>facilityCard(item,progress)).join("")}</div>
     <div class="section-heading"><div><small>PLACED ASSETS</small><strong>Move, rotate or remove</strong></div><span>${run.facilities.length} on campus</span></div>
-    <div class="placed-facility-list">${run.facilities.length?run.facilities.map(facility=>{const size=facilityFootprint(facility.type,facility.rotation||0);return `<article><span class="facility-preview facility-${facility.type}"><i></i></span><div><strong>${facility.name}</strong><small>${size.width.toFixed(1)} × ${size.height.toFixed(1)} tiles · ${(facility.rotation||0)*90}°</small></div><button data-move-facility="${facility.id}">Move</button><button class="danger" data-demolish-facility="${facility.id}">Remove</button></article>`}).join(""):`<div class="build-empty">Place your first facility to unlock move and demolition tools.</div>`}</div>
+    <div class="placed-facility-list">${run.facilities.length?run.facilities.map(facility=>{const size=facilityFootprint(facility.type,facility.rotation||0);return `<article>${facilityPreviewMarkup(facility.type)}<div><strong>${facility.name}</strong><small>${size.width.toFixed(1)} × ${size.height.toFixed(1)} tiles · ${(facility.rotation||0)*90}°</small></div><button data-move-facility="${facility.id}">Move</button><button class="danger" data-demolish-facility="${facility.id}">Remove</button></article>`}).join(""):`<div class="build-empty">Place your first facility to unlock move and demolition tools.</div>`}</div>
     <div class="section-heading"><div><small>SIGNATURE ATTRACTION</small><strong>Design a beach experience</strong></div><span>Choose modules piece by piece</span></div>
     <div class="experience-builder"><div class="experience-design">${experiencePreview(selectedExperienceModules)}<div class="module-grid">${EXPERIENCE_MODULES.map(item=>`<button class="module-button ${selectedExperienceModules.includes(item.id)?"selected":""}" data-module="${item.id}"><span class="module-glyph module-${item.id}"><i></i></span><strong>${item.name}</strong><small>${formatEuro(item.cost)} · +${item.excitement} excitement</small></button>`).join("")}</div></div><div class="rating-console"><small>LIVE DESIGN RATINGS</small><div><span>Excitement <b id="designExcitement">${stats.excitement}</b></span><i><em id="designExcitementBar" style="width:${stats.excitement}%"></em></i></div><div><span>Intensity <b id="designIntensity">${stats.intensity}</b></span><i><em id="designIntensityBar" style="width:${stats.intensity}%"></em></i></div><div><span>Comfort <b id="designComfort">${stats.comfort}</b></span><i><em id="designComfortBar" style="width:${stats.comfort}%"></em></i></div><p id="designVerdict">${experienceVerdict(stats)}</p><button class="action-button orange" id="buildExperience" ${run.cash<experienceCost?"disabled":""}>Place experience · <span id="experienceCost">${formatEuro(experienceCost)}</span></button></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
