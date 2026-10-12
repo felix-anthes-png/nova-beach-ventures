@@ -83,7 +83,7 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
 function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};}
@@ -96,35 +96,48 @@ const GUEST_RELIEF = Object.freeze({
 
 function guestNeed(needs,key,fallback=35){const value=Number(needs?.[key]);return Number.isFinite(value)?Math.max(0,Math.min(100,value)):fallback;}
 
-export function guestDestinationOptions(run,needs={},seed=0){
+function guestTrait(profile,key,fallback){const value=Number(profile?.[key]);return Number.isFinite(value)?value:fallback;}
+function preference(profile,key,fallback=.5){return Math.max(0,Math.min(1,guestTrait(profile?.preferences,key,fallback)));}
+function queueSize(context,kind,id){return Math.max(0,Math.round(Number(context?.queues?.[`${kind}:${id}`]??context?.queues?.[id]??0)||0));}
+function queuePenalty(length,patience){return length*(8+(100-patience)*.22);}
+function optionReason(parts){return parts.filter(Boolean).slice(0,3).join(" · ");}
+
+export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
+  const profile=guestOrNeeds?.needs?guestOrNeeds:{needs:guestOrNeeds},needs=profile.needs||{};
   const hunger=guestNeed(needs,"hunger"),thirst=guestNeed(needs,"thirst"),bladder=guestNeed(needs,"bladder"),energy=guestNeed(needs,"energy"),mood=guestNeed(needs,"mood");
+  const budget=Math.max(0,guestTrait(profile,"budget",Number.POSITIVE_INFINITY)),patience=Math.max(0,Math.min(100,guestTrait(profile,"queuePatience",65))),quality=Math.max(0,Math.min(100,guestTrait(context,"campusQuality",campusMetrics(run).rating)));
+  const social=preference(profile,"social"),calm=preference(profile,"calm"),excitement=preference(profile,"excitement"),food=preference(profile,"food"),drinks=preference(profile,"drinks"),shopping=preference(profile,"shopping");
   const options=[
-    {kind:"landmark",id:"academy",label:"Academic Wing",score:18+((seed+1)%7)},
-    {kind:"landmark",id:"hub",label:"Student Hub",score:13+mood*.34+((seed+3)%6)},
-    {kind:"landmark",id:"forum",label:"Sunset Forum",score:12+mood*.4+((seed+5)%8)}
+    {kind:"landmark",id:"academy",label:"Academic Wing",score:18+calm*18+quality*.08+((seed+1)%7),reason:optionReason(["quiet destination",`${quality}% campus quality`])},
+    {kind:"landmark",id:"hub",label:"Student Hub",score:13+mood*.34+social*28+quality*.1+((seed+3)%6),reason:optionReason(["social preference",`${quality}% campus quality`])},
+    {kind:"landmark",id:"forum",label:"Sunset Forum",score:12+mood*.4+social*20+calm*12+quality*.1+((seed+5)%8),reason:optionReason(["open-air destination",`${quality}% campus quality`])}
   ];
-  if(run.activeEvent&&run.eventVenue)options.push({kind:"landmark",id:"pavilion",label:run.activeEvent.name||"Coastline Pavilion",score:92+mood*.35});
+  if(run.activeEvent&&run.eventVenue){const q=queueSize(context,"landmark","pavilion");options.push({kind:"landmark",id:"pavilion",label:run.activeEvent.name||"Coastline Pavilion",score:92+mood*.35+excitement*35-queuePenalty(q,patience),queueLength:q,reason:optionReason(["live event",q?`${q} waiting`:"no queue"])});}
   for(const facility of run.facilities||[]){
-    let score=8;
+    const q=queueSize(context,"facility",facility.id);let score=8+quality*.08;
     if(facility.type==="bench")score+=energy*1.08+mood*.18;
     else if(facility.type==="water")score+=thirst*1.35;
     else if(facility.type==="restroom")score+=bladder*1.5;
-    else if(facility.type==="foodGarden")score+=hunger*1.28+mood*.22;
-    else if(facility.type==="experience")score+=mood*1.08+attractionStats(facility.modules).excitement*.42;
-    else if(facility.type==="scenery")score+=mood*.48;
+    else if(facility.type==="foodGarden")score+=hunger*1.28+mood*.22+food*30+social*14;
+    else if(facility.type==="experience"){const stats=attractionStats(facility.modules),intensityTarget=guestTrait(profile?.preferences,"intensity",50);score+=mood*1.08+stats.excitement*.3+excitement*38-Math.abs(stats.intensity-intensityTarget)*.3;}
+    else if(facility.type==="scenery")score+=mood*.48+calm*18;
     else if(facility.type==="path")continue;
     else score+=12;
-    options.push({kind:"facility",id:facility.id,type:facility.type,label:facility.name,score});
+    score-=queuePenalty(q,patience);options.push({kind:"facility",id:facility.id,type:facility.type,label:facility.name,score,queueLength:q,reason:optionReason([q?`${q} already there`:"available now",facility.type==="experience"?"attraction fit":`${quality}% campus quality`])});
   }
   for(const store of STORES){
     if((run.venues?.[store.id]??0)<1)continue;
     const products=CATALOGUE.filter(product=>product.storeId===store.id&&run.stock?.[product.id]>0);
     if(!products.length)continue;
-    let score=10;
+    const affordable=products.map(product=>({...product,price:run.prices?.[product.id]??product.reference})).filter(product=>product.price<=budget);
+    if(!affordable.length)continue;
+    const choice=affordable.sort((a,b)=>(a.price/a.reference)-(b.price/b.reference)||a.price-b.price)[0],priceRatio=choice.price/choice.reference,q=queueSize(context,"store",store.id);
+    let score=10+quality*.14+Math.max(-42,30-priceRatio*20)-queuePenalty(q,patience);
     if(store.id==="cafe")score+=hunger*.68+energy*.82+thirst*.18;
     else if(store.id==="snack")score+=hunger*.92+thirst*.6;
     else score+=mood*.52+12;
-    options.push({kind:"store",id:store.id,label:store.name,score,productIds:products.map(product=>product.id)});
+    if(store.id==="cafe")score+=food*22+drinks*18;else if(store.id==="snack"||store.id==="beach")score+=food*16+drinks*26;else if(store.id==="merch")score+=shopping*35;else if(store.id==="surf")score+=shopping*18+excitement*28;
+    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,queueLength:q,reason:optionReason([priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price",q?`${q} in queue`:"no queue",`${quality}% campus quality`])});
   }
   return options.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
 }
