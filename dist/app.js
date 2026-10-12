@@ -8,9 +8,9 @@ const drawerContent = $("#drawerContent");
 const modal = $("#modal");
 const modalCard = $("#modalCard");
 const keys = new Set();
-const campusArt = new Image(); campusArt.src = "./assets/campus-atlas-v2.png";
-const studentArt = new Image(); studentArt.src = "./assets/student-atlas-v2.png";
-const featureArt = new Image(); featureArt.src = "./assets/merch-manager-atlas-v2.png";
+const loadArt = source => { const image=new Image(); image.decoding="async"; image.src=source; return image; };
+const art = Object.fromEntries(["campus","library","mercado","hub","cafe","snack","merch","manager"].map(name=>[name,loadArt(`./assets/v3/${name}.webp`)]));
+const studentSprites = Array.from({length:8},(_,index)=>loadArt(`./assets/v3/student-${index+1}.webp`));
 const ZONES = {
   campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:42, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
   mercado: { id:"mercado", name:"Mercado Supply Hall", sub:"LOGISTICS INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d8c79f", accent:"#f5c95e" },
@@ -154,12 +154,13 @@ function roundedRect(x, y, w, h, r, fill) {
   ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill();
 }
 
-function drawAtlasCell(image,col,row,cols,rows,x,y,width,height,anchor=.86,options={}){
+function drawSprite(image,x,y,width,height,anchor=.9,options={}){
   if(!image.complete||!image.naturalWidth)return false;
-  const sw=image.naturalWidth/cols,sh=image.naturalHeight/rows,p=isoPoint(x,y,options.z||0);
+  const p=isoPoint(x,y,options.z||0);
   ctx.save();ctx.globalAlpha=options.alpha??1;ctx.imageSmoothingEnabled=true;
-  if(options.mirror){ctx.translate(p.x,p.y);ctx.scale(-1,1);ctx.drawImage(image,col*sw,row*sh,sw,sh,-width/2,-height*anchor,width,height);}
-  else ctx.drawImage(image,col*sw,row*sh,sw,sh,p.x-width/2,p.y-height*anchor,width,height);
+  if(options.grade)ctx.filter="saturate(.86) contrast(.97) brightness(1.02)";
+  if(options.mirror){ctx.translate(p.x,p.y);ctx.scale(-1,1);ctx.drawImage(image,-width/2,-height*anchor,width,height);}
+  else ctx.drawImage(image,p.x-width/2,p.y-height*anchor,width,height);
   ctx.restore();return true;
 }
 
@@ -181,10 +182,10 @@ function drawWorld(t) {
   ctx.scale(camera.zoom, camera.zoom);
   drawTerrain(t);
   const worldActors=zone.outdoor?[
-    {depth:8,draw:()=>drawLibrary()},
-    {depth:15,draw:()=>drawMercadoExterior()},
-    {depth:18,draw:()=>drawCampus(t)},
-    {depth:28,draw:()=>drawStudentHub()},
+    {depth:14.4,draw:()=>drawLibrary()},
+    {depth:21.8,draw:()=>drawMercadoExterior()},
+    {depth:31.2,draw:()=>drawCampus(t)},
+    {depth:46.8,draw:()=>drawStudentHub()},
     {depth:43,draw:()=>drawBeachStage(t)},
     ...(run.facilities||[]).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
@@ -200,7 +201,9 @@ function drawWorld(t) {
 }
 
 function drawTerrain(t) {
-  const zone=activeZone(),tiles=[];for(let y=0;y<zone.height;y++)for(let x=0;x<zone.width;x++)tiles.push({x,y,d:x+y});tiles.sort((a,b)=>a.d-b.d);
+  const zone=activeZone(),tiles=[],center=isoPoint(camera.x,camera.y),viewX=canvas.clientWidth/(2*camera.zoom)+TILE_W*2,viewY=canvas.clientHeight/(2*camera.zoom)+TILE_H*3;
+  for(let y=0;y<zone.height;y++)for(let x=0;x<zone.width;x++){const point=isoPoint(x,y);if(Math.abs(point.x-center.x)<=viewX&&Math.abs(point.y-center.y)<=viewY)tiles.push({x,y,d:x+y});}
+  tiles.sort((a,b)=>a.d-b.d);
   tiles.forEach(({x,y})=>{
     let color=zone.floor||"#79aa67",depth=4;
     if(zone.outdoor){
@@ -219,20 +222,20 @@ function mixColor(a,b,amount){const value=color=>color.match(/\w\w/g).map(hex=>p
 function drawTile(x,y,color,depth=0){const a=isoPoint(x,y),b=isoPoint(x+1,y),c=isoPoint(x+1,y+1),d=isoPoint(x,y+1);ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.strokeStyle="rgba(20,48,45,.035)";ctx.lineWidth=.65;ctx.stroke();if(depth){ctx.fillStyle="rgba(45,67,54,.16)";ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(c.x,c.y);ctx.lineTo(c.x,c.y+depth);ctx.lineTo(d.x,d.y+depth);ctx.closePath();ctx.fill();}}
 
 function drawCampus(t) {
-  if(!drawAtlasCell(campusArt,0,0,3,2,21,10.2,650,470,.88))drawBlock(13,2,16,7,160,"#f1eee2","#bcbcaf","#a8aa9e");
-  drawWorldLabel(21,8.8,165,"NOVA COAST CAMPUS","#f5c95e");
+  if(!drawSprite(art.campus,21,10.2,520,385,.91,{grade:true}))drawBlock(13,2,16,7,160,"#f1eee2","#bcbcaf","#a8aa9e");
+  drawWorldLabel(21,8.8,139,"NOVA COAST CAMPUS","#f5c95e");
 }
 
 function drawLibrary(){
-  if(!drawAtlasCell(campusArt,1,0,3,2,6.1,8.3,330,278,.88))drawBlock(2,2.5,8,5.2,100,"#e7dfc7","#a8a18e","#c2baa5");
-  drawWorldLabel(6,7.7,104,"LEARNING CENTER","#64cbc8");
+  if(!drawSprite(art.library,6.1,8.3,275,238,.91,{grade:true}))drawBlock(2,2.5,8,5.2,100,"#e7dfc7","#a8a18e","#c2baa5");
+  drawWorldLabel(6,7.7,92,"LEARNING CENTER","#64cbc8");
 }
 
-function drawMercadoExterior(){if(!drawAtlasCell(campusArt,2,0,3,2,7,14.8,320,276,.88))drawBlock(3.2,8,7.5,4.8,82,"#ead9b1","#b89b69","#c6aa78");drawWorldLabel(7,13.4,96,"MERCADO SUPPLY","#f5c95e");}
+function drawMercadoExterior(){if(!drawSprite(art.mercado,7,14.8,300,230,.91,{grade:true}))drawBlock(3.2,8,7.5,4.8,82,"#ead9b1","#b89b69","#c6aa78");drawWorldLabel(7,13.4,85,"MERCADO SUPPLY","#f5c95e");}
 
 function drawStudentHub(){
-  if(!drawAtlasCell(campusArt,0,1,3,2,35,11.8,370,306,.88))drawBlock(31,5,8,6,118,"#efe8d5","#b7ae98","#d0c7b1");
-  drawWorldLabel(35,10.6,118,"STUDENT HUB","#ff7458");
+  if(!drawSprite(art.hub,35,11.8,330,220,.91,{grade:true}))drawBlock(31,5,8,6,118,"#efe8d5","#b7ae98","#d0c7b1");
+  drawWorldLabel(35,10.6,91,"STUDENT HUB","#ff7458");
 }
 
 function drawBeachStage(t){
@@ -266,7 +269,7 @@ const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","
 function liveCrowd(t){
   const peak=crowdPeak(run.clockMinutes),metrics=campusMetrics(run),actors=[],queueAnchors={cafe:[20.5,13.8],snack:[27.7,21.1],merch:[34.2,15.3]};
   const roaming=Math.min(30,Math.max(5,Math.round(metrics.guests*peak.multiplier*.34)));
-  for(let i=0;i<roaming;i++){const x=3+((i*7.7+run.clockMinutes*.009)%36),y=10+((i*4.9+Math.sin(t*.00018+i)*1.3)%11),person=[x,y,crowdColors[i%crowdColors.length],i*.67];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+30)});}
+  for(let i=0;i<roaming;i++){const x=3+((i*7.7+t*.00032)%36),y=10+((i*4.9+Math.sin(t*.00018+i)*1.3)%11),person=[x,y,crowdColors[i%crowdColors.length],i*.67];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+30)});}
   STORES.filter(store=>(run.venues?.[store.id]??0)>0).forEach((store,storeIndex)=>{const anchor=queueAnchors[store.id],stock=CATALOGUE.filter(product=>product.storeId===store.id).reduce((sum,product)=>sum+run.stock[product.id],0),count=stock?Math.min(8,Math.max(1,Math.round(peak.multiplier*2.4))):0;for(let i=0;i<count;i++){const x=anchor[0]-(store.id==="snack"?i*.32:0),y=anchor[1]+(store.id==="snack"?i*.12:i*.38),person=[x,y,crowdColors[(i+storeIndex*2)%crowdColors.length],2+i*.21];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+70+storeIndex*10)});}if(count)actors.push({depth:anchor[0]+anchor[1]-.1,draw:()=>drawQueueLabel(anchor[0],anchor[1],store.short,count)});});
   return actors;
 }
@@ -294,8 +297,8 @@ function drawPlacedFacility(facility,t,index){
 }
 
 function drawStudent(s,t,i){
-  const motion=Math.sin(t*.0024+s[3]),x=s[0]+motion*.18,y=s[1],p=isoPoint(x,y,4),variant=Math.abs(i)%8;
-  if(studentArt.complete&&studentArt.naturalWidth){ctx.save();ctx.globalAlpha=.96;ctx.translate(p.x,p.y-Math.abs(Math.sin(t*.006+i))*.8);if((i%5)===0)ctx.scale(-1,1);const sw=studentArt.naturalWidth/4,sh=studentArt.naturalHeight/2,col=variant%4,row=Math.floor(variant/4);ctx.drawImage(studentArt,col*sw,row*sh,sw,sh,-22,-57,44,58);ctx.restore();return;}
+  const motion=Math.sin(t*.0024+s[3]),x=s[0]+motion*.12,y=s[1],p=isoPoint(x,y,4),variant=Math.abs(i)%8,sprite=studentSprites[variant];
+  if(sprite.complete&&sprite.naturalWidth){ctx.save();ctx.globalAlpha=.97;ctx.translate(p.x,p.y-Math.abs(Math.sin(t*.0045+i))*.65);if((i%5)===0)ctx.scale(-1,1);ctx.drawImage(sprite,-15,-62,30,63);ctx.restore();return;}
   ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle=s[2];ctx.fillRect(-5,-24,10,18);ctx.fillStyle="#b97858";ctx.beginPath();ctx.arc(0,-29,5,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 
@@ -312,9 +315,9 @@ function drawLocation(id) {
   const isStore=STORES.some(store=>store.id===id),level=isStore?(run.venues?.[id]??0):1,locked=isStore&&level===0,size=1.45+Math.max(1,level)*.18,venueColor=locked?"#7d8b8c":loc.color;
   if(isStore){
     ctx.save();if(locked){ctx.globalAlpha=.46;ctx.filter="grayscale(1)";}const scale=1+(Math.max(1,level)-1)*.09;
-    if(id==="cafe")drawAtlasCell(campusArt,1,1,3,2,loc.x,loc.y+1,205*scale,180*scale,.9);
-    if(id==="snack")drawAtlasCell(campusArt,2,1,3,2,loc.x,loc.y+.55,190*scale,168*scale,.9);
-    if(id==="merch")drawAtlasCell(featureArt,0,0,2,1,loc.x,loc.y+.8,220*scale,165*scale,.9);
+    if(id==="cafe")drawSprite(art.cafe,loc.x,loc.y+.9,180*scale,164*scale,.92,{grade:true});
+    if(id==="snack")drawSprite(art.snack,loc.x,loc.y+.45,170*scale,152*scale,.92,{grade:true});
+    if(id==="merch")drawSprite(art.merch,loc.x,loc.y+.7,210*scale,151*scale,.92,{grade:true});
     ctx.restore();
   }else{
     drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+Math.max(1,level)*8,"#f4ead4","#b7ad99","#cbc2ad");
@@ -328,7 +331,7 @@ function drawLocation(id) {
 function drawPlayer(t) {
   const bob=walking?Math.abs(Math.sin(t*.01))*1.5:Math.sin(t*.003)*.4,p=isoPoint(run.player.x,run.player.y,4);
   ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle="rgba(7,29,37,.22)";ctx.beginPath();ctx.ellipse(0,3,18,7,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,2,23,9,0,0,Math.PI*2);ctx.stroke();ctx.restore();
-  if(featureArt.complete&&featureArt.naturalWidth){const sw=featureArt.naturalWidth/2,sh=featureArt.naturalHeight;ctx.save();ctx.translate(p.x,p.y-bob);if(facing.x+facing.y<0)ctx.scale(-1,1);ctx.drawImage(featureArt,sw,0,sw,sh,-31,-82,62,84);ctx.restore();return;}
+  if(art.manager.complete&&art.manager.naturalWidth){ctx.save();ctx.translate(p.x,p.y-bob);if(facing.x+facing.y<0)ctx.scale(-1,1);ctx.drawImage(art.manager,-17,-77,34,78);ctx.restore();return;}
   drawStudent([run.player.x,run.player.y,"#bce65f",0],t,0);
 }
 
