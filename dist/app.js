@@ -889,24 +889,34 @@ function experiencePreview(moduleIds){
 }
 
 const FACILITY_PRESENTATION={
-  path:{code:"RT-01",category:"INFRASTRUCTURE",caption:"Campus paving system"},
-  scenery:{code:"LS-02",category:"LANDSCAPE",caption:"Native coastal planting"},
-  bench:{code:"CM-03",category:"COMFORT",caption:"Timber social seating"},
-  bin:{code:"SV-04",category:"CAMPUS SERVICE",caption:"Dual-stream waste point"},
-  water:{code:"SV-05",category:"CAMPUS SERVICE",caption:"Public hydration station"},
-  restroom:{code:"AM-06",category:"AMENITY",caption:"Modular service building"},
-  foodGarden:{code:"DS-07",category:"DESTINATION",caption:"Covered social food court"}
+  path:{code:"RT-01",category:"ROUTES",caption:"Limestone + brass wayfinding",material:"PALE STONE"},
+  scenery:{code:"LS-02",category:"LANDSCAPE",caption:"Carcavelos coastal planting",material:"WHITE CONCRETE"},
+  bench:{code:"CM-03",category:"COMFORT",caption:"Atlantic timber seating",material:"IROKO + STEEL"},
+  bin:{code:"SV-04",category:"SERVICES",caption:"Separated campus waste",material:"POWDER COAT"},
+  water:{code:"SV-05",category:"SERVICES",caption:"Filtered public hydration",material:"TERRAZZO + STEEL"},
+  restroom:{code:"AM-06",category:"AMENITY",caption:"Accessible service pavilion",material:"GLASS + TILE"},
+  foodGarden:{code:"DS-07",category:"DESTINATION",caption:"Shaded social food court",material:"CANVAS + TIMBER"}
 };
 const NEED_LABELS={mood:"MOOD",energy:"ENERGY",cleanliness:"CLEAN",thirst:"THIRST",bladder:"RELIEF",hunger:"HUNGER"};
-function facilityPreviewMarkup(type){return `<span class="facility-preview facility-${type}" aria-hidden="true"><i></i><b></b><em></em><u></u></span>`;}
+const FACILITY_ART={
+  path:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="126" cy="119" rx="87" ry="13"/><g class="stone"><path d="M24 74 99 49l55 22-76 28Z"/><path d="m78 99 76-28v14l-76 29Z"/><path d="m154 71 55 22v14l-55-22Z"/><path d="m78 99 76-28 55 22-76 29Z"/></g><g class="stone stone-back"><path d="m61 53 73-25 47 18-72 27Z"/><path d="m109 73 72-27v13l-72 28Z"/><path d="m181 46 32 13v13l-32-13Z"/><path d="m109 73 72-27 32 13-72 28Z"/></g><path class="brass-line" d="m75 72 37 14 78-29"/><path class="joint" d="m111 74 43 17M133 35l48 18M61 67l47 18"/></svg>`,
+  scenery:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="124" cy="119" rx="71" ry="13"/><path class="plinth-top" d="m49 83 81-25 63 23-82 27Z"/><path class="plinth-front" d="m111 108 82-27v21l-82 29Z"/><path class="plinth-side" d="m49 83 62 25v23l-62-26Z"/><path class="soil" d="m74 82 57-18 38 15-57 19Z"/><path class="trunk" d="M119 82c0-19 5-35 8-53"/><g class="fronds"><path d="M127 34Q94 22 72 33M127 34q29-19 57-14M127 34Q99 37 79 58M127 34q34 4 52 27M127 34q-3 20-18 36M127 34q15 19 20 39"/></g><circle class="palm-heart" cx="127" cy="34" r="5"/></svg>`,
+  bench:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="121" cy="119" rx="83" ry="13"/><path class="pad" d="m34 99 92-28 78 26-92 31Z"/><g class="bench-legs"><path d="M73 80v31M164 68v31M94 89v29M185 77v28"/></g><path class="timber-side" d="m55 74 122-30v14L55 89Z"/><path class="timber-top" d="m55 68 122-29 19 8L74 78Z"/><path class="timber-side seat" d="m65 88 120-29v13L65 102Z"/><path class="timber-top seat" d="m65 83 120-29 18 8L83 92Z"/><g class="slats"><path d="m79 64 19 8M104 58l19 8M130 52l19 8M155 46l19 8M90 79l18 8M116 73l18 8M142 67l18 8M168 61l18 8"/></g></svg>`,
+  bin:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="123" cy="121" rx="71" ry="12"/><path class="service-pad" d="m47 99 82-25 64 23-82 28Z"/><g class="bin-green"><path d="m67 56 45 12v48L67 103Z"/><path d="m112 68 20-8v48l-20 8Z"/><path d="m67 56 20-8 45 12-20 8Z"/><circle cx="92" cy="75" r="7"/></g><g class="bin-blue"><path d="m125 49 43 12v47l-43-12Z"/><path d="m168 61 20-8v47l-20 8Z"/><path d="m125 49 20-8 43 12-20 8Z"/><circle cx="148" cy="68" r="7"/></g><path class="service-rail" d="m61 54 50 14 20-8 43 12 19-8"/></svg>`,
+  water:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="122" cy="121" rx="72" ry="12"/><path class="service-pad" d="m45 101 83-26 67 23-84 29Z"/><path class="fountain-front" d="m74 78 82 22v22l-82-23Z"/><path class="fountain-side" d="m156 100 24-9v22l-24 9Z"/><path class="fountain-top" d="m74 78 24-8 82 21-24 9Z"/><path class="pipe" d="M117 79V52c0-18 15-30 33-25 16 4 25 17 25 34v22"/><path class="tap" d="M166 79h18"/><path class="water-drop" d="M183 87c7 8 6 14 0 16-7-2-8-8 0-16Z"/><ellipse class="basin" cx="121" cy="91" rx="24" ry="7"/></svg>`,
+  restroom:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="123" cy="121" rx="83" ry="13"/><path class="building-pad" d="m35 105 92-30 79 26-94 32Z"/><path class="pod-front" d="m67 48 91 22v50l-91-23Z"/><path class="pod-side" d="m158 70 36-14v50l-36 14Z"/><path class="pod-roof" d="m59 45 98-28 46 17-99 31Z"/><path class="pod-roof-edge" d="m59 45 45 20 99-31v12l-99 32-45-20Z"/><path class="pod-door" d="m116 73 31 8v32l-31-8Z"/><circle class="pod-sign" cx="90" cy="72" r="11"/><path class="pod-person" d="M90 67v12m-6-7h12m-9 7-4 7m11-7 4 7"/></svg>`,
+  foodGarden:`<svg viewBox="0 0 240 144"><ellipse class="art-shadow" cx="122" cy="123" rx="99" ry="14"/><path class="garden-pad" d="m20 102 105-35 95 31-107 38Z"/><g class="pergola-posts"><path d="M48 53v61M184 48v62M81 75v50M215 70v42"/></g><path class="canopy" d="M38 50 147 17l75 25-109 36Z"/><path class="canopy-stripe" d="m69 41 76-23 18 6-77 25Zm51 18 77-24 18 6-78 25Z"/><path class="garden-counter-front" d="m73 80 95 25v20l-95-26Z"/><path class="garden-counter-side" d="m168 105 25-9v20l-25 9Z"/><path class="garden-counter-top" d="m73 80 25-8 95 24-25 9Z"/><g class="stools"><ellipse cx="62" cy="110" rx="12" ry="5"/><ellipse cx="92" cy="121" rx="12" ry="5"/><ellipse cx="190" cy="126" rx="12" ry="5"/></g><g class="garden-plants"><path d="M40 100v-18m0 5-10-9m10 7 11-12M211 102V84m0 5-11-9m11 6 10-13"/></g></svg>`
+};
+function facilityPreviewMarkup(type){return `<span class="facility-art facility-art-${type}" aria-hidden="true">${FACILITY_ART[type]}</span>`;}
 function facilityEffectMarkup(item){const effects=Object.entries(item.needs||{}).map(([key,value])=>`<span>+${value} ${NEED_LABELS[key]||key.toUpperCase()}</span>`);return effects.length?effects.join(""):`<span>WALKABLE ROUTE</span>`;}
 function facilityCard(item,progress){
   const meta=FACILITY_PRESENTATION[item.id],size=facilityFootprint(item.id,0),levelRequired=item.id==="foodGarden"?3:1,locked=progress.level<levelRequired;
-  return `<article class="build-card facility-${item.id}-card ${locked?"progress-locked":""}" style="--build:${item.color}">
-    <div class="facility-card-head"><span>${meta.code} · ${meta.category}</span><em>${size.width.toFixed(1)} × ${size.height.toFixed(1)} TILES</em></div>
+  return `<article class="facility-card facility-${item.id}-card ${locked?"progress-locked":""}" style="--build:${item.color}">
+    <div class="facility-card-head"><span>${meta.code}</span><strong>${meta.category}</strong><em>${size.width.toFixed(1)} × ${size.height.toFixed(1)}</em></div>
     ${facilityPreviewMarkup(item.id)}
-    <div class="build-card-copy"><small>${meta.caption}</small><strong>${item.name}</strong><p>${item.description}</p><div class="facility-effects">${facilityEffectMarkup(item)}</div></div>
-    <button data-build="${item.id}" ${run.cash<item.cost||locked?"disabled":""}><span>${locked?`LEVEL ${levelRequired}`:"CONSTRUCT"}</span><strong>${locked?"LOCKED":formatEuro(item.cost)}</strong><em>→</em></button>
+    <div class="facility-card-copy"><small>${meta.caption}</small><strong>${item.name}</strong><p>${item.description}</p></div>
+    <div class="facility-card-spec"><span>${meta.material}</span><div class="facility-effects">${facilityEffectMarkup(item)}</div></div>
+    <button data-build="${item.id}" ${run.cash<item.cost||locked?"disabled":""}><span>${locked?`UNLOCK AT LEVEL ${levelRequired}`:"ADD TO CURSOR"}</span><strong>${locked?"LOCKED":formatEuro(item.cost)}</strong><em>＋</em></button>
   </article>`;
 }
 
@@ -915,7 +925,8 @@ function openBuildPanel() {
   const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost,progress=progressionState(run);
   drawerContent.innerHTML=`<p class="eyebrow">Campus construction · ${run.facilities.length} placed</p><h2>Build the campus</h2><p class="drawer-intro">Place paths, scenery and guest facilities directly in the world. Every build changes student needs and your campus rating.</p>
     <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
-    <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
+    <div class="section-heading facility-library-heading"><div><small>CAMPUS ASSET LIBRARY</small><strong>Designed for Nova Coast</strong></div><span>SELECT · ROTATE · PLACE</span></div>
+    <div class="facility-library-note"><span>07</span><p><strong>Purpose-built campus pieces</strong>Every object has a different footprint, material language and effect on your guests.</p></div>
     <div class="build-grid facility-catalogue">${FACILITY_CATALOGUE.map(item=>facilityCard(item,progress)).join("")}</div>
     <div class="section-heading"><div><small>PLACED ASSETS</small><strong>Move, rotate or remove</strong></div><span>${run.facilities.length} on campus</span></div>
     <div class="placed-facility-list">${run.facilities.length?run.facilities.map(facility=>{const size=facilityFootprint(facility.type,facility.rotation||0);return `<article>${facilityPreviewMarkup(facility.type)}<div><strong>${facility.name}</strong><small>${size.width.toFixed(1)} × ${size.height.toFixed(1)} tiles · ${(facility.rotation||0)*90}°</small></div><button data-move-facility="${facility.id}">Move</button><button class="danger" data-demolish-facility="${facility.id}">Remove</button></article>`}).join(""):`<div class="build-empty">Place your first facility to unlock move and demolition tools.</div>`}</div>
