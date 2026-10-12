@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, CAMPUS_DAYS, MAX_DAYS, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, tradeDay, inventoryValue, overallResult, formatEuro, upgradeVenue } from "./core.js";
+import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, placeFacility, hireStaff } from "./core.js";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -23,8 +23,12 @@ let walking = false;
 let facing = { x: 0, y: 1 };
 let targetPoint = null;
 let currentSupplierStore = "cafe";
-let tradingInProgress = false;
-let skipSimulation = false;
+let pendingBuild = null;
+let selectedExperienceModules = ["music","shade"];
+let simulationElapsed = 0;
+let lastPersistAt = 0;
+let lastSaleCount = run.totalSales || 0;
+let saleFeedTimer = null;
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
@@ -49,7 +53,7 @@ const activeZone = () => ZONES[currentZone];
 function loadRun() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (parsed && parsed.version === 1 && Array.isArray(parsed.history)) {
+    if (parsed && [1,2].includes(parsed.version) && Array.isArray(parsed.history)) {
       if (!parsed.player) parsed.player = { x:21, y:18, zone:"campus" };
       if (!parsed.player.zone || !ZONES[parsed.player.zone]) parsed.player = { x:Math.min(41,Math.max(1,parsed.player.x||21)), y:Math.min(25.7,Math.max(7.5,parsed.player.y||18)), zone:"campus" };
       CATALOGUE.forEach(product => {
@@ -59,6 +63,15 @@ function loadRun() {
       if (!parsed.venues) parsed.venues = { cafe: 1, snack: 1, merch: 1 };
       if (!Number.isInteger(parsed.reputation)) parsed.reputation = 0;
       if (!Array.isArray(parsed.upgrades)) parsed.upgrades = [];
+      if (!Array.isArray(parsed.facilities)) parsed.facilities = [];
+      if (!parsed.staff) parsed.staff = { caretaker:0, technician:0, host:0 };
+      parsed.version=2;parsed.completed=false;
+      if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
+      if(!Number.isFinite(parsed.speed))parsed.speed=1;
+      if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{}};
+      if(!parsed.salesProgress)parsed.salesProgress={};
+      if(!Number.isInteger(parsed.totalSales))parsed.totalSales=parsed.history.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0);
+      if(!Number.isInteger(parsed.totalVisitors))parsed.totalVisitors=parsed.history.reduce((sum,day)=>sum+(day.campus?.guests||0),0);
       return parsed;
     }
   } catch (_) {}
@@ -77,51 +90,48 @@ function save(next) {
 
 function updateHUD() {
   const zone=activeZone();
+  const campus=campusMetrics(run);
   $("#zoneName").textContent=zone.name;
   $("#zoneSub").textContent=zone.sub;
   $("#miniMapTitle").textContent=zone.outdoor?"CAMPUS MAP":"ROOM PLAN";
   $("#game").classList.toggle("indoors",!zone.outdoor);
   $("#weatherIcon").textContent=zone.outdoor?"☀":"⌂";
   $("#weatherTemp").textContent=zone.outdoor?"24°":"IN";
-  $("#weatherNote").textContent=zone.outdoor?"13:40 · ATLANTIC BREEZE":zone.sub;
+  const peak=crowdPeak(run.clockMinutes);
+  $("#weatherNote").textContent=zone.outdoor?`${formatClock(run.clockMinutes)} · ATLANTIC BREEZE`:zone.sub;
   document.querySelectorAll("[data-zone-indicator]").forEach(item=>item.classList.toggle("active",item.dataset.zoneIndicator===zone.id));
-  $("#dayStat").textContent = run.completed ? "5 / 5" : `${run.currentDay} / 5`;
+  $("#dayStat").textContent = `${run.currentDay}`;
+  $("#timeStat").textContent = formatClock(run.clockMinutes);
   $("#cashStat").textContent = formatEuro(run.cash);
   $("#repStat").textContent = `${run.reputation || 0} ★`;
-  $("#dayDots").innerHTML = Array.from({ length: MAX_DAYS }, (_, i) => {
-    const day = i + 1;
-    return `<span class="day-dot ${day <= run.history.length ? "done" : ""} ${!run.completed && day === run.currentDay ? "current" : ""}"></span>`;
-  }).join("");
+  $("#guestStat").textContent = `${campus.guests}`;
+  $("#ratingStat").textContent = `${campus.rating}%`;
   const totalStock = Object.values(run.stock).reduce((a, b) => a + b, 0);
-  const unlockedProducts = CATALOGUE.filter(product => (run.venues?.[product.storeId] || 1) >= (product.tier || 1));
+  const unlockedProducts = CATALOGUE.filter(product => (run.venues?.[product.storeId] ?? 0) >= (product.tier || 1));
   const demandCapacity = unlockedProducts.reduce((sum, product) => sum + demandFor(run.prices[product.id], product.reference), 0);
-  const nextVenue = STORES.find(store => (run.venues?.[store.id] || 1) < 3);
-  $("#pulseDemand").textContent = `${demandCapacity} units`;
-  $("#pulseVenues").textContent = `3 districts · ${unlockedProducts.length} products`;
-  $("#pulseMilestone").textContent = run.completed ? "Season complete" : nextVenue ? `Upgrade ${nextVenue.short}` : "All venues flagship";
-  const campusDay = CAMPUS_DAYS[(run.completed ? MAX_DAYS : run.currentDay) - 1];
-  $("#eventIcon").textContent = campusDay.icon;
-  $("#eventDistrict").textContent = `${run.completed ? "FINAL DAY" : "TODAY"} · ${campusDay.district.toUpperCase()}`;
-  $("#eventTitle").textContent = campusDay.title;
-  $("#eventObjective").textContent = campusDay.objective.label;
-  let title = "Build your first trading plan", text = "Use the Stock tool, then prepare prices across your three venues.", progress = 8;
-  if (run.completed) {
-    title = overallResult(run) >= 0 ? "Venture complete!" : "A useful first run";
-    text = `Your five-day result is ${formatEuro(overallResult(run))}. Open the ledger for the full story.`;
-    progress = 100;
-  } else if (totalStock > 0) {
-    title = `Prepare day ${run.currentDay}`;
-    text = "Review each venue, balance stock and margins, then open the campus for trading.";
-    progress = 15 + run.history.length * 17;
-  } else if (run.history.length > 0) {
-    title = `Restock for day ${run.currentDay}`;
-    text = "Yesterday's inventory is gone. Reinvest your cash, refine prices and grow the venue network.";
-    progress = 15 + run.history.length * 17;
-  }
+  const lockedVenue=STORES.find(store=>(run.venues?.[store.id]??0)===0),openCount=STORES.filter(store=>(run.venues?.[store.id]??0)>0).length;
+  $("#pulseDemand").textContent = `${Math.round(demandCapacity*Math.max(.45,campus.guests/24))} potential sales`;
+  $("#pulseVenues").textContent = `${campus.guests} on campus · ${openCount}/3 shops`;
+  $("#pulseMilestone").textContent = lockedVenue?`Open ${lockedVenue.short} · ${formatEuro(STORE_UNLOCKS[lockedVenue.id])}`:"Grow every shop to level 3";
+  $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="evening"?"★":"·";
+  $("#eventDistrict").textContent = `LIVE · ${formatClock(run.clockMinutes)}`;
+  $("#eventTitle").textContent = peak.label;
+  $("#eventObjective").textContent = peak.multiplier>1?`${peak.multiplier.toFixed(1)}× customer flow`:"Quiet planning window";
+  const focusStoreId=run.venuePurchases?.at(-1)?.storeId||"cafe",focusStore=STORES.find(store=>store.id===focusStoreId),focusStock=CATALOGUE.filter(product=>product.storeId===focusStoreId).reduce((sum,product)=>sum+run.stock[product.id],0);
+  let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory and students will purchase automatically.`, progress = Math.min(100,openCount*22+campus.rating*.34);
+  if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${campus.guests} students are on campus. Better amenities raise footfall and increase sales.`;}
+  else if(focusStock===0&&focusStoreId!=="cafe"){text=`Your new ${focusStore.short} needs stock before its first queue can form.`;}
+  if(lockedVenue&&run.cash>=STORE_UNLOCKS[lockedVenue.id]){title=`You can open ${lockedVenue.name}`;text="Reinvest your profits in the next district, then stock its first product.";}
   $("#missionTitle").textContent = title;
   $("#missionText").textContent = text;
   $("#missionProgress").style.width = `${progress}%`;
+  document.querySelectorAll("[data-speed]").forEach(button=>button.classList.toggle("active",Number(button.dataset.speed)===run.speed));
+  $("#clockIcon").textContent=run.speed===0?"▶":"Ⅱ";$("#clockLabel").textContent=run.speed===0?"Resume":"Pause";
+  $("#game").classList.toggle("build-mode",Boolean(pendingBuild));
+  const buildNotice=$("#buildNotice");if(buildNotice){buildNotice.classList.toggle("hidden",!pendingBuild);if(pendingBuild)$("#buildNoticeName").textContent=pendingBuild.name;}
 }
+
+function formatClock(minutes){const value=Math.floor(minutes||DAY_START),hours=Math.floor(value/60)%24,mins=value%60;return `${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}`;}
 
 function resize() {
   const rect = canvas.getBoundingClientRect();
@@ -158,8 +168,10 @@ function drawWorld(t) {
     {depth:18,draw:()=>drawCampus(t)},
     {depth:28,draw:()=>drawStudentHub()},
     {depth:43,draw:()=>drawBeachStage(t)},
+    ...(run.facilities||[]).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
-    ...students.map((student,i)=>({depth:student[0]+student[1],draw:()=>drawStudent(student,t,i)}))
+    ...students.map((student,i)=>({depth:student[0]+student[1],draw:()=>drawStudent(student,t,i)})),
+    ...liveCrowd(t)
   ]:drawRoomActors(t);
   const actors=[...worldActors,
     ...zoneLocations().map(([id,location])=>({depth:location.x+location.y,draw:()=>drawLocation(id)})),
@@ -232,8 +244,37 @@ function drawBlock(x,y,w,h,z,top,right,left){const a=isoPoint(x,y,z),b=isoPoint(
 
 const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,.76],[29,19,.88],[32,9,.83],[39,12,.92],[37,19,.8],[6,21,.75],[24,22,.72],[40,21,.86]];
 const students=[[8,17,"#f4b858",.2],[11,13,"#dc6958",1.1],[15,18,"#75c0c8",2],[20,15,"#8b74bd",2.8],[24,12,"#e5e4d8",3.6],[29,17,"#ff8060",4.2],[33,19,"#75c0c8",5],[36,12,"#bce65f",5.8],[18,21,"#f5c95e",6.4],[25,20,"#ad75a6",7.1],[12,21,"#dce5db",7.8],[31,10,"#ff9472",8.5]];
+const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
+
+function liveCrowd(t){
+  const peak=crowdPeak(run.clockMinutes),metrics=campusMetrics(run),actors=[],queueAnchors={cafe:[20.5,13.8],snack:[27.7,21.1],merch:[34.2,15.3]};
+  const roaming=Math.min(30,Math.max(5,Math.round(metrics.guests*peak.multiplier*.34)));
+  for(let i=0;i<roaming;i++){const x=3+((i*7.7+run.clockMinutes*.009)%36),y=10+((i*4.9+Math.sin(t*.00018+i)*1.3)%11),person=[x,y,crowdColors[i%crowdColors.length],i*.67];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+30)});}
+  STORES.filter(store=>(run.venues?.[store.id]??0)>0).forEach((store,storeIndex)=>{const anchor=queueAnchors[store.id],stock=CATALOGUE.filter(product=>product.storeId===store.id).reduce((sum,product)=>sum+run.stock[product.id],0),count=stock?Math.min(8,Math.max(1,Math.round(peak.multiplier*2.4))):0;for(let i=0;i<count;i++){const x=anchor[0]-(store.id==="snack"?i*.32:0),y=anchor[1]+(store.id==="snack"?i*.12:i*.38),person=[x,y,crowdColors[(i+storeIndex*2)%crowdColors.length],2+i*.21];actors.push({depth:x+y,draw:()=>drawStudent(person,t,i+70+storeIndex*10)});}if(count)actors.push({depth:anchor[0]+anchor[1]-.1,draw:()=>drawQueueLabel(anchor[0],anchor[1],store.short,count)});});
+  return actors;
+}
+
+function drawQueueLabel(x,y,label,count){const p=isoPoint(x,y,62);roundedRect(p.x-44,p.y-10,88,20,4,"rgba(10,37,46,.92)");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${label.toUpperCase()} · ${count} IN LINE`,p.x,p.y+3);}
 
 function drawTree(x,y,scale,t){const p=isoPoint(x,y,4);ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.fillStyle="rgba(10,45,38,.2)";ctx.beginPath();ctx.ellipse(8,4,28,9,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#73583d";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(t*.001)*2,-65);ctx.stroke();ctx.fillStyle="#2f7c52";for(let a=0;a<6;a++){ctx.save();ctx.rotate(a*1.05);ctx.beginPath();ctx.ellipse(17,-66,23,7,0,0,Math.PI*2);ctx.fill();ctx.restore()}ctx.restore();}
+
+function drawPlacedFacility(facility,t,index){
+  const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type),color=blueprint?.color||"#f5c95e",p=isoPoint(facility.x,facility.y,4);
+  if(facility.type==="path"){drawTile(facility.x-.5,facility.y-.5,"#d7d3c2",2);return;}
+  if(facility.type==="scenery"){drawTree(facility.x,facility.y,.55,t+index*90);return;}
+  if(facility.type==="bench"){drawBlock(facility.x-.7,facility.y-.25,1.4,.5,18,"#d7a968","#71583d","#8c6b47");return;}
+  if(facility.type==="bin"){drawBlock(facility.x-.28,facility.y-.28,.56,.56,34,color,"#39734a","#4f8d5b");}
+  else if(facility.type==="water"){drawBlock(facility.x-.35,facility.y-.35,.7,.7,36,color,"#378c9b","#4fa7b4");const drop=isoPoint(facility.x,facility.y,48);ctx.fillStyle="#d6fbff";ctx.beginPath();ctx.arc(drop.x,drop.y,5,0,Math.PI*2);ctx.fill();}
+  else if(facility.type==="restroom"){drawBlock(facility.x-.62,facility.y-.5,1.24,1,58,"#e9e9df","#567590","#6c8aa3");const sign=isoPoint(facility.x,facility.y,43);ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 8px DM Mono";ctx.fillText("WC",sign.x,sign.y);}
+  else if(facility.type==="foodGarden"){drawBlock(facility.x-.8,facility.y-.55,1.6,1.1,38,"#f4ead4","#b7ad99","#cbc2ad");drawBlock(facility.x-.9,facility.y-.65,1.8,.3,51,color,"#a8633c","#bd754a");}
+  else if(facility.type==="experience"){
+    const stats=attractionStats(facility.modules),height=45+stats.intensity*.42;
+    drawBlock(facility.x-1,facility.y-.7,2,1.4,23,"#314e59","#1c3540","#28434e");
+    const tower=isoPoint(facility.x,facility.y,height);ctx.strokeStyle="#f5c95e";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(tower.x-34,tower.y+height);ctx.lineTo(tower.x-18,tower.y);ctx.lineTo(tower.x+18,tower.y);ctx.lineTo(tower.x+34,tower.y+height);ctx.stroke();ctx.fillStyle="#ff7458";ctx.beginPath();ctx.arc(tower.x,tower.y+Math.sin(t*.004)*3,12,0,Math.PI*2);ctx.fill();
+    const tag=isoPoint(facility.x,facility.y,height+38);roundedRect(tag.x-54,tag.y-10,108,20,4,"rgba(10,37,46,.93)");ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`EXC ${stats.excitement} · INT ${stats.intensity}`,tag.x,tag.y+3);
+  }
+  if(blueprint){const icon=isoPoint(facility.x,facility.y,72);roundedRect(icon.x-13,icon.y-13,26,26,6,"rgba(10,37,46,.9)");ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 8px DM Mono";ctx.fillText(blueprint.icon,icon.x,icon.y+3);}
+}
 
 function drawStudent(s,t,i){const x=s[0]+Math.sin(t*.0004+s[3])*.25,y=s[1],c=s[2],p=isoPoint(x,y,5);ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle="rgba(7,35,39,.2)";ctx.beginPath();ctx.ellipse(0,3,10,4,0,0,Math.PI*2);ctx.fill();const step=Math.sin(t*.007+i);ctx.strokeStyle="#18323a";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-2,-7);ctx.lineTo(-4+step*2,2);ctx.moveTo(2,-7);ctx.lineTo(4-step*2,2);ctx.stroke();ctx.fillStyle=c;ctx.fillRect(-6,-26,12,19);ctx.fillStyle="#b97858";ctx.beginPath();ctx.arc(0,-32,5,0,Math.PI*2);ctx.fill();ctx.restore();}
 
@@ -249,13 +290,13 @@ function drawLocation(id) {
     const tag=isoPoint(loc.x,loc.y,105);roundedRect(tag.x-54,tag.y-11,108,22,5,"rgba(10,37,46,.94)");ctx.fillStyle=loc.color;ctx.fillRect(tag.x-54,tag.y-11,5,22);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title} · ${loc.sub}`,tag.x+3,tag.y+3);
     return;
   }
-  const level=run.venues?.[id]||1, size=1.45+level*.18;
-  drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+level*8,"#f4ead4","#b7ad99","#cbc2ad");
-  drawBlock(loc.x-size*.62,loc.y-size*.5,size*1.24,.32,64+level*9,loc.color,"#a64f43","#bf6152");
+  const isStore=STORES.some(store=>store.id===id),level=isStore?(run.venues?.[id]??0):1,locked=isStore&&level===0,size=1.45+Math.max(1,level)*.18,venueColor=locked?"#7d8b8c":loc.color;
+  drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+Math.max(1,level)*8,locked?"#c4c6bf":"#f4ead4",locked?"#7b8380":"#b7ad99",locked?"#929994":"#cbc2ad");
+  drawBlock(loc.x-size*.62,loc.y-size*.5,size*1.24,.32,64+Math.max(1,level)*9,venueColor,locked?"#4f6062":"#a64f43",locked?"#657477":"#bf6152");
   if(level>1){const flag=isoPoint(loc.x+.5,loc.y-.45,86+level*8);ctx.strokeStyle="#173743";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(flag.x,flag.y+24);ctx.lineTo(flag.x,flag.y-24);ctx.stroke();ctx.fillStyle=loc.color;ctx.beginPath();ctx.moveTo(flag.x,flag.y-23);ctx.lineTo(flag.x+22,flag.y-16);ctx.lineTo(flag.x,flag.y-8);ctx.closePath();ctx.fill();}
-  const p=isoPoint(loc.x,loc.y,39);ctx.fillStyle="#173743";ctx.fillRect(p.x-29,p.y-18,58,23);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 7px DM Mono";ctx.fillText(loc.sub,p.x,p.y-5);
+  const p=isoPoint(loc.x,loc.y,39);ctx.fillStyle="#173743";ctx.fillRect(p.x-29,p.y-18,58,23);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 7px DM Mono";ctx.fillText(locked?"LOCKED":loc.sub,p.x,p.y-5);
   if(near){const q=isoPoint(loc.x,loc.y,3);ctx.strokeStyle="#ffd454";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,55+Math.sin(lastTime*.004)*2,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
-  const tag=isoPoint(loc.x,loc.y,96+level*8);roundedRect(tag.x-50,tag.y-11,100,22,5,"rgba(10,37,46,.92)");ctx.fillStyle=loc.color;ctx.fillRect(tag.x-50,tag.y-11,5,22);ctx.fillStyle="#fff";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${STORES.some(s=>s.id===id)?` · LV ${level}`:""}`,tag.x+3,tag.y+3);
+  const tag=isoPoint(loc.x,loc.y,96+Math.max(1,level)*8);roundedRect(tag.x-50,tag.y-11,100,22,5,"rgba(10,37,46,.92)");ctx.fillStyle=venueColor;ctx.fillRect(tag.x-50,tag.y-11,5,22);ctx.fillStyle="#fff";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · BUY":" · LV "+level:""}`,tag.x+3,tag.y+3);
 }
 
 function drawPlayer(t) {
@@ -274,6 +315,8 @@ function drawPlayer(t) {
 
 function loop(t) {
   const dt = Math.min((t-lastTime)/1000 || 0, .04); lastTime=t;
+  simulationElapsed+=dt;
+  if(simulationElapsed>=.5){const elapsed=simulationElapsed;simulationElapsed=0;tickTycoon(elapsed);}
   let dx=0,dy=0;
   if(keys.has("w")||keys.has("arrowup")){dx--;dy--;}
   if(keys.has("s")||keys.has("arrowdown")){dx++;dy++;}
@@ -289,6 +332,21 @@ function loop(t) {
   const mini=$(".mini-player");if(mini){mini.style.left=`${run.player.x/zone.width*100}%`;mini.style.top=`${run.player.y/zone.height*100}%`;}
   updateProximity(); drawWorld(t); requestAnimationFrame(loop);
 }
+
+function tickTycoon(realSeconds){
+  if(!run.speed)return;
+  const beforeDay=run.currentDay,beforeSales=run.totalSales||0,beforeProducts=structuredClone(run.today?.products||{});
+  run=advanceTycoon(run,realSeconds*8*run.speed);
+  if((run.totalSales||0)>beforeSales){
+    const soldId=Object.keys(run.today?.products||{}).find(id=>(run.today.products[id]?.unitsSold||0)>(beforeProducts[id]?.unitsSold||0));
+    const product=CATALOGUE.find(item=>item.id===soldId);showSaleFeed(product,(run.totalSales||0)-beforeSales);
+  }
+  if(run.currentDay!==beforeDay){const closed=run.history.at(-1);toast(`Day ${beforeDay} closed · ${formatEuro(closed?.totals?.revenue||0)} revenue`);beep(640);}
+  const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=now;}
+  updateHUD();
+}
+
+function showSaleFeed(product,units){if(!product)return;const feed=$("#saleFeed");$("#saleFeedText").textContent=`${units}× ${product.short} · +${formatEuro(units*run.prices[product.id])}`;feed.classList.remove("hidden");clearTimeout(saleFeedTimer);saleFeedTimer=setTimeout(()=>feed.classList.add("hidden"),1500);if((run.totalSales||0)%3===0)beep(470);}
 
 function updateProximity() {
   const near = zoneLocations().find(([,loc]) => Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65);
@@ -309,7 +367,7 @@ function storeTabs(selected, action="supplier") {
 
 function openSupplier(selectedStore="cafe") {
   currentSupplierStore=selectedStore;
-  const store=STORES.find(item=>item.id===selectedStore), products=CATALOGUE.filter(product=>product.storeId===selectedStore), level=run.venues[selectedStore] || 1;
+  const store=STORES.find(item=>item.id===selectedStore), products=CATALOGUE.filter(product=>product.storeId===selectedStore), level=run.venues[selectedStore] ?? 0;
   drawerContent.innerHTML = `
     <p class="eyebrow">Mercado Hub · wholesale market</p><h2>Buy inventory</h2>
     <p class="drawer-intro">Choose a venue, compare unit economics, and build a portfolio you can actually afford.</p>
@@ -332,10 +390,10 @@ function openSupplier(selectedStore="cafe") {
 }
 
 function productBuyCard(product) {
-  const locked=(run.venues?.[product.storeId] || 1)<(product.tier || 1);
+  const level=run.venues?.[product.storeId]??0,locked=level<(product.tier || 1);
   return `<article class="product-card ${locked?"locked":""}" style="--product-color:${product.color}">
     <div class="product-head"><div class="product-icon">${product.icon}</div><div><h3>${product.name}</h3><p>${formatEuro(product.cost)} cost · ${formatEuro(product.reference)} reference</p></div><span class="stock-pill">${run.stock[product.id]} in stock</span></div>
-    <div class="buy-row"><div class="qty-control"><button class="qty-minus" data-id="${product.id}" aria-label="Decrease quantity" ${locked?"disabled":""}>−</button><input class="qty-input" data-id="${product.id}" id="qty-${product.id}" type="number" min="1" step="1" value="1" aria-label="Quantity" ${locked?"disabled":""}><button class="qty-plus" data-id="${product.id}" aria-label="Increase quantity" ${locked?"disabled":""}>+</button></div><button class="action-button buy-button" data-id="${product.id}" ${run.completed||locked ? "disabled" : ""}>${locked?`Unlock at level ${product.tier}`:`Buy · <span id="total-${product.id}">${formatEuro(product.cost)}</span>`}</button></div>
+    <div class="buy-row"><div class="qty-control"><button class="qty-minus" data-id="${product.id}" aria-label="Decrease quantity" ${locked?"disabled":""}>−</button><input class="qty-input" data-id="${product.id}" id="qty-${product.id}" type="number" min="1" step="1" value="1" aria-label="Quantity" ${locked?"disabled":""}><button class="qty-plus" data-id="${product.id}" aria-label="Increase quantity" ${locked?"disabled":""}>+</button></div><button class="action-button buy-button" data-id="${product.id}" ${locked ? "disabled" : ""}>${locked?(level===0?"Venue closed":`Unlock at level ${product.tier}`):`Buy · <span id="total-${product.id}">${formatEuro(product.cost)}</span>`}</button></div>
   </article>`;
 }
 
@@ -346,18 +404,23 @@ function updateBuyTotal(id) {
 
 function openStore(storeId="cafe") {
   const store=STORES.find(item=>item.id===storeId), products=CATALOGUE.filter(product=>product.storeId===storeId);
-  const level=run.venues?.[storeId] || 1, upgradeCost=level===1?1500:2500;
+  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500;
+  if(level===0){
+    const cost=STORE_UNLOCKS[storeId];drawerContent.innerHTML=`<p class="eyebrow">Expansion opportunity · ${store.short}</p><div class="locked-venue-hero" style="--venue:${store.color}"><span>${store.icon}</span><small>NEW CAMPUS DISTRICT</small><h2>${store.name}</h2><p>${store.pitch} Purchase the operating license, then stock its first product and watch a new queue form.</p><div><em>OPENING COST</em><strong>${formatEuro(cost)}</strong></div><button class="action-button orange" id="unlockVenue" ${run.cash<cost?"disabled":""}>Open ${store.short}</button></div>${storeTabs(storeId,"store")}`;
+    drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
+    $("#unlockVenue").addEventListener("click",()=>{try{save(unlockVenue(run,storeId));toast(`${store.name} is now open`);beep(760);openStore(storeId);}catch(error){toast(error.message,true);}});return;
+  }
   const units=products.reduce((sum,p)=>sum+run.stock[p.id],0);
-  const potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
+  const campus=campusMetrics(run),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],Math.round(demandFor(run.prices[p.id],p.reference)*Math.max(.45,campus.guests/24)))*run.prices[p.id],0);
   drawerContent.innerHTML = `
     <p class="eyebrow">Venue management · ${store.short}</p><div class="venue-title"><div><h2>${store.name}</h2><p>${store.pitch}</p></div><div class="level-badge"><small>VENUE LEVEL</small><strong>${level} / 3</strong></div></div>
     <div class="upgrade-track"><span style="width:${level/3*100}%"></span></div>
     ${level<3?`<button class="upgrade-button" id="upgradeVenue">Upgrade to level ${level+1}<small>Unlock ${products.find(p=>p.tier===level+1)?.name} · ${formatEuro(upgradeCost)}</small></button>`:`<div class="max-level">★ Flagship venue · all products unlocked</div>`}
     ${storeTabs(storeId,"store")}
-    <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>DAY POTENTIAL</small><strong>${formatEuro(potential)}</strong><span>revenue</span></div><div><small>PRODUCTS</small><strong>${products.filter(product=>product.tier<=level).length} / 3</strong><span>unlocked</span></div></div>
-    <div class="rule-box"><strong>Daily demand rule</strong><div class="rule-grid"><div><b>10 units</b><small>At or below reference</small></div><div><b>5 units</b><small>Above, up to 2×</small></div><div><b>0 units</b><small>Above 2× reference</small></div></div></div>
+    <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>EST. DAY REVENUE</small><strong>${formatEuro(potential)}</strong><span>rating adjusted</span></div><div><small>PRODUCTS</small><strong>${products.filter(product=>product.tier<=level).length} / 3</strong><span>unlocked</span></div></div>
+    <div class="rule-box"><strong>Live demand</strong><div class="rule-grid"><div><b>${campus.guests} guests</b><small>campus footfall</small></div><div><b>${campus.rating}% rating</b><small>raises conversion</small></div><div><b>${crowdPeak(run.clockMinutes).multiplier.toFixed(1)}× flow</b><small>${crowdPeak(run.clockMinutes).label}</small></div></div></div>
     <div class="product-list">${products.map(product => productPriceCard(product)).join("")}</div>
-    <div class="trade-footer"><button class="action-button secondary" id="visitSupplier">Buy more stock</button><button class="action-button orange" id="tradeButton" ${run.completed ? "disabled" : ""}>Open day ${run.currentDay} →</button></div>`;
+    <div class="trade-footer"><button class="action-button secondary" id="visitSupplier">Buy more stock</button><button class="action-button orange" id="venueClock">${run.speed===0?"Resume":"Pause"} live trading</button></div>`;
   drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
   drawerContent.querySelectorAll(".price-input").forEach(input => {
     input.addEventListener("input", () => updateDemandPreview(input.dataset.id));
@@ -366,28 +429,68 @@ function openStore(storeId="cafe") {
   drawerContent.querySelectorAll(".set-price").forEach(button => button.addEventListener("click",()=>commitPrice(button.dataset.id)));
   if($("#upgradeVenue")) $("#upgradeVenue").addEventListener("click",()=>{try{save(upgradeVenue(run,storeId));toast(`${store.name} upgraded to level ${level+1}`);beep(720);}catch(error){toast(error.message,true);beep(180);}});
   $("#visitSupplier").addEventListener("click",()=>{currentSupplierStore=storeId;openLocation("supplier");});
-  $("#tradeButton").addEventListener("click", confirmTrade);
+  $("#venueClock").addEventListener("click",()=>{setGameSpeed(run.speed===0?1:0);openStore(storeId);});
 }
 
 function openPortfolio() {
-  drawerContent.innerHTML=`<p class="eyebrow">Portfolio · three campus venues</p><h2>Your business network</h2><p class="drawer-intro">Each venue has its own product mix, stock position, pricing and earning potential.</p><div class="venue-grid">${STORES.map(store=>{
+  drawerContent.innerHTML=`<p class="eyebrow">Open-ended company growth</p><h2>Your business network</h2><p class="drawer-intro">Start with Atlantic Café, reinvest its live profits, then open new districts and grow each shop into a flagship.</p><div class="venue-grid">${STORES.map(store=>{
     const products=CATALOGUE.filter(p=>p.storeId===store.id),units=products.reduce((sum,p)=>sum+run.stock[p.id],0),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
-    return `<button class="venue-card" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${store.icon}</span><div><small>${store.short.toUpperCase()} · LEVEL ${run.venues?.[store.id]||1}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${formatEuro(potential)}</b> potential</span><span><b>${3-CATALOGUE.filter(p=>p.storeId===store.id&&p.tier>(run.venues?.[store.id]||1)).length}/3</b> products</span></div><em>Open venue →</em></button>`}).join("")}</div>`;
+    const level=run.venues?.[store.id]??0;return `<button class="venue-card ${level===0?"locked-venue":""}" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${level===0?"🔒":store.icon}</span><div><small>${store.short.toUpperCase()} · ${level===0?"LOCKED":`LEVEL ${level}`}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${level===0?formatEuro(STORE_UNLOCKS[store.id]):formatEuro(potential)}</b> ${level===0?"to open":"potential"}</span><span><b>${level}/3</b> level</span></div><em>${level===0?"View expansion →":"Manage venue →"}</em></button>`}).join("")}</div>`;
   drawerContent.querySelectorAll(".venue-card").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
 }
 
+function startBuild(type,name,modules=[]) {
+  pendingBuild={type,name,modules};closeDrawer();
+  if(currentZone!=="campus")changeZone("campus",{x:21,y:18});else updateHUD();
+  toast(`Build mode · place ${name} on a free tile`);beep(560);
+}
+
+function openBuildPanel() {
+  activeLocation=null;
+  const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost;
+  drawerContent.innerHTML=`<p class="eyebrow">Campus construction · ${run.facilities.length} placed</p><h2>Build the campus</h2><p class="drawer-intro">Place paths, scenery and guest facilities directly in the world. Every build changes student needs and your campus rating.</p>
+    <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
+    <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
+    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>`<article class="build-card" style="--build:${item.color}"><span>${item.icon}</span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost?"disabled":""}>Build · ${formatEuro(item.cost)}</button></article>`).join("")}</div>
+    <div class="section-heading"><div><small>SIGNATURE ATTRACTION</small><strong>Design a beach experience</strong></div><span>Choose modules piece by piece</span></div>
+    <div class="experience-builder"><div class="module-grid">${EXPERIENCE_MODULES.map(item=>`<button class="module-button ${selectedExperienceModules.includes(item.id)?"selected":""}" data-module="${item.id}"><span>${item.icon}</span><strong>${item.name}</strong><small>${formatEuro(item.cost)} · +${item.excitement} excitement</small></button>`).join("")}</div><div class="rating-console"><small>LIVE DESIGN RATINGS</small><div><span>Excitement <b id="designExcitement">${stats.excitement}</b></span><i><em id="designExcitementBar" style="width:${stats.excitement}%"></em></i></div><div><span>Intensity <b id="designIntensity">${stats.intensity}</b></span><i><em id="designIntensityBar" style="width:${stats.intensity}%"></em></i></div><div><span>Comfort <b id="designComfort">${stats.comfort}</b></span><i><em id="designComfortBar" style="width:${stats.comfort}%"></em></i></div><p id="designVerdict">${experienceVerdict(stats)}</p><button class="action-button orange" id="buildExperience" ${run.cash<experienceCost?"disabled":""}>Place experience · <span id="experienceCost">${formatEuro(experienceCost)}</span></button></div></div>`;
+  drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
+  drawerContent.querySelectorAll("[data-build]").forEach(button=>button.addEventListener("click",()=>{const item=FACILITY_CATALOGUE.find(entry=>entry.id===button.dataset.build);startBuild(item.id,item.name);}));
+  drawerContent.querySelectorAll("[data-module]").forEach(button=>button.addEventListener("click",()=>{const id=button.dataset.module;if(selectedExperienceModules.includes(id)&&selectedExperienceModules.length>1)selectedExperienceModules=selectedExperienceModules.filter(item=>item!==id);else if(!selectedExperienceModules.includes(id))selectedExperienceModules.push(id);openBuildPanel();}));
+  $("#buildExperience").addEventListener("click",()=>startBuild("experience","Custom Beach Experience",selectedExperienceModules));
+}
+
+function experienceVerdict(stats){if(stats.intensity>78)return "Too intense — most students will avoid it.";if(stats.excitement<24)return "Too gentle — add a stronger headline module.";if(stats.comfort<35)return "Exciting, but comfort is hurting its appeal.";if(stats.excitement>65&&stats.intensity<70)return "Flagship potential — exciting without becoming punishing.";return "Balanced campus attraction with broad appeal.";}
+
+function openGuestPanel() {
+  activeLocation=null;const metrics=campusMetrics(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"};
+  const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];
+  drawerContent.innerHTML=`<p class="eyebrow">Guest intelligence · live campus sample</p><h2>Students & staff</h2><p class="drawer-intro">Guests stay longer when their needs are met. Build the right amenities and hire a compact operations crew.</p>
+    <div class="guest-hero"><div><small>LIVE CAMPUS GUESTS</small><strong>${metrics.guests}</strong><em>More guests = more buyers</em></div><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong><em>Directly boosts demand</em></div><div><small>SATISFACTION</small><strong>${metrics.satisfaction}%</strong><em>Weakest: ${needLabels[weakest[0]]}</em></div></div>
+    <div class="section-heading"><div><small>GUEST NEEDS</small><strong>What students are feeling</strong></div><span>Updated instantly</span></div>
+    <div class="needs-grid">${Object.entries(metrics.needs).map(([key,value])=>`<div><span>${needLabels[key]} <b>${value}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div>
+    <div class="guest-thought"><span>☺</span><div><small>LATEST GUEST THOUGHT</small><strong>“${guestThought(metrics,needLabels)}”</strong></div></div>
+    <div class="section-heading"><div><small>OPERATIONS TEAM</small><strong>Hire permanent campus staff</strong></div><span>${Object.values(run.staff).reduce((a,b)=>a+b,0)} employed</span></div>
+    <div class="staff-grid">${STAFF_CATALOGUE.map(role=>`<article><span>${role.icon}</span><div><strong>${role.name}</strong><p>${role.description}</p><small>${run.staff[role.id]||0} hired</small></div><button data-hire="${role.id}" ${run.cash<role.cost?"disabled":""}>Hire · ${formatEuro(role.cost)}</button></article>`).join("")}</div>
+    <div class="section-heading"><div><small>BEST ATTRACTION</small><strong>Excitement ${metrics.attraction.excitement} · Intensity ${metrics.attraction.intensity} · Comfort ${metrics.attraction.comfort}</strong></div></div>`;
+  drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
+  drawerContent.querySelectorAll("[data-hire]").forEach(button=>button.addEventListener("click",()=>{try{save(hireStaff(run,button.dataset.hire));toast("Staff member hired for the run");beep(630);openGuestPanel();}catch(error){toast(error.message,true);}}));
+}
+
+function guestThought(metrics,labels){const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];if(metrics.attraction.intensity>78)return "That attraction looks much too intense for me.";if(weakest[1]<50)return `I wish there were better ${labels[weakest[0]].toLowerCase()} facilities.`;if(metrics.attraction.excitement<20)return "The campus is pleasant, but it needs a headline experience.";return "There is plenty to do here and the campus feels cared for.";}
+
 function productPriceCard(product) {
-  const price=run.prices[product.id], demand=demandFor(price,product.reference), locked=(run.venues?.[product.storeId]||1)<(product.tier||1);
+  const price=run.prices[product.id], demand=demandFor(price,product.reference), level=run.venues?.[product.storeId]??0,locked=level<(product.tier||1);
   return `<article class="product-card ${locked?"locked":""}" style="--product-color:${product.color}">
     <div class="product-head"><div class="product-icon">${product.icon}</div><div><h3>${product.name}</h3><p>${run.stock[product.id]} in stock · ref. ${formatEuro(product.reference)}</p></div><span class="stock-pill">Cost ${formatEuro(product.cost)}</span></div>
-    <div class="price-row"><div class="price-wrap"><span>€</span><input class="price-input" data-id="${product.id}" id="price-${product.id}" inputmode="decimal" value="${(price/100).toFixed(2)}" aria-label="Selling price for ${product.name}" ${locked?"disabled":""}></div><button class="action-button set-price" data-id="${product.id}" ${run.completed||locked ? "disabled" : ""}>${locked?`Level ${product.tier}`:"Set price"}</button></div>
-    <div class="price-note"><span>Potential margin ${formatEuro(price-product.cost)} / unit</span><span class="demand-badge" id="demand-${product.id}">${locked?"Locked":`${demand} demand today`}</span></div>
+    <div class="price-row"><div class="price-wrap"><span>€</span><input class="price-input" data-id="${product.id}" id="price-${product.id}" inputmode="decimal" value="${(price/100).toFixed(2)}" aria-label="Selling price for ${product.name}" ${locked?"disabled":""}></div><button class="action-button set-price" data-id="${product.id}" ${locked ? "disabled" : ""}>${locked?(level===0?"Venue closed":`Level ${product.tier}`):"Set price"}</button></div>
+    <div class="price-note"><span>Potential margin ${formatEuro(price-product.cost)} / unit</span><span class="demand-badge" id="demand-${product.id}">${locked?"Locked":`${demand} base interest`}</span></div>
   </article>`;
 }
 
 function updateDemandPreview(id) {
   const product=CATALOGUE.find(p=>p.id===id), badge=$(`#demand-${id}`);
-  try { badge.textContent=`${demandFor(parseEuro($(`#price-${id}`).value),product.reference)} demand today`; }
+  try { badge.textContent=`${demandFor(parseEuro($(`#price-${id}`).value),product.reference)} base interest`; }
   catch (_) { badge.textContent="Enter a valid price"; }
 }
 
@@ -396,136 +499,50 @@ function commitPrice(id) {
   catch(error){ toast(error.message,true); openStore(CATALOGUE.find(product=>product.id===id)?.storeId || "cafe"); beep(180); }
 }
 
-function confirmTrade() {
-  if(run.completed || tradingInProgress) return;
-  const projections=CATALOGUE.map(product=>({product, demand:demandFor(run.prices[product.id],product.reference), sold:Math.min(run.stock[product.id],demandFor(run.prices[product.id],product.reference))}));
-  const venueForecasts=STORES.map(store=>{const items=projections.filter(item=>item.product.storeId===store.id);return {store,units:items.reduce((s,p)=>s+p.sold,0),revenue:items.reduce((s,p)=>s+p.sold*run.prices[p.product.id],0)}});
-  const campusDay=CAMPUS_DAYS[run.currentDay-1];
-  modalCard.className="modal-card";
-  modalCard.innerHTML=`<p class="eyebrow">Campus opening checklist · day ${run.currentDay}</p><h2 id="modalTitle">${campusDay.icon} ${campusDay.title}</h2><p>${campusDay.brief} All three venues trade together and the day is recorded exactly once.</p><div class="event-objective"><span>DAY OBJECTIVE</span><strong>${campusDay.objective.label}</strong><em>+4 reputation</em></div><div class="forecast-grid">${venueForecasts.map(v=>`<div style="--venue:${v.store.color}"><span>${v.store.icon}</span><small>${v.store.short}</small><strong>${v.units} units</strong><em>${formatEuro(v.revenue)} forecast revenue</em></div>`).join("")}</div><div class="forecast-total"><span>PLAN FORECAST</span><strong>${projections.reduce((s,p)=>s+p.sold,0)} units · ${formatEuro(venueForecasts.reduce((sum,venue)=>sum+venue.revenue,0))}</strong></div><div class="modal-actions"><button class="action-button secondary" data-close>Keep planning</button><button class="action-button orange" id="confirmTrade">Open campus →</button></div>`;
-  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#confirmTrade").addEventListener("click",executeTrade,{once:true});
-}
-
-const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
-
-async function executeTrade() {
-  if(tradingInProgress) return;
-  let next, day;
-  try {
-    tradingInProgress=true; skipSimulation=false;
-    next=tradeDay(run); day=next.history.at(-1); const campusDay=CAMPUS_DAYS[day.day-1];
-    const saleQueue=day.items.flatMap(item=>Array.from({length:item.unitsSold},()=>item));
-    const venueTotals=Object.fromEntries(STORES.map(store=>[store.id,{units:0,revenue:0}]));
-    closeDrawer();
-    modalCard.className="modal-card trading-card";
-    modalCard.innerHTML=`<div class="sim-top"><div><p class="eyebrow">LIVE · DAY ${day.day}</p><h2 id="modalTitle">${campusDay.title}</h2><span id="simPhase">Campus gates opening…</span></div><div class="sim-total"><small>LIVE REVENUE</small><strong id="simRevenue">€0.00</strong><em id="simSold">0 sold</em></div></div><div class="sim-progress"><span id="simProgress"></span></div><div class="sim-scene"><div class="sim-campus"><span>NOVA SBE</span><small id="simClock">08:30</small></div><div class="sim-crowd" id="simCrowd"></div><div class="sim-lanes">${STORES.map(store=>`<article class="sim-venue" data-store="${store.id}" style="--venue:${store.color}"><div class="sim-awning"></div><span>${store.icon}</span><small>${store.short}</small><strong id="simUnits-${store.id}">0 sold</strong><em id="simMoney-${store.id}">€0.00</em><div class="sim-meter"><i id="simFill-${store.id}"></i></div></article>`).join("")}</div></div><div class="sim-footer"><div><span class="live-dot"></span><strong id="simMessage">Students are arriving across campus</strong></div><button class="sim-skip" id="simSkip">Skip to results</button></div>`;
-    showModal();
-    $("#simSkip").addEventListener("click",()=>{skipSimulation=true;});
-    await wait(450);
-    if(saleQueue.length===0){
-      $("#simPhase").textContent="Campus trading · no purchases yet";
-      $("#simMessage").textContent="Students browsed, but no stocked offer converted";
-      for(let i=0;i<5&&!skipSimulation;i++){spawnCustomer(null,i,false);await wait(180);}
-      await wait(skipSimulation?50:700);
-    } else {
-      for(let index=0;index<saleQueue.length;index++){
-        if(skipSimulation) break;
-        const item=saleQueue[index], product=CATALOGUE.find(entry=>entry.id===item.productId), store=STORES.find(entry=>entry.id===product.storeId);
-        const progress=(index+1)/saleQueue.length;
-        venueTotals[store.id].units+=1; venueTotals[store.id].revenue+=item.price;
-        $("#simPhase").textContent=progress<.34?"Morning rush":progress<.72?"Midday trading":"Final campus rush";
-        $("#simClock").textContent=progress<.34?"10:15":progress<.72?"13:40":"17:20";
-        $("#simProgress").style.width=`${Math.max(6,progress*100)}%`;
-        $("#simRevenue").textContent=formatEuro(Object.values(venueTotals).reduce((sum,value)=>sum+value.revenue,0));
-        $("#simSold").textContent=`${index+1} sold`;
-        $(`#simUnits-${store.id}`).textContent=`${venueTotals[store.id].units} sold`;
-        $(`#simMoney-${store.id}`).textContent=formatEuro(venueTotals[store.id].revenue);
-        $(`#simFill-${store.id}`).style.width=`${Math.min(100,venueTotals[store.id].units/Math.max(1,day.items.filter(entry=>CATALOGUE.find(product=>product.id===entry.productId)?.storeId===store.id).reduce((sum,entry)=>sum+entry.unitsSold,0))*100)}%`;
-        $("#simMessage").textContent=`${product.short} sold at ${store.short} · +${formatEuro(item.price)}`;
-        spawnCustomer(store,index,true,product.icon);
-        if(index%3===0) beep(420+index%5*35);
-        await wait(Math.max(55,Math.min(135,1900/saleQueue.length)));
-      }
-      Object.entries(venueTotals).forEach(([storeId,value])=>{const storeItems=day.items.filter(entry=>CATALOGUE.find(product=>product.id===entry.productId)?.storeId===storeId);value.units=storeItems.reduce((sum,item)=>sum+item.unitsSold,0);value.revenue=storeItems.reduce((sum,item)=>sum+item.revenue,0);$("#simUnits-"+storeId).textContent=`${value.units} sold`;$("#simMoney-"+storeId).textContent=formatEuro(value.revenue);$("#simFill-"+storeId).style.width=value.units?"100%":"0%";});
-      $("#simProgress").style.width="100%"; $("#simRevenue").textContent=formatEuro(day.totals.revenue); $("#simSold").textContent=`${day.totals.unitsSold} sold`; $("#simPhase").textContent="Campus closed · reconciling results";
-      await wait(skipSimulation?100:500);
-    }
-    save(next); tradingInProgress=false; beep(690); showReport(day,next.completed);
-  } catch(error){
-    console.error("Trading simulation failed",error);
-    tradingInProgress=false;
-    if(next&&day){save(next);showReport(day,next.completed);toast("Trading completed; the live view was skipped.",true);}
-    else{hideModal();toast(error.message,true);}
-  }
-}
-
-function spawnCustomer(store,index,purchased=true,productIcon="") {
-  const crowd=$("#simCrowd"); if(!crowd) return;
-  const customer=document.createElement("div");
-  customer.className=`sim-customer ${store?.id||"wander"} ${purchased?"purchased":"browsing"}`;
-  customer.style.setProperty("--customer",["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f"][index%5]);
-  customer.style.setProperty("--lane",store?STORES.findIndex(item=>item.id===store.id):index%3);
-  customer.innerHTML=`<i></i><b>${purchased?`+ ${productIcon}`:"?"}</b>`;
-  crowd.append(customer); requestAnimationFrame(()=>customer.classList.add("go")); setTimeout(()=>customer.remove(),1050);
-}
-
-function showReport(day, final=false) {
-  const value=overallResult(run), inv=inventoryValue(run);
-  const campusDay=CAMPUS_DAYS[day.day-1], objective=day.objective;
-  const resultTitle=final ? "Your final score" : day.totals.grossProfit>0 ? "A profitable trading day" : day.totals.revenue>0 ? "Campus doors closed" : "A quiet day";
-  modalCard.className="modal-card";
-  modalCard.innerHTML=`<p class="eyebrow">${final ? "Five-day run complete" : `Day ${day.day} closed`}</p><h2 id="modalTitle">${resultTitle}</h2>
-    <div class="objective-result ${objective?.completed?"completed":"missed"}"><span>${objective?.completed?"✓":"○"}</span><div><small>${campusDay.title.toUpperCase()} · DAY OBJECTIVE</small><strong>${objective?.label||campusDay.objective.label}</strong></div><em>${objective?.completed?"+4 reputation":"Try again next run"}</em></div>
-    <div class="report-hero"><small>${final ? "OVERALL GAIN / LOSS" : "TODAY'S GROSS PROFIT"}</small><strong class="${(final?value:day.totals.grossProfit)>=0?"":"result-negative"}">${formatEuro(final?value:day.totals.grossProfit)}</strong></div>
-    <table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")}</tbody><tfoot><tr><td><strong>Total</strong></td><td><strong>${day.totals.unitsSold}</strong></td><td><strong>${formatEuro(day.totals.revenue)}</strong></td><td><strong>${formatEuro(day.totals.cogs)}</strong></td><td><strong>${formatEuro(day.totals.grossProfit)}</strong></td></tr></tfoot></table>
-    ${final?`<div class="report-grid"><div><small>FINAL CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK AT COST</small><strong>${formatEuro(inv)}</strong></div><div><small>STARTED WITH</small><strong>€100.00</strong></div></div>`:""}
-    <div class="modal-actions">${final?`<button class="action-button secondary" id="reportLedger">View ledger</button><button class="action-button" id="reportRestart">Play again</button>`:`<button class="action-button" data-close>Continue to day ${run.currentDay}</button>`}</div>`;
-  showModal();
-  if(final){$("#reportLedger").addEventListener("click",()=>{hideModal();openLocation("board")});$("#reportRestart").addEventListener("click",confirmNewRun);}else modalCard.querySelector("[data-close]").addEventListener("click",hideModal);
-}
-
 function openLedger() {
   const gain=overallResult(run), inv=inventoryValue(run);
-  const objectives=run.history.filter(day=>day.objective?.completed).length;
   const venueResults=STORES.map(store=>{const ids=new Set(CATALOGUE.filter(p=>p.storeId===store.id).map(p=>p.id));const items=run.history.flatMap(day=>day.items).filter(item=>ids.has(item.productId));return {store,units:items.reduce((s,i)=>s+i.unitsSold,0),revenue:items.reduce((s,i)=>s+i.revenue,0),profit:items.reduce((s,i)=>s+i.grossProfit,0)}});
-  drawerContent.innerHTML=`<p class="eyebrow">Company finance · saved locally</p><h2>Portfolio performance</h2><p class="drawer-intro">Compare venues, inspect daily results, and decide where tomorrow's cash should go.</p>
-    <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>GAIN / LOSS</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div><div><small>OBJECTIVES</small><strong>${objectives} / ${run.history.length||5}</strong></div></div>
-    <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>Trading performance</strong></div><span>${run.history.length} / 5 days</span></div>
+  drawerContent.innerHTML=`<p class="eyebrow">Live company finance · autosaved</p><h2>Portfolio performance</h2><p class="drawer-intro">The business runs continuously. Compare shops, inspect closed days, and decide where to reinvest.</p>
+    <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>NET WORTH CHANGE</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div><div><small>TOTAL VISITORS</small><strong>${run.totalVisitors||0}</strong></div></div>
+    <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>All-time trading performance</strong></div><span>Day ${run.currentDay} · ${formatClock(run.clockMinutes)}</span></div>
     <div class="venue-kpis">${venueResults.map(v=>`<div style="border-top:3px solid ${v.store.color}"><small>${v.store.short.toUpperCase()}</small><strong>${formatEuro(v.profit)}</strong><span>${v.units} sold · ${formatEuro(v.revenue)} revenue</span></div>`).join("")}</div>
-    <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Completed days</strong></div></div>
-    <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>No trading days yet.<br>Prepare your venues and open the campus.</div>`}</div>`;
+    <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Closed trading days</strong></div><span>Latest 60 saved</span></div>
+    <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>The first day is still running.<br>Sales appear here automatically at 19:30.</div>`}</div>`;
 }
 
 function historyCard(day) {
-  const campusDay=CAMPUS_DAYS[day.day-1];
-  return `<details class="history-day"><summary><strong>Day ${day.day} · ${campusDay.title}</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail"><div class="history-objective ${day.objective?.completed?"done":""}">${day.objective?.completed?"✓":"○"} ${day.objective?.label||campusDay.objective.label}</div><table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")}</tbody></table></div></details>`;
+  return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span>+${formatEuro(day.totals.revenue)}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied</div>`:""}<table class="mini-table"><thead><tr><th>Product</th><th>Sold</th><th>Revenue</th><th>COGS</th><th>Profit</th></tr></thead><tbody>${day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
 }
 
 function confirmNewRun() {
   modalCard.className="modal-card";
-  modalCard.innerHTML=`<p class="eyebrow">Replace current run?</p><h2 id="modalTitle">Start from day one</h2><p>This replaces your saved run with <strong>€100.00 cash</strong>, zero stock, reference prices and an empty history. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace run</button></div>`;
-  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
+  modalCard.innerHTML=`<p class="eyebrow">Replace your tycoon?</p><h2 id="modalTitle">Start a new campus company</h2><p>This replaces your saved business with <strong>€100.00 cash</strong>, Atlantic Café at level one, zero stock, no construction and an empty ledger. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace company</button></div>`;
+  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
 }
 
 function showModal(){modal.classList.remove("hidden");}
 function hideModal(){modal.classList.add("hidden");}
 function toast(message,error=false){const el=document.createElement("div");el.className=`toast ${error?"error":""}`;el.textContent=message;$("#toastRegion").append(el);setTimeout(()=>el.remove(),2800);}
 function beep(frequency){if(!soundOn)return;try{const audio=new AudioContext();const osc=audio.createOscillator(),gain=audio.createGain();osc.frequency.value=frequency;gain.gain.setValueAtTime(.05,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.12);osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+.12);}catch(_){} }
+function setGameSpeed(speed){run.speed=Number(speed);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
 
 window.addEventListener("resize",resize);
-window.addEventListener("keydown",event=>{if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(event.key.toLowerCase())){keys.add(event.key.toLowerCase());targetPoint=null;event.preventDefault();}if(event.key.toLowerCase()==="e"&&modal.classList.contains("hidden")){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"&&!tradingInProgress){hideModal();closeDrawer();}});
+window.addEventListener("keydown",event=>{if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(event.key.toLowerCase())){keys.add(event.key.toLowerCase());targetPoint=null;event.preventDefault();}if(event.key.toLowerCase()==="e"&&modal.classList.contains("hidden")){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild){pendingBuild=null;updateHUD();toast("Build cancelled");}hideModal();closeDrawer();}});
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
-canvas.addEventListener("click",event=>{const rect=canvas.getBoundingClientRect(),cp=isoPoint(camera.x,camera.y);const ix=(event.clientX-rect.left-canvas.clientWidth/2)/camera.zoom+cp.x,iy=(event.clientY-rect.top-canvas.clientHeight/2)/camera.zoom+cp.y;const x=iy/TILE_H+ix/TILE_W,y=iy/TILE_H-ix/TILE_W;const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
+canvas.addEventListener("click",event=>{const rect=canvas.getBoundingClientRect(),cp=isoPoint(camera.x,camera.y);const ix=(event.clientX-rect.left-canvas.clientWidth/2)/camera.zoom+cp.x,iy=(event.clientY-rect.top-canvas.clientHeight/2)/camera.zoom+cp.y;const x=iy/TILE_H+ix/TILE_W,y=iy/TILE_H-ix/TILE_W;if(pendingBuild){try{if(currentZone!=="campus"||y>22.5)throw new Error("Build on a free campus tile above the beach line.");const next=placeFacility(run,pendingBuild.type,Math.round(x*2)/2,Math.round(y*2)/2,pendingBuild.modules);const built=pendingBuild.name;pendingBuild=null;save(next);toast(`${built} opened · campus rating ${campusMetrics(next).rating}%`);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
 $("#closeDrawer").addEventListener("click",closeDrawer);
 $("#newRunButton").addEventListener("click",confirmNewRun);
 $("#soundButton").addEventListener("click",()=>{soundOn=!soundOn;$("#soundButton").classList.toggle("muted",!soundOn);$("#soundButton").textContent=soundOn?"♪":"×";});
 document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>{
   const action=button.dataset.action;
   if(action==="buy")openLocation("supplier");
+  if(action==="build")openBuildPanel();
   if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
-  if(action==="trade")confirmTrade();
+  if(action==="clock")setGameSpeed(run.speed===0?1:0);
+  if(action==="guests")openGuestPanel();
   if(action==="ledger")openLocation("board");
 }));
-modal.addEventListener("click",event=>{if(event.target===modal&&!tradingInProgress)hideModal();});
+document.querySelectorAll("[data-speed]").forEach(button=>button.addEventListener("click",()=>setGameSpeed(button.dataset.speed)));
+modal.addEventListener("click",event=>{if(event.target===modal)hideModal();});
 
 resize(); updateHUD(); requestAnimationFrame(loop);

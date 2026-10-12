@@ -1,6 +1,31 @@
 export const INITIAL_CASH = 10000;
-export const MAX_DAYS = 5;
 export const STORAGE_KEY = "nova-beach-ventures-v1";
+export const DAY_START = 450;
+export const DAY_END = 1170;
+
+export const FACILITY_CATALOGUE = Object.freeze([
+  { id:"path", name:"Promenade Tile", icon:"▦", cost:100, color:"#c9c9b9", description:"Extend the walkable campus route one tile at a time.", needs:{} },
+  { id:"scenery", name:"Palm Planter", icon:"♧", cost:300, color:"#5aa86a", description:"Scenery that makes the campus feel more welcoming.", needs:{ mood:3 } },
+  { id:"bench", name:"Atlantic Bench", icon:"▰", cost:500, color:"#d7a968", description:"Rest spot that restores energy and mood.", needs:{ energy:10, mood:7 } },
+  { id:"bin", name:"Recycling Point", icon:"♻", cost:400, color:"#70bd77", description:"Keeps paths clean and protects the campus rating.", needs:{ cleanliness:13 } },
+  { id:"water", name:"Water Fountain", icon:"◒", cost:900, color:"#68cbd8", description:"A free refill point for thirsty students.", needs:{ thirst:18 } },
+  { id:"restroom", name:"Restroom Pod", icon:"WC", cost:1600, color:"#7e9ec5", description:"Essential relief for longer campus visits.", needs:{ bladder:22, cleanliness:4 } },
+  { id:"foodGarden", name:"Food Garden", icon:"✦", cost:2200, color:"#f2a65f", description:"A social food court that tackles hunger and mood.", needs:{ hunger:20, mood:8 } }
+]);
+
+export const STAFF_CATALOGUE = Object.freeze([
+  { id:"caretaker", name:"Campus Caretaker", icon:"⌁", cost:1000, description:"Improves cleanliness across every district." },
+  { id:"technician", name:"Experience Technician", icon:"⚙", cost:1200, description:"Raises attraction reliability and comfort." },
+  { id:"host", name:"Student Host", icon:"★", cost:1400, description:"Improves mood and helps more guests discover venues." }
+]);
+
+export const EXPERIENCE_MODULES = Object.freeze([
+  { id:"music", name:"Live DJ Deck", icon:"♫", cost:600, excitement:18, intensity:5, comfort:1 },
+  { id:"sunset", name:"Sunset Lookout", icon:"☀", cost:900, excitement:27, intensity:13, comfort:4 },
+  { id:"shade", name:"Canvas Shade", icon:"⌂", cost:700, excitement:4, intensity:0, comfort:23 },
+  { id:"social", name:"Social Seating", icon:"◎", cost:500, excitement:9, intensity:1, comfort:16 },
+  { id:"surf", name:"Surf Simulator", icon:"≈", cost:1200, excitement:36, intensity:34, comfort:-9 }
+]);
 
 export const STORES = Object.freeze([
   { id: "cafe", name: "Atlantic Café", short: "Café", icon: "☕", color: "#ff815d", pitch: "Coffee and quick campus comfort." },
@@ -8,13 +33,7 @@ export const STORES = Object.freeze([
   { id: "merch", name: "Nova Supply Co.", short: "Merch", icon: "◆", color: "#67c7c4", pitch: "Campus gear with stronger margins." }
 ]);
 
-export const CAMPUS_DAYS = Object.freeze([
-  { day: 1, id: "lecture-rush", icon: "◷", title: "Lecture Rush", district: "Courtyard", brief: "Students cross the courtyard between morning classes.", objective: { type: "units", target: 5, label: "Sell at least 5 units" } },
-  { day: 2, id: "surf-club", icon: "≈", title: "Surf Club Sign-up", district: "Boardwalk", brief: "The promenade fills up after the club introduction.", objective: { type: "profit", target: 1500, label: "Earn €15.00 gross profit" } },
-  { day: 3, id: "career-fair", icon: "◇", title: "Career Fair", district: "Student Hub", brief: "Visitors circulate between the Hub and main building.", objective: { type: "venues", target: 2, label: "Make sales at 2 venues" } },
-  { day: 4, id: "study-night", icon: "✦", title: "Study Marathon", district: "Learning Center", brief: "A long study session keeps the campus active all day.", objective: { type: "revenue", target: 6000, label: "Reach €60.00 revenue" } },
-  { day: 5, id: "sunset-social", icon: "☀", title: "Sunset Social", district: "Beach Stage", brief: "The season closes with the campus gathered by the ocean.", objective: { type: "cash", target: 10000, label: "Finish with at least €100 cash" } }
-]);
+export const STORE_UNLOCKS = Object.freeze({ cafe:0, snack:12000, merch:28000 });
 
 export const CATALOGUE = Object.freeze([
   { id: "coldBrew", storeId: "cafe", tier: 1, name: "Atlantic Cold Brew", short: "Cold Brew", icon: "☕", cost: 200, reference: 400, color: "#e98a55" },
@@ -31,7 +50,67 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 1, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 1, merch: 1 }, reputation: 0, upgrades: [], player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0 }, reputation: 0, upgrades: [], facilities: [], staff: { caretaker:0, technician:0, host:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, player: { x: 21, y: 18, zone: "campus" } };
+}
+
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,products:{}};}
+
+export function attractionStats(moduleIds=[]) {
+  const modules=moduleIds.map(id=>EXPERIENCE_MODULES.find(item=>item.id===id)).filter(Boolean);
+  return {
+    excitement:Math.min(100,modules.reduce((sum,item)=>sum+item.excitement,0)),
+    intensity:Math.min(100,modules.reduce((sum,item)=>sum+item.intensity,0)),
+    comfort:Math.max(0,Math.min(100,42+modules.reduce((sum,item)=>sum+item.comfort,0))),
+    cost:modules.reduce((sum,item)=>sum+item.cost,0)
+  };
+}
+
+export function campusMetrics(run) {
+  const needs={ hunger:42, thirst:39, bladder:44, energy:46, mood:47, cleanliness:52 };
+  for(const facility of run.facilities||[]){
+    const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type);
+    if(blueprint) Object.entries(blueprint.needs||{}).forEach(([key,value])=>needs[key]+=value);
+  }
+  const staff=run.staff||{};
+  needs.cleanliness+=(staff.caretaker||0)*15;
+  needs.mood+=(staff.host||0)*12;
+  needs.energy+=(staff.host||0)*4;
+  Object.keys(needs).forEach(key=>needs[key]=Math.max(0,Math.min(100,needs[key])));
+  const experiences=(run.facilities||[]).filter(item=>item.type==="experience");
+  const attraction=experiences.reduce((best,item)=>{const stats=attractionStats(item.modules);return stats.excitement>best.excitement?stats:best;},{excitement:0,intensity:0,comfort:42,cost:0});
+  attraction.comfort=Math.min(100,attraction.comfort+(staff.technician||0)*9);
+  const satisfaction=Math.round(Object.values(needs).reduce((sum,value)=>sum+value,0)/Object.keys(needs).length);
+  const intensityFit=attraction.intensity<=70?10:Math.max(-18,10-(attraction.intensity-70));
+  const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit)));
+  const guests=Math.max(12,Math.round(12+rating*.28+(run.facilities||[]).length*1.5+(staff.host||0)*3+attraction.excitement*.12));
+  return { needs, satisfaction, rating, guests, attraction };
+}
+
+export function placeFacility(run,type,x,y,moduleIds=[]) {
+  if(!Number.isFinite(x)||!Number.isFinite(y)) throw new Error("Choose a valid campus tile.");
+  if((run.facilities||[]).some(item=>Math.hypot(item.x-x,item.y-y)<1.35)) throw new Error("That space is already occupied.");
+  let cost,name,modules=[];
+  if(type==="experience"){
+    modules=[...new Set(moduleIds)].filter(id=>EXPERIENCE_MODULES.some(item=>item.id===id));
+    if(!modules.length) throw new Error("Choose at least one attraction module.");
+    cost=1200+attractionStats(modules).cost;name="Custom Beach Experience";
+  }else{
+    const blueprint=FACILITY_CATALOGUE.find(item=>item.id===type);if(!blueprint)throw new Error("Unknown facility.");
+    cost=blueprint.cost;name=blueprint.name;
+  }
+  if(run.cash<cost) throw new Error(`You need ${formatEuro(cost)} but only have ${formatEuro(run.cash)}.`);
+  const next=structuredClone(run);if(!Array.isArray(next.facilities))next.facilities=[];
+  next.cash-=cost;next.facilities.push({id:`facility-${Date.now()}-${next.facilities.length}`,type,name,x,y,modules,builtDay:run.currentDay,cost});
+  return next;
+}
+
+export function hireStaff(run,staffId,now=new Date().toISOString()) {
+  const role=STAFF_CATALOGUE.find(item=>item.id===staffId);if(!role)throw new Error("Unknown staff role.");
+  if(run.cash<role.cost) throw new Error(`You need ${formatEuro(role.cost)} but only have ${formatEuro(run.cash)}.`);
+  const next=structuredClone(run);if(!next.staff)next.staff={caretaker:0,technician:0,host:0};
+  next.cash-=role.cost;next.staff[staffId]=(next.staff[staffId]||0)+1;
+  if(!Array.isArray(next.staffHires))next.staffHires=[];next.staffHires.push({at:now,day:run.currentDay,staffId,cost:role.cost});
+  return next;
 }
 
 export function demandFor(price, reference) {
@@ -50,11 +129,10 @@ export function parseEuro(value) {
 }
 
 export function buyStock(run, productId, quantity, now = new Date().toISOString()) {
-  if (run.completed) throw new Error("This run is complete. Start a new run to buy again.");
   if (!Number.isInteger(quantity) || quantity <= 0) throw new Error("Quantity must be a positive whole number.");
   const product = CATALOGUE.find(item => item.id === productId);
   if (!product) throw new Error("Unknown product.");
-  if ((run.venues?.[product.storeId] || 1) < (product.tier || 1)) throw new Error(`Upgrade this venue to level ${product.tier} to unlock ${product.name}.`);
+  if ((run.venues?.[product.storeId] ?? 0) < (product.tier || 1)) throw new Error(`Open or upgrade this venue to level ${product.tier} to unlock ${product.name}.`);
   const total = product.cost * quantity;
   if (total > run.cash) throw new Error(`You need ${formatEuro(total)} but only have ${formatEuro(run.cash)}.`);
   const next = structuredClone(run);
@@ -65,7 +143,6 @@ export function buyStock(run, productId, quantity, now = new Date().toISOString(
 }
 
 export function setPrice(run, productId, cents) {
-  if (run.completed) throw new Error("This run is complete. Prices are locked.");
   if (!Number.isInteger(cents) || cents <= 0) throw new Error("Price must be positive and use at most two decimals.");
   if (!CATALOGUE.some(item => item.id === productId)) throw new Error("Unknown product.");
   const next = structuredClone(run);
@@ -73,38 +150,63 @@ export function setPrice(run, productId, cents) {
   return next;
 }
 
-export function tradeDay(run, now = new Date().toISOString()) {
-  if (run.completed || run.history.length >= MAX_DAYS) throw new Error("All five trading days are complete.");
-  const next = structuredClone(run);
-  const items = CATALOGUE.map(product => {
-    const price = next.prices[product.id];
-    const demand = demandFor(price, product.reference);
-    const unitsSold = Math.min(demand, next.stock[product.id]);
-    const revenue = unitsSold * price;
-    const cogs = unitsSold * product.cost;
-    next.stock[product.id] -= unitsSold;
-    next.cash += revenue;
-    return { productId: product.id, unitsSold, demand, price, revenue, cogs, grossProfit: revenue - cogs };
-  });
-  const totals = items.reduce((sum, item) => ({
-    unitsSold: sum.unitsSold + item.unitsSold,
-    revenue: sum.revenue + item.revenue,
-    cogs: sum.cogs + item.cogs,
-    grossProfit: sum.grossProfit + item.grossProfit
-  }), { unitsSold: 0, revenue: 0, cogs: 0, grossProfit: 0 });
-  const campusDay = CAMPUS_DAYS[run.currentDay - 1];
-  const activeVenues = new Set(items.filter(item => item.unitsSold > 0).map(item => CATALOGUE.find(product => product.id === item.productId)?.storeId)).size;
-  const objectiveValue = campusDay.objective.type === "units" ? totals.unitsSold
-    : campusDay.objective.type === "profit" ? totals.grossProfit
-    : campusDay.objective.type === "venues" ? activeVenues
-    : campusDay.objective.type === "revenue" ? totals.revenue
-    : next.cash;
-  const objective = { ...campusDay.objective, value: objectiveValue, completed: objectiveValue >= campusDay.objective.target, reputation: objectiveValue >= campusDay.objective.target ? 4 : 0 };
-  next.history.push({ day: run.currentDay, eventId: campusDay.id, completedAt: now, items, totals, closingCash: next.cash, objective });
-  next.reputation = (next.reputation || 0) + Math.max(1, Math.floor(Math.max(0, totals.grossProfit) / 200)) + objective.reputation;
-  if (run.currentDay >= MAX_DAYS) next.completed = true;
-  else next.currentDay += 1;
+export function unlockVenue(run,storeId,now=new Date().toISOString()){
+  if(!STORES.some(store=>store.id===storeId))throw new Error("Unknown venue.");
+  if((run.venues?.[storeId]??0)>0)throw new Error("This venue is already open.");
+  const cost=STORE_UNLOCKS[storeId];if(run.cash<cost)throw new Error(`You need ${formatEuro(cost)} to open this venue.`);
+  const next=structuredClone(run);next.cash-=cost;next.venues[storeId]=1;
+  if(!Array.isArray(next.venuePurchases))next.venuePurchases=[];next.venuePurchases.push({at:now,day:run.currentDay,storeId,cost});
   return next;
+}
+
+export function crowdPeak(minutes){
+  if(minutes>=450&&minutes<570)return {id:"arrival",label:"Morning arrival",multiplier:2.15};
+  if(minutes>=690&&minutes<840)return {id:"lunch",label:"Lunch rush",multiplier:2.55};
+  if(minutes>=990&&minutes<1110)return {id:"evening",label:"After-class wave",multiplier:1.75};
+  return {id:"steady",label:"Steady campus flow",multiplier:.62};
+}
+
+export function advanceTycoon(run,minutes){
+  const next=structuredClone(run);ensureTycoonState(next);let remaining=Math.max(0,minutes);
+  while(remaining>.001){
+    const untilClose=DAY_END-next.clockMinutes,step=Math.min(5,remaining,untilClose);
+    if(step<=0){closeTycoonDay(next);continue;}
+    processSlice(next,step);next.clockMinutes+=step;remaining-=step;
+    if(next.clockMinutes>=DAY_END-.001)closeTycoonDay(next);
+  }
+  return next;
+}
+
+function ensureTycoonState(run){
+  if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
+  if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};
+  if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
+  if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
+  if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
+}
+
+function processSlice(run,minutes){
+  const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),campusFactor=Math.max(.45,metrics.guests/24);
+  run.visitorProgress+=metrics.guests*peak.multiplier*minutes/115;
+  const arrived=Math.floor(run.visitorProgress);run.visitorProgress-=arrived;run.today.visitors+=arrived;run.totalVisitors+=arrived;
+  for(const product of CATALOGUE){
+    const level=run.venues?.[product.storeId]??0;if(level<(product.tier||1))continue;
+    const base=demandFor(run.prices[product.id],product.reference),venueFactor=1+(level-1)*.34;
+    run.salesProgress[product.id]=(run.salesProgress[product.id]||0)+base*campusFactor*venueFactor*peak.multiplier*minutes/720;
+    let units=Math.min(run.stock[product.id],Math.floor(run.salesProgress[product.id]));
+    if(units<=0){if(run.stock[product.id]<=0)run.salesProgress[product.id]=Math.min(.95,run.salesProgress[product.id]);continue;}
+    run.salesProgress[product.id]-=units;const revenue=units*run.prices[product.id],cogs=units*product.cost;
+    run.stock[product.id]-=units;run.cash+=revenue;run.today.revenue+=revenue;run.today.cogs+=cogs;run.today.unitsSold+=units;run.totalSales+=units;
+    const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};row.unitsSold+=units;row.revenue+=revenue;row.cogs+=cogs;run.today.products[product.id]=row;
+  }
+}
+
+function closeTycoonDay(run){
+  const metrics=campusMetrics(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
+  const totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,grossProfit:run.today.revenue-run.today.cogs};
+  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,campus:{...metrics,guests:run.today.visitors}});
+  run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.grossProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
+  if(run.history.length>60)run.history=run.history.slice(-60);
 }
 
 export function inventoryValue(run) {
@@ -115,9 +217,9 @@ export function overallResult(run) { return run.cash + inventoryValue(run) - INI
 export function formatEuro(cents) { return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(cents / 100); }
 
 export function upgradeVenue(run, storeId, now = new Date().toISOString()) {
-  if (run.completed) throw new Error("This run is complete. Start a new run to upgrade again.");
   if (!STORES.some(store => store.id === storeId)) throw new Error("Unknown venue.");
-  const level = run.venues?.[storeId] || 1;
+  const level = run.venues?.[storeId] ?? 0;
+  if(level===0)throw new Error("Open this venue before upgrading it.");
   if (level >= 3) throw new Error("This venue is already at the maximum level.");
   const cost = level === 1 ? 1500 : 2500;
   if (run.cash < cost) throw new Error(`You need ${formatEuro(cost)} to upgrade this venue.`);
