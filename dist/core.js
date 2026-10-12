@@ -13,6 +13,12 @@ export const FACILITY_CATALOGUE = Object.freeze([
   { id:"foodGarden", name:"Food Garden", icon:"✦", cost:2200, color:"#f2a65f", description:"A social food court that tackles hunger and mood.", needs:{ hunger:20, mood:8 } }
 ]);
 
+export const FACILITY_FOOTPRINTS = Object.freeze({
+  path:{width:1,height:1}, scenery:{width:1.1,height:1.1}, bench:{width:1.8,height:.8},
+  bin:{width:1,height:1}, water:{width:1.2,height:1.2}, restroom:{width:1.7,height:1.45},
+  foodGarden:{width:2.7,height:2.1}, experience:{width:3.7,height:2.55}
+});
+
 export const STAFF_CATALOGUE = Object.freeze([
   { id:"caretaker", name:"Campus Caretaker", icon:"⌁", cost:1000, description:"Improves cleanliness across every district." },
   { id:"technician", name:"Experience Technician", icon:"⚙", cost:1200, description:"Raises attraction reliability and comfort." },
@@ -86,9 +92,21 @@ export function campusMetrics(run) {
   return { needs, satisfaction, rating, guests, attraction };
 }
 
-export function placeFacility(run,type,x,y,moduleIds=[]) {
+export function facilityFootprint(type,rotation=0) {
+  const base=FACILITY_FOOTPRINTS[type]||{width:1,height:1},turn=((Number(rotation)||0)%4+4)%4;
+  return turn%2?{width:base.height,height:base.width}:{...base};
+}
+
+function facilityOverlap(a,b) {
+  const af=facilityFootprint(a.type,a.rotation),bf=facilityFootprint(b.type,b.rotation);
+  return Math.abs(a.x-b.x)<(af.width+bf.width)/2+.08&&Math.abs(a.y-b.y)<(af.height+bf.height)/2+.08;
+}
+
+export function placeFacility(run,type,x,y,moduleIds=[],rotation=0) {
   if(!Number.isFinite(x)||!Number.isFinite(y)) throw new Error("Choose a valid campus tile.");
-  if((run.facilities||[]).some(item=>Math.hypot(item.x-x,item.y-y)<1.35)) throw new Error("That space is already occupied.");
+  const turn=((Number(rotation)||0)%4+4)%4;
+  const candidate={type,x,y,rotation:turn};
+  if((run.facilities||[]).some(item=>facilityOverlap(item,candidate))) throw new Error("That footprint overlaps another facility.");
   let cost,name,modules=[];
   if(type==="experience"){
     modules=[...new Set(moduleIds)].filter(id=>EXPERIENCE_MODULES.some(item=>item.id===id));
@@ -100,8 +118,22 @@ export function placeFacility(run,type,x,y,moduleIds=[]) {
   }
   if(run.cash<cost) throw new Error(`You need ${formatEuro(cost)} but only have ${formatEuro(run.cash)}.`);
   const next=structuredClone(run);if(!Array.isArray(next.facilities))next.facilities=[];
-  next.cash-=cost;next.facilities.push({id:`facility-${Date.now()}-${next.facilities.length}`,type,name,x,y,modules,builtDay:run.currentDay,cost});
+  next.cash-=cost;next.facilities.push({id:`facility-${Date.now()}-${next.facilities.length}`,type,name,x,y,rotation:turn,modules,builtDay:run.currentDay,cost});
   return next;
+}
+
+export function moveFacility(run,facilityId,x,y,rotation=0) {
+  if(!Number.isFinite(x)||!Number.isFinite(y))throw new Error("Choose a valid campus tile.");
+  const source=(run.facilities||[]).find(item=>item.id===facilityId);if(!source)throw new Error("That facility no longer exists.");
+  const turn=((Number(rotation)||0)%4+4)%4,candidate={...source,x,y,rotation:turn};
+  if((run.facilities||[]).some(item=>item.id!==facilityId&&facilityOverlap(item,candidate)))throw new Error("That footprint overlaps another facility.");
+  const next=structuredClone(run),target=next.facilities.find(item=>item.id===facilityId);target.x=x;target.y=y;target.rotation=turn;return next;
+}
+
+export function demolishFacility(run,facilityId) {
+  const source=(run.facilities||[]).find(item=>item.id===facilityId);if(!source)throw new Error("That facility no longer exists.");
+  const next=structuredClone(run),refund=Math.floor((source.cost||0)*.4);next.facilities=next.facilities.filter(item=>item.id!==facilityId);next.cash+=refund;
+  if(!Array.isArray(next.demolitions))next.demolitions=[];next.demolitions.push({facilityId,name:source.name,day:run.currentDay,refund});return next;
 }
 
 export function hireStaff(run,staffId,now=new Date().toISOString()) {

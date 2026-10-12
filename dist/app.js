@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, placeFacility, hireStaff } from "./core.js";
+import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff } from "./core.js?v=15-smart-build";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -24,6 +24,9 @@ let facing = { x: 0, y: 1 };
 let targetPoint = null;
 let currentSupplierStore = "cafe";
 let pendingBuild = null;
+let buildCursor = null;
+let buildResumeSpeed = null;
+let objectTransform = null;
 let selectedExperienceModules = ["music","shade"];
 let simulationElapsed = 0;
 let lastPersistAt = 0;
@@ -32,6 +35,12 @@ let saleFeedTimer = null;
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
+const RESERVED_BUILD_AREAS = [
+  {kind:"rect",x:1.8,y:8,w:9.7,h:6.3,label:"Mercado building"},
+  {kind:"rect",x:13.3,y:7.2,w:14.6,h:6.8,label:"Academic complex"},
+  {kind:"rect",x:29,y:4.2,w:11.5,h:9.1,label:"Student Hub"},
+  {kind:"circle",x:20.5,y:22.35,r:3.25,label:"Sunset Forum"}
+];
 
 const locations = {
   marketDoor: { zone:"campus", x:7, y:15.2, kind:"door", label:"Enter Mercado Supply Hall", targetZone:"mercado", color:"#f5c95e", title:"MERCADO", sub:"ENTER" },
@@ -64,6 +73,7 @@ function loadRun() {
       if (!Number.isInteger(parsed.reputation)) parsed.reputation = 0;
       if (!Array.isArray(parsed.upgrades)) parsed.upgrades = [];
       if (!Array.isArray(parsed.facilities)) parsed.facilities = [];
+      parsed.facilities.forEach(facility=>{if(!Number.isInteger(facility.rotation))facility.rotation=0;});
       if (!parsed.staff) parsed.staff = { caretaker:0, technician:0, host:0 };
       parsed.version=2;parsed.completed=false;
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
@@ -128,7 +138,7 @@ function updateHUD() {
   document.querySelectorAll("[data-speed]").forEach(button=>button.classList.toggle("active",Number(button.dataset.speed)===run.speed));
   $("#clockIcon").textContent=run.speed===0?"▶":"Ⅱ";$("#clockLabel").textContent=run.speed===0?"Resume":"Pause";
   $("#game").classList.toggle("build-mode",Boolean(pendingBuild));
-  const buildNotice=$("#buildNotice");if(buildNotice){buildNotice.classList.toggle("hidden",!pendingBuild);if(pendingBuild)$("#buildNoticeName").textContent=pendingBuild.name;}
+  refreshBuildNotice();
 }
 
 function formatClock(minutes){const value=Math.floor(minutes||DAY_START),hours=Math.floor(value/60)%24,mins=value%60;return `${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}`;}
@@ -145,10 +155,40 @@ function worldToScreen(x, y) {
   return {x:(p.x-c.x)*camera.zoom+canvas.clientWidth/2,y:(p.y-c.y)*camera.zoom+canvas.clientHeight/2};
 }
 
-function isoPoint(x,y,z=0){return {x:(x-y)*TILE_W/2,y:(x+y)*TILE_H/2-z};}
+function isoPoint(x,y,z=0){
+  if(objectTransform){const dx=x-objectTransform.x,dy=y-objectTransform.y,turn=objectTransform.rotation%4;if(turn===1){x=objectTransform.x-dy;y=objectTransform.y+dx;}else if(turn===2){x=objectTransform.x-dx;y=objectTransform.y-dy;}else if(turn===3){x=objectTransform.x+dy;y=objectTransform.y-dx;}}
+  return {x:(x-y)*TILE_W/2,y:(x+y)*TILE_H/2-z};
+}
 
 function roundedRect(x, y, w, h, r, fill) {
   ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill();
+}
+
+function buildCost(build){if(build.mode==="move")return 0;if(build.type==="experience")return 1200+attractionStats(build.modules).cost;return FACILITY_CATALOGUE.find(item=>item.id===build.type)?.cost||0;}
+function footprintRect(type,x,y,rotation=0){const size=facilityFootprint(type,rotation);return {x:x-size.width/2,y:y-size.height/2,w:size.width,h:size.height};}
+function rectsOverlap(a,b,margin=.08){return a.x<b.x+b.w+margin&&a.x+a.w>b.x-margin&&a.y<b.y+b.h+margin&&a.y+a.h>b.y-margin;}
+function rectTouchesCircle(rect,circle,margin=0){const nx=Math.max(rect.x,Math.min(circle.x,rect.x+rect.w)),ny=Math.max(rect.y,Math.min(circle.y,rect.y+rect.h));return Math.hypot(nx-circle.x,ny-circle.y)<circle.r+margin;}
+function snappedBuildPoint(x,y){return {x:Math.round(x*2)/2,y:Math.round(y*2)/2};}
+function canvasWorldPoint(event){const rect=canvas.getBoundingClientRect(),cp=isoPoint(camera.x,camera.y),ix=(event.clientX-rect.left-canvas.clientWidth/2)/camera.zoom+cp.x,iy=(event.clientY-rect.top-canvas.clientHeight/2)/camera.zoom+cp.y;return {x:iy/TILE_H+ix/TILE_W,y:iy/TILE_H-ix/TILE_W};}
+
+function validateBuildPoint(x,y,build=pendingBuild){
+  if(!build||currentZone!=="campus")return {valid:false,reason:"Return to the outdoor campus"};
+  const footprint=footprintRect(build.type,x,y,build.rotation||0),zone=ZONES.campus;
+  if(footprint.x<zone.minX||footprint.x+footprint.w>zone.maxX||footprint.y<zone.minY||footprint.y+footprint.h>22.5)return {valid:false,reason:"Outside the construction boundary"};
+  for(const area of RESERVED_BUILD_AREAS){if(area.kind==="rect"&&rectsOverlap(footprint,area,0))return {valid:false,reason:`Reserved: ${area.label}`};if(area.kind==="circle"&&rectTouchesCircle(footprint,area,.1))return {valid:false,reason:`Reserved: ${area.label}`};}
+  for(const facility of run.facilities||[]){if(build.sourceId===facility.id)continue;const occupied=footprintRect(facility.type,facility.x,facility.y,facility.rotation||0);if(rectsOverlap(footprint,occupied,.1))return {valid:false,reason:`Blocked by ${facility.name}`};}
+  for(const tree of campusTrees){if(rectTouchesCircle(footprint,{x:tree[0],y:tree[1],r:.55*tree[2]},.05))return {valid:false,reason:"A palm occupies this tile"};}
+  if(build.type!=="path")for(const location of Object.values(locations).filter(item=>item.zone==="campus")){if(rectTouchesCircle(footprint,{x:location.x,y:location.y,r:location.kind==="door"?1.15:1.35},.05))return {valid:false,reason:`Keep access clear: ${location.title}`};}
+  if(build.mode!=="move"&&run.cash<buildCost(build))return {valid:false,reason:`Need ${formatEuro(buildCost(build))}`};
+  return {valid:true,reason:build.mode==="move"?"Move here":"Ready to build"};
+}
+
+function updateBuildCursor(x,y){if(!pendingBuild)return;const point=snappedBuildPoint(x,y),status=validateBuildPoint(point.x,point.y);buildCursor={...point,...status};refreshBuildNotice();}
+function refreshBuildNotice(){const notice=$("#buildNotice");if(!notice)return;notice.classList.toggle("hidden",!pendingBuild);notice.classList.toggle("invalid",Boolean(pendingBuild&&buildCursor&&!buildCursor.valid));if(!pendingBuild)return;$("#buildNoticeName").textContent=pendingBuild.name;$("#buildNoticeStatus").textContent=buildCursor?.reason||"Move the cursor onto the campus";$("#buildRotation").textContent=`${(pendingBuild.rotation||0)*90}°`;}
+
+function drawBuildGhost(t){
+  if(!pendingBuild||!buildCursor||currentZone!=="campus")return;const valid=buildCursor.valid,color=valid?"#bce65f":"#ff7458",size=facilityFootprint(pendingBuild.type,pendingBuild.rotation||0),x=buildCursor.x,y=buildCursor.y,z=8;
+  const corners=[isoPoint(x-size.width/2,y-size.height/2,z),isoPoint(x+size.width/2,y-size.height/2,z),isoPoint(x+size.width/2,y+size.height/2,z),isoPoint(x-size.width/2,y+size.height/2,z)];ctx.save();ctx.setLineDash([8,5]);drawPlane(corners,valid?"rgba(188,230,95,.28)":"rgba(255,116,88,.3)",color,2.5);ctx.setLineDash([]);ctx.globalAlpha=.62;drawPlacedFacility({type:pendingBuild.type,x,y,rotation:pendingBuild.rotation||0,modules:pendingBuild.modules||[],name:pendingBuild.name},t,-1);ctx.globalAlpha=1;const tag=isoPoint(x,y,z+74);roundedRect(tag.x-57,tag.y-11,114,22,8,"rgba(7,29,37,.94)");ctx.fillStyle=color;ctx.beginPath();ctx.arc(tag.x-45,tag.y,3.5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 6px DM Mono";ctx.fillText(valid?"CLICK TO PLACE":"BLOCKED",tag.x+5,tag.y+2);ctx.restore();
 }
 
 function drawWorldLabel(x,y,z,title,accent="#bce65f"){
@@ -175,7 +215,8 @@ function drawWorld(t) {
     {depth:31.2,draw:()=>drawCampus(t)},
     {depth:46.8,draw:()=>drawStudentHub()},
     {depth:43,draw:()=>drawBeachStage(t)},
-    ...(run.facilities||[]).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
+    ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
+    ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
     ...students.map((student,i)=>({depth:student[0]+student[1],draw:()=>drawStudent(student,t,i)})),
     ...liveCrowd(t)
@@ -495,14 +536,17 @@ function drawExperience(facility,t){
 }
 
 function drawPlacedFacility(facility,t,index){
-  if(facility.type==="path"){drawTile(facility.x-.5,facility.y-.5,"#d7d3c2",2);return;}
-  if(facility.type==="scenery"){drawBlock(facility.x-.55,facility.y-.55,1.1,1.1,16,"#d9d4c8","#999990","#b1afa5");drawTree(facility.x,facility.y,.6,t+index*90);return;}
-  if(facility.type==="bench"){drawAtlanticBench(facility.x,facility.y);return;}
-  if(facility.type==="bin")drawRecyclingPoint(facility.x,facility.y);
-  else if(facility.type==="water")drawWaterStation(facility.x,facility.y,t);
-  else if(facility.type==="restroom")drawRestroomPod(facility.x,facility.y);
-  else if(facility.type==="foodGarden")drawFoodGarden(facility.x,facility.y);
-  else if(facility.type==="experience")drawExperience(facility,t);
+  const previous=objectTransform;objectTransform={x:facility.x,y:facility.y,rotation:facility.rotation||0};
+  try{
+    if(facility.type==="path")drawTile(facility.x-.5,facility.y-.5,"#d7d3c2",2);
+    else if(facility.type==="scenery"){drawBlock(facility.x-.55,facility.y-.55,1.1,1.1,16,"#d9d4c8","#999990","#b1afa5");drawTree(facility.x,facility.y,.6,t+index*90);}
+    else if(facility.type==="bench")drawAtlanticBench(facility.x,facility.y);
+    else if(facility.type==="bin")drawRecyclingPoint(facility.x,facility.y);
+    else if(facility.type==="water")drawWaterStation(facility.x,facility.y,t);
+    else if(facility.type==="restroom")drawRestroomPod(facility.x,facility.y);
+    else if(facility.type==="foodGarden")drawFoodGarden(facility.x,facility.y);
+    else if(facility.type==="experience")drawExperience(facility,t);
+  }finally{objectTransform=previous;}
 }
 
 const personStyles=[
@@ -705,10 +749,18 @@ function openPortfolio() {
   drawerContent.querySelectorAll(".venue-card").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
 }
 
-function startBuild(type,name,modules=[]) {
-  pendingBuild={type,name,modules};closeDrawer();
-  if(currentZone!=="campus")changeZone("campus",{x:21,y:18});else updateHUD();
-  toast(`Build mode · place ${name} on a free tile`);beep(560);
+function beginBuildMode(build){
+  if(buildResumeSpeed===null)buildResumeSpeed=run.speed;run.speed=0;pendingBuild={mode:"place",rotation:0,...build};closeDrawer();
+  if(currentZone!=="campus")changeZone("campus",{x:21,y:18});
+  const start=snappedBuildPoint(run.player.x,Math.min(21.5,run.player.y+2));updateBuildCursor(start.x,start.y);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(`${pendingBuild.mode==="move"?"Move":"Build"} mode · position ${pendingBuild.name}`);beep(560);
+}
+function startBuild(type,name,modules=[]){beginBuildMode({type,name,modules,mode:"place",rotation:0});}
+function startMoveFacility(facility){beginBuildMode({type:facility.type,name:`Move ${facility.name}`,modules:facility.modules||[],mode:"move",sourceId:facility.id,rotation:facility.rotation||0});}
+function rotatePendingBuild(){if(!pendingBuild)return;pendingBuild.rotation=((pendingBuild.rotation||0)+1)%4;if(buildCursor)updateBuildCursor(buildCursor.x,buildCursor.y);refreshBuildNotice();toast(`Rotated to ${pendingBuild.rotation*90}°`);beep(480);}
+function cancelBuildMode(){if(!pendingBuild)return;pendingBuild=null;buildCursor=null;if(buildResumeSpeed!==null)run.speed=buildResumeSpeed;buildResumeSpeed=null;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast("Build mode cancelled");}
+function finishBuildMode(next){if(buildResumeSpeed!==null)next.speed=buildResumeSpeed;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;save(next);}
+function confirmDemolish(facility){
+  const refund=Math.floor((facility.cost||0)*.4);modalCard.className="modal-card";modalCard.innerHTML=`<p class="eyebrow">Campus works · demolition</p><h2 id="modalTitle">Remove ${facility.name}?</h2><p>This permanently removes the facility and returns <strong>${formatEuro(refund)}</strong> in salvage value. Campus needs and rating update immediately.</p><div class="modal-actions"><button class="action-button secondary" data-close>Keep facility</button><button class="action-button orange" id="confirmDemolish">Remove &amp; refund</button></div>`;showModal();modalCard.querySelector("[data-close]").addEventListener("click",hideModal);$("#confirmDemolish").addEventListener("click",()=>{const next=demolishFacility(run,facility.id);save(next);hideModal();openBuildPanel();toast(`${facility.name} removed · ${formatEuro(refund)} returned`);beep(260);});
 }
 
 function experiencePreview(moduleIds){
@@ -725,10 +777,14 @@ function openBuildPanel() {
     <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
     <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
     <div class="build-grid">${FACILITY_CATALOGUE.map(item=>`<article class="build-card" style="--build:${item.color}"><span class="facility-preview facility-${item.id}"><i></i></span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost?"disabled":""}>Build · ${formatEuro(item.cost)}</button></article>`).join("")}</div>
+    <div class="section-heading"><div><small>PLACED ASSETS</small><strong>Move, rotate or remove</strong></div><span>${run.facilities.length} on campus</span></div>
+    <div class="placed-facility-list">${run.facilities.length?run.facilities.map(facility=>{const size=facilityFootprint(facility.type,facility.rotation||0);return `<article><span class="facility-preview facility-${facility.type}"><i></i></span><div><strong>${facility.name}</strong><small>${size.width.toFixed(1)} × ${size.height.toFixed(1)} tiles · ${(facility.rotation||0)*90}°</small></div><button data-move-facility="${facility.id}">Move</button><button class="danger" data-demolish-facility="${facility.id}">Remove</button></article>`}).join(""):`<div class="build-empty">Place your first facility to unlock move and demolition tools.</div>`}</div>
     <div class="section-heading"><div><small>SIGNATURE ATTRACTION</small><strong>Design a beach experience</strong></div><span>Choose modules piece by piece</span></div>
     <div class="experience-builder"><div class="experience-design">${experiencePreview(selectedExperienceModules)}<div class="module-grid">${EXPERIENCE_MODULES.map(item=>`<button class="module-button ${selectedExperienceModules.includes(item.id)?"selected":""}" data-module="${item.id}"><span class="module-glyph module-${item.id}"><i></i></span><strong>${item.name}</strong><small>${formatEuro(item.cost)} · +${item.excitement} excitement</small></button>`).join("")}</div></div><div class="rating-console"><small>LIVE DESIGN RATINGS</small><div><span>Excitement <b id="designExcitement">${stats.excitement}</b></span><i><em id="designExcitementBar" style="width:${stats.excitement}%"></em></i></div><div><span>Intensity <b id="designIntensity">${stats.intensity}</b></span><i><em id="designIntensityBar" style="width:${stats.intensity}%"></em></i></div><div><span>Comfort <b id="designComfort">${stats.comfort}</b></span><i><em id="designComfortBar" style="width:${stats.comfort}%"></em></i></div><p id="designVerdict">${experienceVerdict(stats)}</p><button class="action-button orange" id="buildExperience" ${run.cash<experienceCost?"disabled":""}>Place experience · <span id="experienceCost">${formatEuro(experienceCost)}</span></button></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
   drawerContent.querySelectorAll("[data-build]").forEach(button=>button.addEventListener("click",()=>{const item=FACILITY_CATALOGUE.find(entry=>entry.id===button.dataset.build);startBuild(item.id,item.name);}));
+  drawerContent.querySelectorAll("[data-move-facility]").forEach(button=>button.addEventListener("click",()=>{const facility=run.facilities.find(item=>item.id===button.dataset.moveFacility);if(facility)startMoveFacility(facility);}));
+  drawerContent.querySelectorAll("[data-demolish-facility]").forEach(button=>button.addEventListener("click",()=>{const facility=run.facilities.find(item=>item.id===button.dataset.demolishFacility);if(facility)confirmDemolish(facility);}));
   drawerContent.querySelectorAll("[data-module]").forEach(button=>button.addEventListener("click",()=>{const id=button.dataset.module;if(selectedExperienceModules.includes(id)&&selectedExperienceModules.length>1)selectedExperienceModules=selectedExperienceModules.filter(item=>item!==id);else if(!selectedExperienceModules.includes(id))selectedExperienceModules.push(id);openBuildPanel();}));
   $("#buildExperience").addEventListener("click",()=>startBuild("experience","Custom Beach Experience",selectedExperienceModules));
 }
@@ -790,26 +846,30 @@ function historyCard(day) {
 function confirmNewRun() {
   modalCard.className="modal-card";
   modalCard.innerHTML=`<p class="eyebrow">Replace your tycoon?</p><h2 id="modalTitle">Start a new campus company</h2><p>This replaces your saved business with <strong>€100.00 cash</strong>, Atlantic Café at level one, zero stock, no construction and an empty ledger. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace company</button></div>`;
-  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
+  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
 }
 
 function showModal(){modal.classList.remove("hidden");}
 function hideModal(){modal.classList.add("hidden");}
 function toast(message,error=false){const el=document.createElement("div");el.className=`toast ${error?"error":""}`;el.textContent=message;$("#toastRegion").append(el);setTimeout(()=>el.remove(),2800);}
 function beep(frequency){if(!soundOn)return;try{const audio=new AudioContext();const osc=audio.createOscillator(),gain=audio.createGain();osc.frequency.value=frequency;gain.gain.setValueAtTime(.05,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.12);osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+.12);}catch(_){} }
-function setGameSpeed(speed){run.speed=Number(speed);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
+function setGameSpeed(speed){const requested=Number(speed);if(pendingBuild&&requested>0){toast("Finish or cancel construction before resuming the clock",true);return;}run.speed=requested;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
 
 window.addEventListener("resize",resize);
-window.addEventListener("keydown",event=>{if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(event.key.toLowerCase())){keys.add(event.key.toLowerCase());targetPoint=null;event.preventDefault();}if(event.key.toLowerCase()==="e"&&modal.classList.contains("hidden")){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild){pendingBuild=null;updateHUD();toast("Build cancelled");}hideModal();closeDrawer();}});
+window.addEventListener("keydown",event=>{const key=event.key.toLowerCase();if(key==="r"&&pendingBuild){rotatePendingBuild();event.preventDefault();return;}if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)){keys.add(key);targetPoint=null;event.preventDefault();}if(key==="e"&&modal.classList.contains("hidden")&&!pendingBuild){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild)cancelBuildMode();hideModal();closeDrawer();}});
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
-canvas.addEventListener("click",event=>{const rect=canvas.getBoundingClientRect(),cp=isoPoint(camera.x,camera.y);const ix=(event.clientX-rect.left-canvas.clientWidth/2)/camera.zoom+cp.x,iy=(event.clientY-rect.top-canvas.clientHeight/2)/camera.zoom+cp.y;const x=iy/TILE_H+ix/TILE_W,y=iy/TILE_H-ix/TILE_W;if(pendingBuild){try{if(currentZone!=="campus"||y>22.5)throw new Error("Build on a free campus tile above the beach line.");if(Math.hypot(x-20.5,y-22.35)<3.25)throw new Error("Leave a clear plaza around the Sunset Forum.");const next=placeFacility(run,pendingBuild.type,Math.round(x*2)/2,Math.round(y*2)/2,pendingBuild.modules);const built=pendingBuild.name;pendingBuild=null;save(next);toast(`${built} opened · campus rating ${campusMetrics(next).rating}%`);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
+canvas.addEventListener("mousemove",event=>{if(pendingBuild){const point=canvasWorldPoint(event);updateBuildCursor(point.x,point.y);}});
+canvas.addEventListener("mouseleave",()=>{if(pendingBuild){buildCursor=null;refreshBuildNotice();}});
+canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
 $("#closeDrawer").addEventListener("click",closeDrawer);
+$("#rotateBuild").addEventListener("click",rotatePendingBuild);
+$("#cancelBuild").addEventListener("click",cancelBuildMode);
 $("#newRunButton").addEventListener("click",confirmNewRun);
 $("#soundButton").addEventListener("click",()=>{soundOn=!soundOn;$("#soundButton").classList.toggle("muted",!soundOn);$("#soundButton").textContent=soundOn?"♪":"×";});
 document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>{
   const action=button.dataset.action;
   if(action==="buy")openLocation("supplier");
-  if(action==="build")openBuildPanel();
+  if(action==="build"){if(pendingBuild)cancelBuildMode();openBuildPanel();}
   if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
   if(action==="clock")setGameSpeed(run.speed===0?1:0);
   if(action==="guests")openGuestPanel();
