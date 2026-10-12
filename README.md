@@ -4,13 +4,15 @@ An open-ended campus tycoon set on a stylized Nova SBE / Carcavelos waterfront. 
 
 ## Tycoon systems
 
-- Start with Atlantic Café, then purchase Beach Fuel Bar and Nova Supply Co. with earned cash.
-- Three venues and nine products across café, beach-fuel and campus-merch categories.
-- Venue upgrades, product unlocks, reputation, demand-capacity and portfolio views.
+- Start with Atlantic Café, then unlock Beach Fuel Bar, Nova Merch Lab, Maré Beach Bar and Carcavelos Surf Shack with earned cash and company XP.
+- Five venues and fifteen products across café, beach-fuel, campus-merch, beach-bar and surf categories.
+- Ten company levels, three visual stages per store, level-gated staff, persistent scenario goals and a dedicated progression dashboard.
+- Purchasable East Promenade and Ocean Pier districts extend the walkable/buildable map and reveal new store plots.
+- A permanent Coastline Pavilion hosts timed Sunset Sessions, Founders Markets and Nova Surf Cups that create new crowd waves.
 - Accelerated continuous days from 07:30 to 19:30 with pause, 1×, 2× and 4× speed controls.
 - Automatic live sales, persistent daily ledgers, visible customer queues, and morning, lunch and after-class rushes.
 - A stabilized 2.5D art system with individually masked low-poly architecture, eight varied student sprites, a dedicated player character, smooth crowd motion and base-aware depth sorting.
-- A 42×30 coast overworld plus separate Mercado Supply Hall, Academic Wing and Student Hub interiors, each with its own NPCs, props, interactions and return route.
+- An expandable 58×30 coast overworld plus separate Mercado Supply Hall, Academic Wing and Student Hub interiors, each with its own NPCs, props, interactions and return route.
 - A persistent room-aware player location, click-to-move, WASD movement, marked entrances and quick management shortcuts.
 - Buildable paths, scenery, amenities, staff and custom attractions; campus quality increases guest count, which directly increases sales demand.
 - Immediate autosave for purchases, prices, upgrades, position and completed trading days.

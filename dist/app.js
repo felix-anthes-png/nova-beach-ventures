@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=16-living-guests";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=17-progression";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -9,12 +9,13 @@ const modal = $("#modal");
 const modalCard = $("#modalCard");
 const keys = new Set();
 const ZONES = {
-  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:42, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
+  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:58, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
   mercado: { id:"mercado", name:"Mercado Supply Hall", sub:"LOGISTICS INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d8c79f", accent:"#f5c95e" },
   academy: { id:"academy", name:"Academic Wing", sub:"COURTYARD INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d7dad3", accent:"#ff7b5b" },
   hub: { id:"hub", name:"Student Hub", sub:"VENTURE INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#cddbd5", accent:"#64cbc8" }
 };
 let run = loadRun();
+syncCampusBounds();
 let currentZone = run.player.zone || "campus";
 let soundOn = true;
 let activeLocation = null;
@@ -40,14 +41,17 @@ const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
 const GUEST_SPEED = 1.45;
-const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3}];
+const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:47.5,y:21.2},{x:55.2,y:16.2}];
 const GUEST_NAMES = ["Inês","Tomás","Maya","Luca","Beatriz","Rafael","Sofia","Noah","Leonor","Mateo","Clara","Tiago","Amélia","Hugo","Nina","Martim"];
-const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",exit:"↗"};
+const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",beach:"☀",surf:"≈",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",pavilion:"♫",exit:"↗"};
 const RESERVED_BUILD_AREAS = [
   {kind:"rect",x:1.8,y:8,w:9.7,h:6.3,label:"Mercado building"},
   {kind:"rect",x:13.3,y:7.2,w:14.6,h:6.8,label:"Academic complex"},
   {kind:"rect",x:29,y:4.2,w:11.5,h:9.1,label:"Student Hub"},
-  {kind:"circle",x:20.5,y:22.35,r:3.25,label:"Sunset Forum"}
+  {kind:"circle",x:20.5,y:22.35,r:3.25,label:"Sunset Forum"},
+  {kind:"rect",x:43.3,y:18.7,w:5.8,h:4.2,label:"Beach Bar plot"},
+  {kind:"rect",x:50.2,y:13.6,w:5.4,h:4.8,label:"Surf Shack plot"},
+  {kind:"circle",x:48,y:11.9,r:3.2,label:"Coastline Pavilion"}
 ];
 
 const locations = {
@@ -55,17 +59,24 @@ const locations = {
   academyDoor: { zone:"campus", x:20, y:12.2, kind:"door", label:"Enter the Academic Wing", targetZone:"academy", color:"#ff7b5b", title:"ACADEMIC WING", sub:"ENTER" },
   hubDoor: { zone:"campus", x:34.5, y:14.2, kind:"door", label:"Enter the Student Hub", targetZone:"hub", color:"#64cbc8", title:"STUDENT HUB", sub:"ENTER" },
   snack: { zone:"campus", x:28, y:21.5, label:"Manage Beach Fuel Bar", panel:()=>openStore("snack"), color:"#afd864", title:"BEACH FUEL", sub:"BOARDWALK" },
+  eastGate: { zone:"campus", x:40.2, y:17.2, label:"Review East Promenade expansion", panel:()=>openDistrictPanel("east"), color:"#f2b94b", title:"EAST PROMENADE", sub:"LAND" },
+  beach: { zone:"campus", x:45.9, y:20.6, label:"Manage Maré Beach Bar", panel:()=>openStore("beach"), color:"#f2b94b", title:"MARÉ BEACH BAR", sub:"EAST PROMENADE" },
+  pavilion: { zone:"campus", x:47.9, y:11.9, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"EVENT LAWN" },
+  pierGate: { zone:"campus", x:49.3, y:17.2, label:"Review Ocean Pier expansion", panel:()=>openDistrictPanel("pier"), color:"#479fb5", title:"OCEAN PIER", sub:"LAND" },
+  surf: { zone:"campus", x:53.1, y:16.1, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
   supplier: { zone:"mercado", x:7.5, y:4.2, label:"Open wholesale inventory", panel:()=>openSupplier(currentSupplierStore), color:"#f5c95e", title:"SUPPLY DESK", sub:"WHOLESALE" },
   marketExit: { zone:"mercado", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:7,y:16.8}, color:"#f5c95e", title:"CAMPUS", sub:"EXIT" },
   cafe: { zone:"academy", x:7.3, y:4.3, label:"Manage Atlantic Café", panel:()=>openStore("cafe"), color:"#ff7b5b", title:"ATLANTIC CAFÉ", sub:"ACADEMIC WING" },
   academyExit: { zone:"academy", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:20,y:13.8}, color:"#ff7b5b", title:"CAMPUS", sub:"EXIT" },
-  merch: { zone:"hub", x:5.3, y:4.2, label:"Manage Nova Supply Co.", panel:()=>openStore("merch"), color:"#5ac7c4", title:"NOVA SUPPLY", sub:"STUDENT HUB" },
+  merch: { zone:"hub", x:5.3, y:4.2, label:"Manage Nova Merch Lab", panel:()=>openStore("merch"), color:"#5ac7c4", title:"MERCH LAB", sub:"STUDENT HUB" },
   board: { zone:"hub", x:10.5, y:5.2, label:"Open the venture ledger", panel:openLedger, color:"#67b7d1", title:"VENTURE HQ", sub:"FINANCE" },
   hubExit: { zone:"hub", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:34.5,y:15.8}, color:"#64cbc8", title:"CAMPUS", sub:"EXIT" }
 };
 
-const zoneLocations = () => Object.entries(locations).filter(([,location]) => location.zone === currentZone);
+const locationAvailable=id=>!(["beach","pavilion","pierGate"].includes(id)&&!run.districts?.east)&&!(id==="surf"&&!run.districts?.pier);
+const zoneLocations = () => Object.entries(locations).filter(([id,location]) => location.zone === currentZone&&locationAvailable(id));
 const activeZone = () => ZONES[currentZone];
+function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.districts?.east?49.3:41;}
 
 function loadRun() {
   try {
@@ -77,12 +88,16 @@ function loadRun() {
         if (!Number.isInteger(parsed.stock[product.id])) parsed.stock[product.id] = 0;
         if (!Number.isInteger(parsed.prices[product.id])) parsed.prices[product.id] = product.reference;
       });
-      if (!parsed.venues) parsed.venues = { cafe: 1, snack: 1, merch: 1 };
+      if (!parsed.venues) parsed.venues = { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 };
+      STORES.forEach(store=>{if(!Number.isInteger(parsed.venues[store.id]))parsed.venues[store.id]=store.id==="cafe"?1:0;});
+      if(!parsed.districts)parsed.districts={coast:1,east:0,pier:0};
+      if(!Number.isInteger(parsed.eventVenue))parsed.eventVenue=0;if(!Array.isArray(parsed.eventHistory))parsed.eventHistory=[];
       if (!Number.isInteger(parsed.reputation)) parsed.reputation = 0;
       if (!Array.isArray(parsed.upgrades)) parsed.upgrades = [];
       if (!Array.isArray(parsed.facilities)) parsed.facilities = [];
       parsed.facilities.forEach(facility=>{if(!Number.isInteger(facility.rotation))facility.rotation=0;});
-      if (!parsed.staff) parsed.staff = { caretaker:0, technician:0, host:0 };
+      if (!parsed.staff) parsed.staff = { service:0, caretaker:0, technician:0, host:0, entertainer:0 };
+      STAFF_CATALOGUE.forEach(role=>{if(!Number.isInteger(parsed.staff[role.id]))parsed.staff[role.id]=0;});
       parsed.version=2;parsed.completed=false;
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
@@ -106,13 +121,14 @@ function loadRun() {
 function save(next) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   run = next;
+  syncCampusBounds();
   updateHUD();
   if (activeLocation) locations[activeLocation].panel();
 }
 
 function updateHUD() {
   const zone=activeZone();
-  const campus=campusMetrics(run);
+  const campus=campusMetrics(run),progression=progressionState(run);
   $("#zoneName").textContent=zone.name;
   $("#zoneSub").textContent=zone.sub;
   $("#miniMapTitle").textContent=zone.outdoor?"CAMPUS MAP":"ROOM PLAN";
@@ -126,6 +142,7 @@ function updateHUD() {
   $("#timeStat").textContent = formatClock(run.clockMinutes);
   $("#cashStat").textContent = formatEuro(run.cash);
   $("#repStat").textContent = `${run.reputation || 0} ★`;
+  $("#levelStat").textContent = `LV ${progression.level}`;
   $("#guestStat").textContent = `${guestAgents.length||campus.guests}`;
   $("#ratingStat").textContent = `${campus.rating}%`;
   const totalStock = Object.values(run.stock).reduce((a, b) => a + b, 0);
@@ -135,16 +152,18 @@ function updateHUD() {
   $("#pulseDemand").textContent = `${Math.round(demandCapacity*Math.max(.45,campus.guests/24))} potential sales`;
   const activeGuests=guestAgents.length||campus.guests,usingGuests=guestAgents.filter(guest=>guest.state==="using"||guest.state==="queueing").length;
   $("#pulseVenues").textContent = `${activeGuests} live · ${usingGuests} at destinations`;
-  $("#pulseMilestone").textContent = lockedVenue?`Open ${lockedVenue.short} · ${formatEuro(STORE_UNLOCKS[lockedVenue.id])}`:"Grow every shop to level 3";
+  $("#pulseMilestone").textContent = progression.next?`Level ${progression.next.level}: ${progression.next.unlock}`:"Nova Legend achieved";
   $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="evening"?"★":"·";
   $("#eventDistrict").textContent = `LIVE · ${formatClock(run.clockMinutes)}`;
-  $("#eventTitle").textContent = peak.label;
-  $("#eventObjective").textContent = peak.multiplier>1?`${peak.multiplier.toFixed(1)}× customer flow`:"Quiet planning window";
+  const liveEvent=EVENT_CATALOGUE.find(event=>event.id===run.activeEvent?.id);$("#eventTitle").textContent = liveEvent?liveEvent.name:peak.label;
+  $("#eventObjective").textContent = liveEvent?`${Math.ceil(run.activeEvent.remainingMinutes)} min · +${liveEvent.guestBonus} guests`:peak.multiplier>1?`${peak.multiplier.toFixed(1)}× customer flow`:"Quiet planning window";
   const focusStoreId=run.venuePurchases?.at(-1)?.storeId||"cafe",focusStore=STORES.find(store=>store.id===focusStoreId),focusStock=CATALOGUE.filter(product=>product.storeId===focusStoreId).reduce((sum,product)=>sum+run.stock[product.id],0);
   let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory and students will purchase automatically.`, progress = Math.min(100,openCount*22+campus.rating*.34);
   if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${activeGuests} students are navigating the campus. Watch them queue, use amenities and react to what you build.`;}
   else if(focusStock===0&&focusStoreId!=="cafe"){text=`Your new ${focusStore.short} needs stock before its first queue can form.`;}
-  if(lockedVenue&&run.cash>=STORE_UNLOCKS[lockedVenue.id]){title=`You can open ${lockedVenue.name}`;text="Reinvest your profits in the next district, then stock its first product.";}
+  const venueDistrictReady=lockedVenue&&(!["beach","surf"].includes(lockedVenue.id)||(lockedVenue.id==="beach"?run.districts?.east:run.districts?.pier));
+  if(lockedVenue&&run.cash>=STORE_UNLOCKS[lockedVenue.id]&&progression.level>=(STORE_REQUIREMENTS[lockedVenue.id]||1)&&venueDistrictReady){title=`You can open ${lockedVenue.name}`;text="Reinvest your profits in the next venue, then stock its first product.";}
+  if(progression.next&&progression.progress>=75){title=`Level ${progression.next.level} is close`;text=`Keep serving guests to unlock ${progression.next.unlock}. ${progression.xp}/${progression.next.xp} XP.`;}
   $("#missionTitle").textContent = title;
   $("#missionText").textContent = text;
   $("#missionProgress").style.width = `${progress}%`;
@@ -280,6 +299,14 @@ function drawCampusGroundPlan(t){
   const water=isoPoint(18.1,11.05,6);ctx.save();ctx.globalAlpha=.36;ctx.strokeStyle="#f4ffff";ctx.lineWidth=1.2;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(water.x+i*6-9,water.y+i*3-4,32,7,0,0,Math.PI*2);ctx.stroke();}ctx.restore();
   for(let i=0;i<5;i++){const x=12+i*4.5;drawBlock(x,13.2,.9,.9,17,"#e7e2d4","#9c9c92","#b5b4aa");const p=isoPoint(x+.45,13.65,19);ctx.fillStyle=i%2?"#6f9273":"#7c9d79";ctx.beginPath();ctx.ellipse(p.x,p.y-8,15,9,0,0,Math.PI*2);ctx.fill();}
   const sun=isoPoint(27.7,11.6,8);ctx.fillStyle="rgba(255,255,255,.2)";ctx.beginPath();ctx.ellipse(sun.x,sun.y,52+Math.sin(t*.0005)*2,13,0,0,Math.PI*2);ctx.fill();
+  drawExpansionDistricts(t);
+}
+
+function drawExpansionDistricts(t){
+  if(run.districts?.east){drawGroundSlab(40.2,9.1,9.3,13.6,"#d8d3c4",5);drawGroundSlab(41.1,18.2,8.4,4.5,"#dec481",4);for(let i=0;i<6;i++){const p=isoPoint(41.2+i*1.55,17.35,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}drawWorldLabel(45.1,9.65,54,"EAST PROMENADE","#f2b94b");}
+  else{drawGroundSlab(40.7,10.3,8.2,11.8,"#91a979",2);for(let i=0;i<7;i++){const p=isoPoint(41.4+i*1.05,16.9+(i%2)*.42,5);ctx.fillStyle=i%2?"#889c72":"#9eb184";ctx.beginPath();ctx.ellipse(p.x,p.y,18,7,0,0,Math.PI*2);ctx.fill();}}
+  if(run.districts?.pier){drawGroundSlab(49,13.1,7.4,7.5,"#caa36e",7);for(let i=0;i<13;i++){const a=isoPoint(49.2+i*.55,13.35,8),b=isoPoint(49.2+i*.55,20.25,8);ctx.strokeStyle=i%2?"rgba(86,59,38,.28)":"rgba(255,255,255,.18)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawWorldLabel(52.7,13.2,67,"OCEAN PIER","#479fb5");}
+  else if(run.districts?.east){drawGroundSlab(49.1,13.5,6.7,6.8,"#7fa06f",2);}
 }
 
 function drawFacadeBandY(x,y,w,zBottom,zTop,color="#244e58",mullions=5){
@@ -443,11 +470,11 @@ function drawBlock(x,y,w,h,z,top,right,left){const a=isoPoint(x,y,z),b=isoPoint(
 
 const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,.76],[29,19,.88],[32,9,.83],[39,12,.92],[37,19,.8],[6,21,.75],[24,22,.72],[40,21,.86]];
 const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
-const guestTargetPoints={cafe:{x:20.45,y:13.75},snack:{x:27.65,y:21.05},merch:{x:34.15,y:15.25},academy:{x:20,y:13.35},hub:{x:34.5,y:15.2},forum:{x:20.5,y:21.15}};
+const guestTargetPoints={cafe:{x:20.45,y:13.75},snack:{x:27.65,y:21.05},merch:{x:34.15,y:15.25},beach:{x:45.55,y:20.2},surf:{x:52.7,y:16.5},academy:{x:20,y:13.35},hub:{x:34.5,y:15.2},forum:{x:20.5,y:21.15},pavilion:{x:47.8,y:12.8}};
 
 function guestRandom(seed,offset=0){const value=Math.sin((seed+1)*91.733+offset*37.119)*43758.5453;return value-Math.floor(value);}
 function createGuestAgent(){
-  const id=++guestSequence,entry=GUEST_ENTRIES[id%GUEST_ENTRIES.length],guest={id,name:GUEST_NAMES[id%GUEST_NAMES.length],x:entry.x,y:entry.y,color:crowdColors[id%crowdColors.length],phase:guestRandom(id,1)*6,direction:1,state:"arriving",activity:"Arriving on campus",thought:"Let’s see what is happening today.",age:0,visits:0,route:[],routeIndex:0,target:null,remove:false,needs:{hunger:28+Math.round(guestRandom(id,2)*68),thirst:24+Math.round(guestRandom(id,3)*72),bladder:12+Math.round(guestRandom(id,4)*72),energy:20+Math.round(guestRandom(id,5)*68),mood:18+Math.round(guestRandom(id,6)*65)}};
+  const id=++guestSequence,entries=GUEST_ENTRIES.filter(point=>point.x<=ZONES.campus.maxX),entry=entries[id%entries.length],guest={id,name:GUEST_NAMES[id%GUEST_NAMES.length],x:entry.x,y:entry.y,color:crowdColors[id%crowdColors.length],phase:guestRandom(id,1)*6,direction:1,state:"arriving",activity:"Arriving on campus",thought:"Let’s see what is happening today.",age:0,visits:0,route:[],routeIndex:0,target:null,remove:false,needs:{hunger:28+Math.round(guestRandom(id,2)*68),thirst:24+Math.round(guestRandom(id,3)*72),bladder:12+Math.round(guestRandom(id,4)*72),energy:20+Math.round(guestRandom(id,5)*68),mood:18+Math.round(guestRandom(id,6)*65)}};
   sendGuestToNextActivity(guest);return guest;
 }
 
@@ -458,7 +485,7 @@ function sendGuestToNextActivity(guest){
   if(!point){sendGuestHome(guest);return;}
   guest.target={...pick,x:point.x,y:point.y};guest.route=guestRoute(guest,point);guest.routeIndex=0;guest.state="walking";guest.activity=`Walking to ${pick.label}`;guest.thought=guestThoughtForTarget(pick,guest.needs);
 }
-function sendGuestHome(guest){const exit=[...GUEST_ENTRIES].sort((a,b)=>Math.hypot(guest.x-a.x,guest.y-a.y)-Math.hypot(guest.x-b.x,guest.y-b.y))[0];guest.target={kind:"exit",id:"exit",label:"Campus exit",x:exit.x,y:exit.y};guest.route=guestRoute(guest,exit);guest.routeIndex=0;guest.state="leaving";guest.activity="Heading home";guest.thought="Time to head out.";}
+function sendGuestHome(guest){const exit=GUEST_ENTRIES.filter(point=>point.x<=ZONES.campus.maxX).sort((a,b)=>Math.hypot(guest.x-a.x,guest.y-a.y)-Math.hypot(guest.x-b.x,guest.y-b.y))[0];guest.target={kind:"exit",id:"exit",label:"Campus exit",x:exit.x,y:exit.y};guest.route=guestRoute(guest,exit);guest.routeIndex=0;guest.state="leaving";guest.activity="Heading home";guest.thought="Time to head out.";}
 function guestThoughtForTarget(target,needs){if(target.id==="water")return `I really need a drink.`;if(target.id==="restroom")return `Where is the nearest restroom?`;if(target.id==="bench")return `A short break would be perfect.`;if(target.id==="foodGarden")return `I need something to eat.`;if(target.kind==="store")return `I might buy something at ${target.label}.`;if(target.id==="experience")return `That attraction looks fun.`;return `I want to visit ${target.label}.`;}
 
 function beginGuestActivity(guest){
@@ -486,7 +513,7 @@ function updateCampusGuests(dt){
     else if(guest.state==="using"){guest.timer-=dt*speed;if(guest.timer<=0)completeGuestActivity(guest);}
   }
   const queues=new Map();for(const guest of guestAgents.filter(item=>item.state==="queueing")){const key=guest.target.id;if(!queues.has(key))queues.set(key,[]);queues.get(key).push(guest);}
-  for(const queue of queues.values()){queue.sort((a,b)=>a.id-b.id);queue.forEach((guest,index)=>{const diagonal=guest.target.id!=="snack",point={x:guest.target.x-index*(diagonal?.48:.52),y:guest.target.y+index*(diagonal?.48:.2)};moveGuestToward(guest,point,GUEST_SPEED*dt*1.4);guest.activity=index?`Waiting · ${index+1} in line`:`Being served at ${guest.target.label}`;if(index===0){guest.timer-=dt*speed;if(guest.timer<=0){guest.thought="Got it — where next?";completeGuestActivity(guest);}}});}
+  for(const queue of queues.values()){queue.sort((a,b)=>a.id-b.id);queue.forEach((guest,index)=>{const diagonal=guest.target.id!=="snack",point={x:guest.target.x-index*(diagonal?.48:.52),y:guest.target.y+index*(diagonal?.48:.2)};moveGuestToward(guest,point,GUEST_SPEED*dt*1.4);guest.activity=index?`Waiting · ${index+1} in line`:`Being served at ${guest.target.label}`;if(index===0){guest.timer-=dt*speed*(1+(run.staff?.service||0)*.35);if(guest.timer<=0){guest.thought="Got it — where next?";completeGuestActivity(guest);}}});}
   guestAgents=guestAgents.filter(guest=>!guest.remove);
 }
 
@@ -634,13 +661,23 @@ function drawGuestAgent(guest,t,index){
 }
 
 function drawStorePod(id,loc,level,locked){
-  const size=1.7+Math.max(1,level)*.17,accent=locked?"#7d8b8c":loc.color,x=loc.x-size/2,y=loc.y-size*.38,z=42+Math.max(1,level)*5;
-  drawBlock(x,y,size,size*.76,z,"#f1f0e9","#aeb9b5","#c7ccc7");
-  drawFacadeBandY(x+.15,y+size*.76+.01,size-.3,10,z-7,"#28535c",3);
-  drawRaisedSlab(x-.12,y-.12,size+.24,size*.25,z+3,4,"#f8f6ee","#9ba7a4","#bcc3bf");
+  if(locked){drawVenuePlot(id,loc);return;}
+  const size=1.72+level*.18,accent=loc.color,x=loc.x-size/2,y=loc.y-size*.38,z=40+level*9;
+  drawBlock(x,y,size,size*.76,z,level===3?"#f7f5ec":"#f1f0e9",level===3?"#94aaa8":"#aeb9b5","#c7ccc7");
+  drawFacadeBandY(x+.13,y+size*.76+.01,size-.26,9,z-7,level===3?"#214d59":"#28535c",level+2);
+  if(level>=2){drawRaisedSlab(x-.22,y-.18,size+.44,size*.34,z+7,5,"#f8f6ee","#91a09d","#b9c2bd");const terrace=isoPoint(loc.x,y+.05,z+12);ctx.strokeStyle=accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(terrace.x-30,terrace.y-6);ctx.lineTo(terrace.x+30,terrace.y+22);ctx.stroke();}
+  else drawRaisedSlab(x-.12,y-.12,size+.24,size*.25,z+3,4,"#f8f6ee","#9ba7a4","#bcc3bf");
+  if(level===3){drawBlock(x+.18,y+.08,size-.36,size*.48,24,"#dae5e0","#7d9796","#a8b9b3");const roof=isoPoint(loc.x,y+.08,z+15);ctx.fillStyle="#315d66";for(let i=0;i<3;i++)ctx.fillRect(roof.x-25+i*18,roof.y-8+i*8,13,7);}
   const awning=isoPoint(loc.x,loc.y+size*.43,z-2);ctx.strokeStyle=accent;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(awning.x-24,awning.y-12);ctx.lineTo(awning.x+24,awning.y+12);ctx.stroke();
-  const sign=isoPoint(loc.x,loc.y+size*.4,29);roundedRect(sign.x-24,sign.y-7,48,14,3,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":"NOVA",sign.x,sign.y+2);
+  const sign=isoPoint(loc.x,loc.y+size*.4,29);roundedRect(sign.x-27,sign.y-7,54,14,3,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":id==="merch"?"MERCH":id==="beach"?"MARÉ":"SURF",sign.x,sign.y+2);
+  if(level>=2){const badge=isoPoint(loc.x-.55,loc.y-.45,z+26);ctx.fillStyle=accent;ctx.beginPath();ctx.arc(badge.x,badge.y,8,0,Math.PI*2);ctx.fill();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 6px DM Mono";ctx.fillText(`L${level}`,badge.x,badge.y+2);}
 }
+
+function drawVenuePlot(id,loc){const store=STORES.find(item=>item.id===id),p=isoPoint(loc.x,loc.y,8);drawGroundSlab(loc.x-1.05,loc.y-.72,2.1,1.44,"#d8d4c8",4);ctx.strokeStyle="#7d8b8c";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(p.x-55,p.y-18);ctx.lineTo(p.x,p.y-43);ctx.lineTo(p.x+55,p.y-17);ctx.lineTo(p.x,p.y+8);ctx.closePath();ctx.stroke();ctx.setLineDash([]);roundedRect(p.x-36,p.y-29,72,18,4,"#173743");ctx.fillStyle=store?.color||"#bce65f";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("AVAILABLE PLOT",p.x,p.y-18);}
+
+function drawExpansionGate(loc,unlocked){const p=isoPoint(loc.x,loc.y,4);ctx.strokeStyle=unlocked?loc.color:"#173743";ctx.lineWidth=5;for(const dx of [-.75,.75]){const a=isoPoint(loc.x+dx,loc.y,4),b=isoPoint(loc.x+dx,loc.y,55);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}const top=isoPoint(loc.x,loc.y,57);roundedRect(top.x-48,top.y-9,96,18,4,unlocked?loc.color:"#173743");ctx.fillStyle=unlocked?"#173743":"#f5c95e";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(unlocked?"DISTRICT OPEN":"LAND FOR SALE",top.x,top.y+2);if(!unlocked){ctx.strokeStyle="#e9dfc8";ctx.lineWidth=2;for(let i=-2;i<=2;i++){const a=isoPoint(loc.x-1.1,loc.y+i*.18,16),b=isoPoint(loc.x+1.1,loc.y+i*.18,16);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}}
+
+function drawEventPavilion(loc){if(!run.eventVenue){drawGroundSlab(loc.x-1.45,loc.y-1.05,2.9,2.1,"#d9d5c9",4);const p=isoPoint(loc.x,loc.y,12);roundedRect(p.x-45,p.y-12,90,24,4,"#173743");ctx.fillStyle="#e47768";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("EVENT VENUE PLOT",p.x,p.y+2);return;}drawRaisedSlab(loc.x-1.55,loc.y-.95,3.1,1.9,15,7,"#e2c08b","#765c43","#a17c56");drawCanopy(loc.x-1.32,loc.y-.76,2.64,1.28,62);const stage=isoPoint(loc.x,loc.y,23);roundedRect(stage.x-42,stage.y-19,84,29,4,"#173743");ctx.fillStyle=run.activeEvent?"#bce65f":"#e47768";for(let i=0;i<7;i++)ctx.fillRect(stage.x-29+i*9,stage.y-9-Math.sin(lastTime*.008+i)*4,4,9+Math.sin(lastTime*.008+i)*4);}
 
 function drawServicePoint(id,loc){
   if(id==="supplier"){
@@ -662,7 +699,11 @@ function drawLocation(id) {
     return;
   }
   const isStore=STORES.some(store=>store.id===id),level=isStore?(run.venues?.[id]??0):1,locked=isStore&&level===0,size=1.45+Math.max(1,level)*.18,venueColor=locked?"#7d8b8c":loc.color;
-  if(isStore){
+  if(id==="eastGate"||id==="pierGate"){
+    drawExpansionGate(loc,Boolean(run.districts?.[id==="eastGate"?"east":"pier"]));
+  }else if(id==="pavilion"){
+    drawEventPavilion(loc);
+  }else if(isStore){
     ctx.save();if(locked)ctx.globalAlpha=.48;drawStorePod(id,loc,level,locked);ctx.restore();
   }else if(id==="supplier"||id==="board"){
     drawServicePoint(id,loc);
@@ -672,7 +713,7 @@ function drawLocation(id) {
   }
   if(level>1){const flag=isoPoint(loc.x+.5,loc.y-.45,86+level*8);ctx.strokeStyle="#173743";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(flag.x,flag.y+24);ctx.lineTo(flag.x,flag.y-24);ctx.stroke();ctx.fillStyle=loc.color;ctx.beginPath();ctx.moveTo(flag.x,flag.y-23);ctx.lineTo(flag.x+22,flag.y-16);ctx.lineTo(flag.x,flag.y-8);ctx.closePath();ctx.fill();}
   if(near){const q=isoPoint(loc.x,loc.y,3);ctx.strokeStyle="#ffd454";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,55+Math.sin(lastTime*.004)*2,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
-  const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:96);roundedRect(tag.x-50,tag.y-11,100,22,11,"rgba(10,37,46,.9)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · BUY":" · LV "+level:""}`,tag.x+5,tag.y+3);
+  const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96);roundedRect(tag.x-50,tag.y-11,100,22,11,"rgba(10,37,46,.9)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);
 }
 
 function drawPlayer(t) {
@@ -773,9 +814,9 @@ function updateBuyTotal(id) {
 
 function openStore(storeId="cafe") {
   const store=STORES.find(item=>item.id===storeId), products=CATALOGUE.filter(product=>product.storeId===storeId);
-  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500;
+  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500,progress=progressionState(run),requiredLevel=STORE_REQUIREMENTS[storeId]||1,districtMissing=storeId==="beach"&&!run.districts?.east?"East Promenade":storeId==="surf"&&!run.districts?.pier?"Ocean Pier":null;
   if(level===0){
-    const cost=STORE_UNLOCKS[storeId];drawerContent.innerHTML=`<p class="eyebrow">Expansion opportunity · ${store.short}</p><div class="locked-venue-hero" style="--venue:${store.color}"><span>${store.icon}</span><small>NEW CAMPUS DISTRICT</small><h2>${store.name}</h2><p>${store.pitch} Purchase the operating license, then stock its first product and watch a new queue form.</p><div><em>OPENING COST</em><strong>${formatEuro(cost)}</strong></div><button class="action-button orange" id="unlockVenue" ${run.cash<cost?"disabled":""}>Open ${store.short}</button></div>${storeTabs(storeId,"store")}`;
+    const cost=STORE_UNLOCKS[storeId],ready=progress.level>=requiredLevel&&!districtMissing;drawerContent.innerHTML=`<p class="eyebrow">Expansion opportunity · ${store.short}</p><div class="locked-venue-hero" style="--venue:${store.color}"><span>${store.icon}</span><small>LEVEL ${requiredLevel} VENUE</small><h2>${store.name}</h2><p>${store.pitch} The building appears only after you earn the level, secure its district and purchase the operating license.</p><div class="unlock-requirements"><em class="${progress.level>=requiredLevel?"done":""}">COMPANY LEVEL ${requiredLevel}</em><em class="${!districtMissing?"done":""}">${districtMissing?`ACQUIRE ${districtMissing.toUpperCase()}`:"DISTRICT READY"}</em></div><div><em>OPENING COST</em><strong>${formatEuro(cost)}</strong></div><button class="action-button orange" id="unlockVenue" ${run.cash<cost||!ready?"disabled":""}>${!ready?`Requires level ${requiredLevel}${districtMissing?" + land":""}`:`Open ${store.short}`}</button></div>${storeTabs(storeId,"store")}`;
     drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
     $("#unlockVenue").addEventListener("click",()=>{try{save(unlockVenue(run,storeId));toast(`${store.name} is now open`);beep(760);openStore(storeId);}catch(error){toast(error.message,true);}});return;
   }
@@ -783,10 +824,11 @@ function openStore(storeId="cafe") {
   const campus=campusMetrics(run),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],Math.round(demandFor(run.prices[p.id],p.reference)*Math.max(.45,campus.guests/24)))*run.prices[p.id],0);
   drawerContent.innerHTML = `
     <p class="eyebrow">Venue management · ${store.short}</p><div class="venue-title"><div><h2>${store.name}</h2><p>${store.pitch}</p></div><div class="level-badge"><small>VENUE LEVEL</small><strong>${level} / 3</strong></div></div>
+    <div class="venue-evolution level-${level}" style="--venue:${store.color}"><span class="evo-building"><i></i><b>${store.icon}</b></span><div><small>VISUAL STAGE ${level}</small><strong>${level===1?"Compact campus kiosk":level===2?"Expanded service terrace":"Two-storey flagship"}</strong><p>${level===1?"One counter and a small awning.":level===2?"Faster frontage, terrace seating and stronger identity.":"Premium façade, rooftop fit-out and maximum product range."}</p></div></div>
     <div class="upgrade-track"><span style="width:${level/3*100}%"></span></div>
     ${level<3?`<button class="upgrade-button" id="upgradeVenue">Upgrade to level ${level+1}<small>Unlock ${products.find(p=>p.tier===level+1)?.name} · ${formatEuro(upgradeCost)}</small></button>`:`<div class="max-level">★ Flagship venue · all products unlocked</div>`}
     ${storeTabs(storeId,"store")}
-    <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>EST. DAY REVENUE</small><strong>${formatEuro(potential)}</strong><span>rating adjusted</span></div><div><small>PRODUCTS</small><strong>${products.filter(product=>product.tier<=level).length} / 3</strong><span>unlocked</span></div></div>
+    <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>EST. DAY REVENUE</small><strong>${formatEuro(potential)}</strong><span>rating adjusted</span></div><div><small>LIFETIME VISITS</small><strong>${run.venueVisits?.[storeId]||0}</strong><span>${run.staff?.service||0} queue leads</span></div></div>
     <div class="rule-box"><strong>Live demand</strong><div class="rule-grid"><div><b>${campus.guests} guests</b><small>campus footfall</small></div><div><b>${campus.rating}% rating</b><small>raises conversion</small></div><div><b>${crowdPeak(run.clockMinutes).multiplier.toFixed(1)}× flow</b><small>${crowdPeak(run.clockMinutes).label}</small></div></div></div>
     <div class="product-list">${products.map(product => productPriceCard(product)).join("")}</div>
     <div class="trade-footer"><button class="action-button secondary" id="visitSupplier">Buy more stock</button><button class="action-button orange" id="venueClock">${run.speed===0?"Resume":"Pause"} live trading</button></div>`;
@@ -802,10 +844,27 @@ function openStore(storeId="cafe") {
 }
 
 function openPortfolio() {
-  drawerContent.innerHTML=`<p class="eyebrow">Open-ended company growth</p><h2>Your business network</h2><p class="drawer-intro">Start with Atlantic Café, reinvest its live profits, then open new districts and grow each shop into a flagship.</p><div class="venue-grid">${STORES.map(store=>{
+  const progress=progressionState(run);drawerContent.innerHTML=`<p class="eyebrow">Company level ${progress.level} · ${progress.title}</p><h2>Your business network</h2><p class="drawer-intro">Start with Atlantic Café, reinvest its live profits, acquire land and turn construction plots into a five-store coastal portfolio.</p><div class="progress-ribbon"><span style="width:${progress.progress}%"></span><strong>${progress.next?`${progress.xp} / ${progress.next.xp} XP · NEXT: ${progress.next.unlock}`:"MAXIMUM LEVEL REACHED"}</strong></div><div class="venue-grid">${STORES.map(store=>{
     const products=CATALOGUE.filter(p=>p.storeId===store.id),units=products.reduce((sum,p)=>sum+run.stock[p.id],0),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
-    const level=run.venues?.[store.id]??0;return `<button class="venue-card ${level===0?"locked-venue":""}" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${level===0?"🔒":store.icon}</span><div><small>${store.short.toUpperCase()} · ${level===0?"LOCKED":`LEVEL ${level}`}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${level===0?formatEuro(STORE_UNLOCKS[store.id]):formatEuro(potential)}</b> ${level===0?"to open":"potential"}</span><span><b>${level}/3</b> level</span></div><em>${level===0?"View expansion →":"Manage venue →"}</em></button>`}).join("")}</div>`;
+    const level=run.venues?.[store.id]??0,required=STORE_REQUIREMENTS[store.id]||1;return `<button class="venue-card ${level===0?"locked-venue":""}" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${level===0?"⌁":store.icon}</span><div><small>${store.short.toUpperCase()} · ${level===0?`LEVEL ${required}`:`LEVEL ${level}`}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${level===0?formatEuro(STORE_UNLOCKS[store.id]):formatEuro(potential)}</b> ${level===0?"to open":"potential"}</span><span><b>${level}/3</b> stage</span></div><em>${level===0?"Inspect construction plot →":"Manage venue →"}</em></button>`}).join("")}</div>`;
   drawerContent.querySelectorAll(".venue-card").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
+}
+
+function openDistrictPanel(districtId){
+  const district=DISTRICT_CATALOGUE.find(item=>item.id===districtId),progress=progressionState(run),owned=Boolean(run.districts?.[districtId]),previousReady=districtId!=="pier"||run.districts?.east,ready=progress.level>=district.level&&previousReady;
+  const features=districtId==="east"?["9 new buildable tiles","Maré Beach Bar plot","Coastline Pavilion","New guest entrance"]:["7-tile ocean boardwalk","Surf Shack plot","Nova Surf Cup","Premium guest entrance"];
+  drawerContent.innerHTML=`<p class="eyebrow">Land expansion · company level ${progress.level}</p><div class="district-hero" style="--district:${district.color}"><span>${districtId==="east"?"☀":"≈"}</span><div><small>${owned?"DISTRICT ACQUIRED":`UNLOCKS AT LEVEL ${district.level}`}</small><h2>${district.name}</h2><p>${district.description}</p></div></div><div class="district-map-preview ${owned?"owned":""}"><i></i><b></b><span>CORE CAMPUS</span><strong>${district.name.toUpperCase()}</strong></div><div class="section-heading"><div><small>EXPANSION CONTENT</small><strong>What this land adds</strong></div></div><div class="district-feature-grid">${features.map(feature=>`<div><span>✓</span>${feature}</div>`).join("")}</div>${owned?`<div class="max-level">★ Land owned · walk through the district gate now</div>`:`<div class="unlock-requirements"><em class="${progress.level>=district.level?"done":""}">COMPANY LEVEL ${district.level}</em><em class="${previousReady?"done":""}">${districtId==="pier"?"EAST PROMENADE OWNED":"CORE CAMPUS OWNED"}</em></div><div class="district-price"><small>LAND ACQUISITION</small><strong>${formatEuro(district.cost)}</strong><span>Permanent expansion</span></div><button class="action-button orange" id="buyDistrict" ${!ready||run.cash<district.cost?"disabled":""}>${!ready?`Reach level ${district.level}${previousReady?"":" + acquire East"}`:`Acquire ${district.name}`}</button>`}`;
+  drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");if($("#buyDistrict"))$("#buyDistrict").addEventListener("click",()=>{try{save(unlockDistrict(run,districtId));toast(`${district.name} acquired · the map has expanded`);beep(820);openDistrictPanel(districtId);}catch(error){toast(error.message,true);beep(180);}});
+}
+
+function openEventVenue(){
+  const progress=progressionState(run),active=EVENT_CATALOGUE.find(event=>event.id===run.activeEvent?.id);
+  if(!run.eventVenue){const ready=progress.level>=7&&run.districts?.east;drawerContent.innerHTML=`<p class="eyebrow">Event expansion · East Promenade</p><div class="event-venue-hero"><span>♫</span><small>LEVEL 7 LANDMARK</small><h2>Coastline Pavilion</h2><p>Build a permanent event venue that creates timed crowd waves and gives guests a new destination.</p><div><em>BUILD COST</em><strong>${formatEuro(50000)}</strong></div><button class="action-button orange" id="buildEventVenue" ${!ready||run.cash<50000?"disabled":""}>${!run.districts?.east?"Acquire East Promenade first":progress.level<7?"Reach company level 7":"Build Coastline Pavilion"}</button></div>`;drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");$("#buildEventVenue").addEventListener("click",()=>{try{save(unlockEventVenue(run));toast("Coastline Pavilion opened");beep(850);openEventVenue();}catch(error){toast(error.message,true);beep(180);}});return;}
+  drawerContent.innerHTML=`<p class="eyebrow">Live events · Coastline Pavilion</p><h2>Program the campus</h2><p class="drawer-intro">Events cost cash to launch, run for several game hours and create a visible guest rush toward the pavilion and nearby stores.</p>${active?`<div class="active-event"><span>${active.icon}</span><div><small>LIVE NOW</small><strong>${active.name}</strong><p>${Math.ceil(run.activeEvent.remainingMinutes)} game minutes remaining · +${active.guestBonus} guest capacity</p></div></div>`:""}<div class="event-grid">${EVENT_CATALOGUE.map(event=>{const locked=progress.level<event.level;return `<article class="${locked?"locked":""}"><span>${event.icon}</span><div><small>LEVEL ${event.level} EVENT</small><strong>${event.name}</strong><p>${event.description}</p><em>${event.duration} min · +${event.guestBonus} guests</em></div><button data-event="${event.id}" ${locked||active||run.cash<event.cost?"disabled":""}>${locked?`Level ${event.level}`:active?"Venue busy":`Launch · ${formatEuro(event.cost)}`}</button></article>`}).join("")}</div>`;drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");drawerContent.querySelectorAll("[data-event]").forEach(button=>button.addEventListener("click",()=>{try{save(launchEvent(run,button.dataset.event));toast(`${EVENT_CATALOGUE.find(event=>event.id===button.dataset.event).name} is live`);beep(900);openEventVenue();}catch(error){toast(error.message,true);beep(180);}}));
+}
+
+function openProgressPanel(){
+  activeLocation=null;const progress=progressionState(run),goals=scenarioGoals(run);drawerContent.innerHTML=`<p class="eyebrow">Company progression · season one</p><div class="progress-hero"><div><small>COMPANY LEVEL</small><strong>${progress.level}</strong><em>${progress.title}</em></div><div><small>EXPERIENCE</small><strong>${progress.xp} XP</strong><em>${progress.next?`${progress.next.xp-progress.xp} to next level`:"Maximum level"}</em></div><div><small>EMPIRE VALUE</small><strong>${formatEuro(run.cash+inventoryValue(run))}</strong><em>${Object.values(run.venues).filter(level=>level>0).length} stores · ${Object.values(run.districts).filter(Boolean).length} districts</em></div></div><div class="progress-ribbon large"><span style="width:${progress.progress}%"></span><strong>${progress.next?`NEXT UNLOCK · ${progress.next.unlock}`:"NOVA LEGEND · ALL LEVELS COMPLETE"}</strong></div><div class="section-heading"><div><small>LONG-TERM GOALS</small><strong>Build a campus institution</strong></div><span>${goals.filter(goal=>goal.complete).length}/${goals.length} complete</span></div><div class="goal-grid">${goals.map(goal=>`<article class="${goal.complete?"complete":""}"><span>${goal.complete?"✓":"○"}</span><div><strong>${goal.name}</strong><p>${goal.description}</p><i><em style="width:${Math.min(100,goal.value/goal.target*100)}%"></em></i><small>${goal.value} / ${goal.target}</small></div></article>`).join("")}</div><div class="section-heading"><div><small>LEVEL ROADMAP</small><strong>Every level changes what you can build</strong></div></div><div class="level-roadmap">${PROGRESSION_LEVELS.map(tier=>`<div class="${tier.level<progress.level?"done":tier.level===progress.level?"current":""}"><span>${tier.level}</span><div><strong>${tier.title}</strong><small>${tier.unlock}</small></div><em>${tier.xp} XP</em></div>`).join("")}</div><div class="section-heading"><div><small>LAND PORTFOLIO</small><strong>Expandable campus districts</strong></div></div><div class="district-buttons">${DISTRICT_CATALOGUE.map(district=>`<button data-district="${district.id}" style="--district:${district.color}"><span>${run.districts?.[district.id]?"✓":"⌁"}</span><div><strong>${district.name}</strong><small>${run.districts?.[district.id]?"Owned":`Level ${district.level} · ${formatEuro(district.cost)}`}</small></div></button>`).join("")}</div>`;drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");drawerContent.querySelectorAll("[data-district]").forEach(button=>button.addEventListener("click",()=>openDistrictPanel(button.dataset.district)));
 }
 
 function beginBuildMode(build){
@@ -831,11 +890,11 @@ function experiencePreview(moduleIds){
 
 function openBuildPanel() {
   activeLocation=null;
-  const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost;
+  const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost,progress=progressionState(run);
   drawerContent.innerHTML=`<p class="eyebrow">Campus construction · ${run.facilities.length} placed</p><h2>Build the campus</h2><p class="drawer-intro">Place paths, scenery and guest facilities directly in the world. Every build changes student needs and your campus rating.</p>
     <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
     <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
-    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>`<article class="build-card" style="--build:${item.color}"><span class="facility-preview facility-${item.id}"><i></i></span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost?"disabled":""}>Build · ${formatEuro(item.cost)}</button></article>`).join("")}</div>
+    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>{const levelRequired=item.id==="foodGarden"?3:1,locked=progress.level<levelRequired;return `<article class="build-card ${locked?"progress-locked":""}" style="--build:${item.color}"><span class="facility-preview facility-${item.id}"><i></i></span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost||locked?"disabled":""}>${locked?`Unlock at level ${levelRequired}`:`Build · ${formatEuro(item.cost)}`}</button></article>`}).join("")}</div>
     <div class="section-heading"><div><small>PLACED ASSETS</small><strong>Move, rotate or remove</strong></div><span>${run.facilities.length} on campus</span></div>
     <div class="placed-facility-list">${run.facilities.length?run.facilities.map(facility=>{const size=facilityFootprint(facility.type,facility.rotation||0);return `<article><span class="facility-preview facility-${facility.type}"><i></i></span><div><strong>${facility.name}</strong><small>${size.width.toFixed(1)} × ${size.height.toFixed(1)} tiles · ${(facility.rotation||0)*90}°</small></div><button data-move-facility="${facility.id}">Move</button><button class="danger" data-demolish-facility="${facility.id}">Remove</button></article>`}).join(""):`<div class="build-empty">Place your first facility to unlock move and demolition tools.</div>`}</div>
     <div class="section-heading"><div><small>SIGNATURE ATTRACTION</small><strong>Design a beach experience</strong></div><span>Choose modules piece by piece</span></div>
@@ -851,7 +910,7 @@ function openBuildPanel() {
 function experienceVerdict(stats){if(stats.intensity>78)return "Too intense — most students will avoid it.";if(stats.excitement<24)return "Too gentle — add a stronger headline module.";if(stats.comfort<35)return "Exciting, but comfort is hurting its appeal.";if(stats.excitement>65&&stats.intensity<70)return "Flagship potential — exciting without becoming punishing.";return "Balanced campus attraction with broad appeal.";}
 
 function openGuestPanel() {
-  activeLocation=null;const metrics=campusMetrics(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"},live=guestAgents.length,walking=guestAgents.filter(guest=>guest.state==="walking"||guest.state==="leaving").length,queueing=guestAgents.filter(guest=>guest.state==="queueing").length,using=guestAgents.filter(guest=>guest.state==="using").length,hotspots=guestHotspots();
+  activeLocation=null;const metrics=campusMetrics(run),progress=progressionState(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"},live=guestAgents.length,walking=guestAgents.filter(guest=>guest.state==="walking"||guest.state==="leaving").length,queueing=guestAgents.filter(guest=>guest.state==="queueing").length,using=guestAgents.filter(guest=>guest.state==="using").length,hotspots=guestHotspots();
   const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];
   drawerContent.innerHTML=`<p class="eyebrow">Guest intelligence · individual simulation</p><h2>Students using the campus</h2><p class="drawer-intro">Every visible guest now has personal needs, walks to a real destination, waits in line, uses the facility and decides where to go next.</p>
     <div class="guest-hero"><div><small>LIVE GUESTS</small><strong>${live}</strong><em>${walking} moving across campus</em></div><div><small>AT DESTINATIONS</small><strong>${using+queueing}</strong><em>${queueing} currently queueing</em></div><div><small>TOTAL INTERACTIONS</small><strong>${run.totalCampusInteractions||0}</strong><em>Persisted across sessions</em></div></div>
@@ -863,14 +922,14 @@ function openGuestPanel() {
     <div class="needs-grid">${Object.entries(metrics.needs).map(([key,value])=>`<div><span>${needLabels[key]} <b>${value}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div>
     <div class="guest-thought"><span>☺</span><div><small>LATEST GUEST THOUGHT</small><strong>“${guestThought(metrics,needLabels)}”</strong></div></div>
     <div class="section-heading"><div><small>OPERATIONS TEAM</small><strong>Hire permanent campus staff</strong></div><span>${Object.values(run.staff).reduce((a,b)=>a+b,0)} employed</span></div>
-    <div class="staff-grid">${STAFF_CATALOGUE.map(role=>`<article><span>${role.icon}</span><div><strong>${role.name}</strong><p>${role.description}</p><small>${run.staff[role.id]||0} hired</small></div><button data-hire="${role.id}" ${run.cash<role.cost?"disabled":""}>Hire · ${formatEuro(role.cost)}</button></article>`).join("")}</div>
+    <div class="staff-grid">${STAFF_CATALOGUE.map(role=>{const locked=progress.level<(role.level||1);return `<article class="${locked?"staff-locked":""}"><span>${locked?"⌁":role.icon}</span><div><strong>${role.name}</strong><p>${role.description}</p><small>${locked?`UNLOCKS AT LEVEL ${role.level}`:`${run.staff[role.id]||0} hired`}</small></div><button data-hire="${role.id}" ${run.cash<role.cost||locked?"disabled":""}>${locked?`Level ${role.level} required`:`Hire · ${formatEuro(role.cost)}`}</button></article>`}).join("")}</div>
     <div class="section-heading"><div><small>BEST ATTRACTION</small><strong>Excitement ${metrics.attraction.excitement} · Intensity ${metrics.attraction.intensity} · Comfort ${metrics.attraction.comfort}</strong></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
   drawerContent.querySelectorAll("[data-guest-id]").forEach(button=>button.addEventListener("click",()=>{const guest=guestAgents.find(item=>item.id===Number(button.dataset.guestId));if(guest)openGuestProfile(guest);}));
   drawerContent.querySelectorAll("[data-hire]").forEach(button=>button.addEventListener("click",()=>{try{save(hireStaff(run,button.dataset.hire));toast("Staff member hired for the run");beep(630);openGuestPanel();}catch(error){toast(error.message,true);}}));
 }
 
-function activityName(kind,id){if(kind==="store")return STORES.find(item=>item.id===id)?.name||id;const facility=(run.facilities||[]).find(item=>item.id===id);if(facility)return facility.name;return id==="academy"?"Academic Wing":id==="hub"?"Student Hub":id==="forum"?"Sunset Forum":id;}
+function activityName(kind,id){if(kind==="store")return STORES.find(item=>item.id===id)?.name||id;const facility=(run.facilities||[]).find(item=>item.id===id);if(facility)return facility.name;return id==="academy"?"Academic Wing":id==="hub"?"Student Hub":id==="forum"?"Sunset Forum":id==="pavilion"?"Coastline Pavilion":id;}
 function guestHotspots(){const rows=new Map();for(const guest of guestAgents.filter(item=>item.target&&item.target.kind!=="exit")){const key=`${guest.target.kind}:${guest.target.id}`,row=rows.get(key)||{...guest.target,live:0,visits:run.today?.activities?.[key]||0};row.live+=1;rows.set(key,row);}for(const [key,visits] of Object.entries(run.today?.activities||{})){if(rows.has(key))continue;const split=key.indexOf(":"),kind=key.slice(0,split),id=key.slice(split+1),facility=(run.facilities||[]).find(item=>item.id===id);rows.set(key,{kind,id,type:facility?.type,label:activityName(kind,id),live:0,visits});}return [...rows.values()].sort((a,b)=>b.live-a.live||b.visits-a.visits).slice(0,6);}
 function openGuestProfile(guest){const labels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Mood"};drawerContent.innerHTML=`<p class="eyebrow">Live guest · #${String(guest.id).padStart(3,"0")}</p><div class="guest-profile-head"><i style="--guest:${guest.color}"></i><div><h2>${guest.name}</h2><p>${guest.activity}</p></div><span>${guest.visits} visits</span></div><div class="guest-quote">“${guest.thought}”</div><div class="section-heading"><div><small>PERSONAL NEEDS</small><strong>What drives the next decision</strong></div></div><div class="needs-grid">${Object.entries(guest.needs).map(([key,value])=>`<div><span>${labels[key]} <b>${Math.round(value)}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div><div class="guest-journey"><small>CURRENT JOURNEY</small><strong>${guest.target?.label||"Exploring campus"}</strong><p>${guest.state==="queueing"?"Waiting for service before choosing another destination.":guest.state==="using"?"Actively using this part of the campus.":guest.state==="leaving"?"Leaving after a complete campus visit.":"Following the campus promenade to the selected destination."}</p></div><button class="action-button secondary" id="backToGuests">Back to all guests</button>`;drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");$("#backToGuests").addEventListener("click",openGuestPanel);}
 
@@ -941,6 +1000,7 @@ document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventLi
   if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
   if(action==="clock")setGameSpeed(run.speed===0?1:0);
   if(action==="guests")openGuestPanel();
+  if(action==="progress")openProgressPanel();
   if(action==="ledger")openLocation("board");
 }));
 document.querySelectorAll("[data-speed]").forEach(button=>button.addEventListener("click",()=>setGameSpeed(button.dataset.speed)));

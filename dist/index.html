@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./premium.css?v=16-living-guests" />
+    <link rel="stylesheet" href="./premium.css?v=17-progression" />
   </head>
   <body>
     <div id="game" class="game-shell">
@@ -25,6 +25,7 @@
           <div class="stat cash"><span>CASH</span><strong id="cashStat">€100.00</strong></div>
           <div class="stat guests"><span>GUESTS</span><strong id="guestStat">24</strong></div>
           <div class="stat rating"><span>RATING</span><strong id="ratingStat">50%</strong></div>
+          <div class="stat level"><span>COMPANY</span><strong id="levelStat">LV 1</strong></div>
           <div class="stat rep hidden-stat"><span>REPUTATION</span><strong id="repStat">0 ★</strong></div>
           <div class="time-controls" aria-label="Game speed"><button data-speed="0">Ⅱ</button><button class="active" data-speed="1">1×</button><button data-speed="2">2×</button><button data-speed="4">4×</button></div>
         </div>
@@ -94,6 +95,7 @@
           <button data-action="stores"><span>⌂</span><strong>Stores</strong><small>Manage venues</small></button>
           <button data-action="clock" id="clockButton"><span id="clockIcon">Ⅱ</span><strong id="clockLabel">Pause</strong><small>Simulation clock</small></button>
           <button data-action="guests"><span>☺</span><strong>Guests</strong><small>Needs &amp; staff</small></button>
+          <button data-action="progress"><span>★</span><strong>Progress</strong><small>Goals &amp; land</small></button>
           <button data-action="ledger"><span>▤</span><strong>Finance</strong><small>Review results</small></button>
         </nav>
 
@@ -112,6 +114,6 @@
 
       <div id="toastRegion" class="toast-region" aria-live="polite"></div>
     </div>
-    <script type="module" src="./app.js?v=16-living-guests"></script>
+    <script type="module" src="./app.js?v=17-progression"></script>
   </body>
 </html>
