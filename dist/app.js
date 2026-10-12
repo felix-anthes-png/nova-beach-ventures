@@ -309,11 +309,65 @@ function drawBeachStage(t){
   ctx.fillStyle="#173743";ctx.fillRect(p.x-48,p.y-9,17,27);ctx.fillRect(p.x+31,p.y-9,17,27);ctx.restore();drawWorldLabel(20.5,23,86,"BEACH STAGE","#ff8b66");
 }
 
+function drawInteriorFloor(zone){
+  drawGroundSlab(1.1,1.1,12.8,9.15,"#e8e7e0",4);
+  const accent=zone.id==="academy"?"#dce9df":zone.id==="mercado"?"#ece1c9":"#dbe8e6";
+  drawGroundSlab(2.1,2.05,10.8,1.15,accent,5);
+  for(let i=0;i<6;i++){const p=isoPoint(2.6+i*1.75,2.6,6);ctx.strokeStyle="rgba(255,255,255,.5)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x-22,p.y-10);ctx.lineTo(p.x+22,p.y+10);ctx.stroke();}
+}
+
+function drawIndoorPlant(x,y,scale=1){
+  drawBlock(x-.32,y-.32,.64,.64,18,"#d7cfc1","#8e8f87","#aaa99f");const p=isoPoint(x,y,20);ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.strokeStyle="#4c7654";ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.save();ctx.rotate(i*Math.PI/3);ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(8,-9,4,-19);ctx.stroke();ctx.restore();}ctx.restore();
+}
+
+function drawCommunalTable(x,y,w=3.2,color="#cfa670"){
+  drawRaisedSlab(x,y,w,.75,29,6,color,mixColor(color,"#000000",.32),mixColor(color,"#000000",.19));
+  ctx.strokeStyle="#274a52";ctx.lineWidth=3;[x+.3,x+w-.3].forEach(px=>{const a=isoPoint(px,y+.36,0),b=isoPoint(px,y+.36,23);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();});
+  for(let i=0;i<3;i++){const px=x+.55+i*(w-1.1)/2;drawBlock(px-.22,y-.55,.44,.42,13,"#31545b","#223e45","#29484f");drawBlock(px-.22,y+.88,.44,.42,13,"#31545b","#223e45","#29484f");}
+}
+
+function drawCafeWorkshop(){
+  drawRaisedSlab(5.65,2.15,4.3,.85,38,8,"#d5b37b","#82694b","#9f8159");
+  drawFacadeBandY(5.8,3.01,4,10,31,"#244e58",5);
+  const machine=isoPoint(8.7,2.7,49);ctx.fillStyle="#ecede7";roundedRect(machine.x-17,machine.y-16,34,19,4,"#ecede7");ctx.fillStyle="#173743";ctx.fillRect(machine.x-10,machine.y-11,20,5);ctx.fillStyle="#ff7458";ctx.beginPath();ctx.arc(machine.x+11,machine.y-8,2,0,Math.PI*2);ctx.fill();
+  const shelf=isoPoint(8,1.6,47);ctx.strokeStyle="#b48a56";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(shelf.x-64,shelf.y);ctx.lineTo(shelf.x+64,shelf.y+32);ctx.stroke();for(let i=0;i<6;i++){ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(shelf.x-47+i*18,shelf.y+7+i*4,4,0,Math.PI*2);ctx.fill();}
+}
+
+function drawMercadoShelf(x,y,w=3.1){
+  drawBlock(x,y,w,.62,58,"#f1efe7","#8e9996","#b8bfba");
+  for(let z=15;z<55;z+=17){drawFacadeBandY(x+.15,y+.63,w-.3,z,z+6,"#31545b",Math.max(3,Math.round(w)));}
+  const colors=["#f5c95e","#ff7458","#64cbc8","#bce65f"];for(let i=0;i<4;i++){const p=isoPoint(x+.5+i*(w-1)/3,y+.68,31);ctx.fillStyle=colors[i];ctx.fillRect(p.x-4,p.y-5,8,9);}
+}
+
+function drawColdRoom(){
+  drawCampusWing(9.7,2.05,3.15,2.25,65,{glass:"#326a74",accent:"#64cbc8"});const p=isoPoint(11.3,4.32,37);roundedRect(p.x-26,p.y-8,52,16,3,"#173743");ctx.fillStyle="#d8fbff";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("COLD STORE",p.x,p.y+2);
+}
+
+function drawLounge(x,y,color="#6f9294"){
+  drawBlock(x,y,2.5,.8,19,mixColor(color,"#ffffff",.2),mixColor(color,"#000000",.35),mixColor(color,"#000000",.2));
+  drawRaisedSlab(x-.1,y-.04,2.7,.28,37,8,mixColor(color,"#ffffff",.1),mixColor(color,"#000000",.38),mixColor(color,"#000000",.22));
+  drawBlock(x+.85,y+1.05,.75,.75,14,"#d5b170","#846944","#9d7c50");
+}
+
+function drawMerchDisplay(){
+  drawRaisedSlab(2.05,2.15,3.5,.65,34,6,"#e9e8e1","#8f9a97","#b9bfbb");
+  const colors=["#64cbc8","#f5c95e","#ff7458"];for(let i=0;i<3;i++){const p=isoPoint(2.7+i,2.55,47);ctx.fillStyle=colors[i];ctx.beginPath();ctx.moveTo(p.x-8,p.y-4);ctx.lineTo(p.x,p.y-12);ctx.lineTo(p.x+8,p.y-4);ctx.lineTo(p.x+5,p.y+9);ctx.lineTo(p.x-5,p.y+9);ctx.closePath();ctx.fill();}
+}
+
+function drawVentureWall(){
+  const p=isoPoint(10.8,1.08,63);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-64,-27,128,54,4,"#173743");ctx.fillStyle="#bce65f";ctx.font="800 7px DM Mono";ctx.fillText("VENTURE BOARD",-52,-11);ctx.fillStyle="#d9e5e1";for(let i=0;i<4;i++){ctx.fillRect(-50,-1+i*8,32+i*8,3);}ctx.restore();
+}
+
 function drawRoomActors(t){
-  const zone=activeZone(),actors=[{depth:1,draw:()=>drawRoomShell(zone)}];
-  const furniture=zone.id==="mercado"?[[2.2,3,3,.8,34,"#b58b55"],[9.7,3,3,.8,34,"#b58b55"],[2,6.5,2.4,.8,28,"#7d6749"],[10.5,6.5,2.4,.8,28,"#7d6749"]]:zone.id==="academy"?[[2.2,3.1,2.4,1,28,"#d7a26f"],[10.4,3.1,2.4,1,28,"#d7a26f"],[2.4,6.4,2.2,1.1,24,"#6fa3a2"],[10.4,6.4,2.2,1.1,24,"#6fa3a2"]]:[[2,2.8,2.3,1,31,"#67c7c4"],[10.7,2.8,2.3,1,31,"#67c7c4"],[2.3,6.5,2.6,1.2,24,"#8e7bbb"],[9.9,7,2.8,1,30,"#4d7180"]];
-  furniture.forEach((item,index)=>actors.push({depth:item[0]+item[1],draw:()=>drawFurniture(...item,index)}));
-  const roomPeople=zone.id==="mercado"?[[4.8,5.4,"#f5c95e",.5],[10,5.5,"#ff8060",1.4]]:zone.id==="academy"?[[4.5,6,"#75c0c8",.3],[10.2,5.7,"#e6b45f",1.7],[6.2,3,"#ad75a6",2.5]]:[[4.3,6.3,"#ff8060",.8],[9.2,4.2,"#75c0c8",1.9],[11.8,6.2,"#bce65f",2.7]];
+  const zone=activeZone(),actors=[{depth:.1,draw:()=>drawInteriorFloor(zone)},{depth:1,draw:()=>drawRoomShell(zone)}];
+  if(zone.id==="academy"){
+    actors.push({depth:4.7,draw:drawCafeWorkshop},{depth:8.1,draw:()=>drawCommunalTable(2.1,5.65,3.5,"#d2a66c")},{depth:14.1,draw:()=>drawCommunalTable(9.9,4.2,3,"#d2a66c")},{depth:10.5,draw:()=>drawLounge(2.2,7.25,"#608a8b")},{depth:12.9,draw:()=>drawIndoorPlant(11.8,7.2,1.2)});
+  }else if(zone.id==="mercado"){
+    actors.push({depth:5.1,draw:()=>drawMercadoShelf(2.05,2.45,4)},{depth:9.3,draw:()=>drawMercadoShelf(2.1,6.55,3.6)},{depth:12,draw:drawColdRoom},{depth:16.2,draw:()=>drawMercadoShelf(10.1,6.1,2.8)},{depth:10,draw:()=>drawIndoorPlant(7.6,7.7,.9)});
+  }else{
+    actors.push({depth:4.5,draw:drawMerchDisplay},{depth:11.8,draw:()=>drawLounge(2.15,7,"#7c70a2")},{depth:15.2,draw:()=>drawLounge(9.8,6.1,"#568c8c")},{depth:12,draw:drawVentureWall},{depth:10.7,draw:()=>drawIndoorPlant(7.8,6.9,1.1)});
+  }
+  const roomPeople=zone.id==="mercado"?[[4.8,5.4,"#f5c95e",.5],[10,5.5,"#ff8060",1.4]]:zone.id==="academy"?[[4.7,4.8,"#75c0c8",.3],[10.5,6.2,"#e6b45f",1.7],[5.3,7.4,"#ad75a6",2.5]]:[[4.7,6.2,"#ff8060",.8],[9.2,4.7,"#75c0c8",1.9],[11.8,7.2,"#bce65f",2.7]];
   roomPeople.forEach((person,index)=>actors.push({depth:person[0]+person[1],draw:()=>drawStudent(person,t,index)}));
   return actors;
 }
@@ -354,22 +408,70 @@ function drawQueueLabel(x,y,label,count){const p=isoPoint(x,y,62);roundedRect(p.
 
 function drawTree(x,y,scale,t){const p=isoPoint(x,y,4),sway=Math.sin(t*.001)*2;ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.fillStyle="rgba(10,45,38,.16)";ctx.beginPath();ctx.ellipse(7,4,27,8,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#76563b";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-2,-30,sway,-64);ctx.stroke();ctx.strokeStyle="rgba(255,210,145,.34)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-2,-3);ctx.quadraticCurveTo(-4,-31,sway-2,-61);ctx.stroke();ctx.translate(sway,-65);for(let a=0;a<7;a++){ctx.save();ctx.rotate(a*Math.PI*2/7+Math.sin(t*.0007+a)*.035);ctx.fillStyle=a%2?"#2f8358":"#3d9668";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(18,-7,37,0);ctx.quadraticCurveTo(19,8,0,3);ctx.closePath();ctx.fill();ctx.restore();}ctx.fillStyle="#87633f";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();}
 
+function drawAtlanticBench(x,y){
+  drawRaisedSlab(x-.82,y-.28,1.64,.56,19,7,"#c99e64","#755b3e","#92704a");
+  const p=isoPoint(x,y-.21,36);ctx.strokeStyle="#284b53";ctx.lineWidth=3;for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(p.x-35+i*2,p.y-8+i);ctx.lineTo(p.x+35+i*2,p.y+26+i);ctx.stroke();}ctx.strokeStyle="#203f46";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(p.x-35,p.y+28);ctx.lineTo(p.x-27,p.y-4);ctx.moveTo(p.x+34,p.y+28);ctx.lineTo(p.x+26,p.y+20);ctx.stroke();
+}
+
+function drawRecyclingPoint(x,y){
+  [[-.34,"#57a568","P"],[.34,"#5aa7bd","C"]].forEach(([offset,color,label])=>{drawBlock(x+offset-.27,y-.28,.54,.56,35,color,mixColor(color,"#000000",.32),mixColor(color,"#000000",.18));drawRaisedSlab(x+offset-.3,y-.31,.6,.62,39,5,"#173743","#0d2d35","#123943");const p=isoPoint(x+offset,y+.3,26);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(label,p.x,p.y);});
+}
+
+function drawWaterStation(x,y,t){
+  drawBlock(x-.42,y-.36,.84,.72,20,"#ecece5","#9faeaa","#bec7c2");const p=isoPoint(x,y,22);ctx.strokeStyle="#3d7e8a";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(p.x-8,p.y);ctx.quadraticCurveTo(p.x-8,p.y-33,p.x+9,p.y-33);ctx.lineTo(p.x+9,p.y-20);ctx.stroke();ctx.fillStyle="#72d2db";ctx.beginPath();ctx.arc(p.x+9,p.y-16+Math.sin(t*.006),3,0,Math.PI*2);ctx.fill();
+}
+
+function drawRestroomPod(x,y){
+  drawCampusWing(x-.72,y-.58,1.44,1.16,55,{glass:"#315965",accent:"#7e9ec5"});
+  const p=isoPoint(x,y+.59,34);roundedRect(p.x-25,p.y-11,50,22,3,"#173743");ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="900 8px DM Mono";ctx.fillText("WC  ·  WC",p.x,p.y+3);
+}
+
+function drawFoodGarden(x,y){
+  drawGroundSlab(x-1.15,y-.85,2.3,1.7,"#dfd5bd",5);drawCanopy(x-.95,y-.72,1.9,1.42,49);
+  drawRaisedSlab(x-.68,y-.12,1.36,.46,29,6,"#d29a5d","#865e3f","#a6754b");
+  [[-.72,.58,"#ff7458"],[0,.72,"#f5c95e"],[.72,.58,"#64cbc8"]].forEach(([ox,oy,color])=>{const p=isoPoint(x+ox,y+oy,15);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,8,4,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#284b53";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x,p.y+12);ctx.stroke();});
+}
+
+function drawMusicModule(x,y,t){
+  drawRaisedSlab(x-.95,y-.52,1.4,.7,32,10,"#213f49","#112f38","#193943");const p=isoPoint(x-.25,y-.16,51);ctx.fillStyle="#f5c95e";for(let i=0;i<5;i++)ctx.fillRect(p.x-18+i*8,p.y-4-Math.abs(Math.sin(t*.008+i))*12,5,6+Math.abs(Math.sin(t*.008+i))*12);[-1,1].forEach(side=>{const s=isoPoint(x+side*.83,y-.05,41);roundedRect(s.x-8,s.y-17,16,24,3,"#173743");ctx.fillStyle="#64cbc8";ctx.beginPath();ctx.arc(s.x,s.y-4,4,0,Math.PI*2);ctx.fill();});
+}
+
+function drawSunsetModule(x,y){
+  drawRaisedSlab(x+.15,y-.72,1.25,1.05,43,10,"#d1ad72","#715941","#92704d");const rail=isoPoint(x+.78,y-.18,58);ctx.strokeStyle="#eef5f2";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(rail.x-27,rail.y+15);ctx.lineTo(rail.x-27,rail.y-10);ctx.lineTo(rail.x+27,rail.y+16);ctx.lineTo(rail.x+27,rail.y+39);ctx.stroke();ctx.strokeStyle="#173743";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(rail.x,rail.y+8);ctx.lineTo(rail.x+7,rail.y-14);ctx.stroke();ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.arc(rail.x+10,rail.y-18,7,0,Math.PI*2);ctx.fill();
+}
+
+function drawShadeModule(x,y){
+  const a=isoPoint(x-1.15,y-.65,20),b=isoPoint(x+1.1,y-.65,20),c=isoPoint(x+.4,y+.75,20),ta=isoPoint(x-1.15,y-.65,76),tb=isoPoint(x+1.1,y-.65,62),tc=isoPoint(x+.4,y+.75,69);ctx.strokeStyle="#294d55";ctx.lineWidth=3;[[a,ta],[b,tb],[c,tc]].forEach(([from,to])=>{ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();});drawPlane([ta,tb,tc],"rgba(255,238,194,.94)","rgba(117,87,54,.25)");
+}
+
+function drawSocialModule(x,y){
+  const p=isoPoint(x-.45,y+.53,22);ctx.save();ctx.translate(p.x,p.y);ctx.scale(1,.42);ctx.strokeStyle="#d09a5e";ctx.lineWidth=10;ctx.beginPath();ctx.arc(0,0,30,0,Math.PI*2);ctx.stroke();ctx.strokeStyle="#173743";ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.stroke();ctx.restore();const top=isoPoint(x-.45,y+.53,31);ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.arc(top.x,top.y,5,0,Math.PI*2);ctx.fill();
+}
+
+function drawSurfModule(x,y,t){
+  drawGroundSlab(x-1.22,y-.7,2.44,1.4,"#5fbac6",9);const p=isoPoint(x,y,28),wave=Math.sin(t*.004)*3;ctx.strokeStyle="#e8ffff";ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(p.x-42,p.y+13);ctx.bezierCurveTo(p.x-18,p.y-18-wave,p.x+7,p.y-23+wave,p.x+39,p.y+5);ctx.stroke();ctx.strokeStyle="#f5c95e";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x-5,p.y+7);ctx.lineTo(p.x+19,p.y-8);ctx.stroke();
+}
+
+function drawExperience(facility,t){
+  const modules=facility.modules||[],has=id=>modules.includes(id),stats=attractionStats(modules),x=facility.x,y=facility.y;
+  drawGroundSlab(x-1.35,y-.9,2.7,1.8,"#dad7cb",6);
+  if(has("surf"))drawSurfModule(x,y,t);else{drawGroundSlab(x-1.08,y-.66,2.16,1.32,"#dce8e3",7);}
+  if(has("social"))drawSocialModule(x,y);
+  if(has("music"))drawMusicModule(x,y,t);
+  if(has("sunset"))drawSunsetModule(x,y);
+  if(has("shade"))drawShadeModule(x,y);
+  const height=has("shade")?100:has("sunset")?82:70,tag=isoPoint(x,y,height);roundedRect(tag.x-48,tag.y-9,96,18,9,"rgba(10,37,46,.9)");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="700 6px DM Mono";ctx.fillText(`${modules.length} MODULES · EXC ${stats.excitement}`,tag.x,tag.y+2);
+}
+
 function drawPlacedFacility(facility,t,index){
-  const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type),color=blueprint?.color||"#f5c95e",p=isoPoint(facility.x,facility.y,4);
   if(facility.type==="path"){drawTile(facility.x-.5,facility.y-.5,"#d7d3c2",2);return;}
-  if(facility.type==="scenery"){drawTree(facility.x,facility.y,.55,t+index*90);return;}
-  if(facility.type==="bench"){drawBlock(facility.x-.7,facility.y-.25,1.4,.5,18,"#d7a968","#71583d","#8c6b47");return;}
-  if(facility.type==="bin"){drawBlock(facility.x-.28,facility.y-.28,.56,.56,34,color,"#39734a","#4f8d5b");}
-  else if(facility.type==="water"){drawBlock(facility.x-.35,facility.y-.35,.7,.7,36,color,"#378c9b","#4fa7b4");const drop=isoPoint(facility.x,facility.y,48);ctx.fillStyle="#d6fbff";ctx.beginPath();ctx.arc(drop.x,drop.y,5,0,Math.PI*2);ctx.fill();}
-  else if(facility.type==="restroom"){drawBlock(facility.x-.62,facility.y-.5,1.24,1,58,"#e9e9df","#567590","#6c8aa3");const sign=isoPoint(facility.x,facility.y,43);ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 8px DM Mono";ctx.fillText("WC",sign.x,sign.y);}
-  else if(facility.type==="foodGarden"){drawBlock(facility.x-.8,facility.y-.55,1.6,1.1,38,"#f4ead4","#b7ad99","#cbc2ad");drawBlock(facility.x-.9,facility.y-.65,1.8,.3,51,color,"#a8633c","#bd754a");}
-  else if(facility.type==="experience"){
-    const stats=attractionStats(facility.modules),height=45+stats.intensity*.42;
-    drawBlock(facility.x-1,facility.y-.7,2,1.4,23,"#314e59","#1c3540","#28434e");
-    const tower=isoPoint(facility.x,facility.y,height);ctx.strokeStyle="#f5c95e";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(tower.x-34,tower.y+height);ctx.lineTo(tower.x-18,tower.y);ctx.lineTo(tower.x+18,tower.y);ctx.lineTo(tower.x+34,tower.y+height);ctx.stroke();ctx.fillStyle="#ff7458";ctx.beginPath();ctx.arc(tower.x,tower.y+Math.sin(t*.004)*3,12,0,Math.PI*2);ctx.fill();
-    const tag=isoPoint(facility.x,facility.y,height+38);roundedRect(tag.x-54,tag.y-10,108,20,4,"rgba(10,37,46,.93)");ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`EXC ${stats.excitement} · INT ${stats.intensity}`,tag.x,tag.y+3);
-  }
-  if(blueprint){const icon=isoPoint(facility.x,facility.y,72);roundedRect(icon.x-13,icon.y-13,26,26,6,"rgba(10,37,46,.9)");ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 8px DM Mono";ctx.fillText(blueprint.icon,icon.x,icon.y+3);}
+  if(facility.type==="scenery"){drawBlock(facility.x-.55,facility.y-.55,1.1,1.1,16,"#d9d4c8","#999990","#b1afa5");drawTree(facility.x,facility.y,.6,t+index*90);return;}
+  if(facility.type==="bench"){drawAtlanticBench(facility.x,facility.y);return;}
+  if(facility.type==="bin")drawRecyclingPoint(facility.x,facility.y);
+  else if(facility.type==="water")drawWaterStation(facility.x,facility.y,t);
+  else if(facility.type==="restroom")drawRestroomPod(facility.x,facility.y);
+  else if(facility.type==="foodGarden")drawFoodGarden(facility.x,facility.y);
+  else if(facility.type==="experience")drawExperience(facility,t);
 }
 
 const personStyles=[
@@ -407,6 +509,15 @@ function drawStorePod(id,loc,level,locked){
   const sign=isoPoint(loc.x,loc.y+size*.4,29);roundedRect(sign.x-24,sign.y-7,48,14,3,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":"NOVA",sign.x,sign.y+2);
 }
 
+function drawServicePoint(id,loc){
+  if(id==="supplier"){
+    drawRaisedSlab(loc.x-1.1,loc.y-.4,2.2,.8,31,8,"#d5ae72","#795f43","#967550");drawFacadeBandY(loc.x-1,loc.y+.41,2,9,24,"#315862",4);
+    const p=isoPoint(loc.x,loc.y+.42,39);ctx.fillStyle="#f5c95e";for(let i=0;i<4;i++)ctx.fillRect(p.x-25+i*16,p.y-8+i*4,9,6);
+  }else{
+    drawRaisedSlab(loc.x-.95,loc.y-.38,1.9,.76,29,7,"#d9ddd6","#83918e","#aab3af");const p=isoPoint(loc.x,loc.y+.4,45);roundedRect(p.x-34,p.y-22,68,31,4,"#173743");ctx.fillStyle="#bce65f";ctx.fillRect(p.x-25,p.y-13,24,4);ctx.fillStyle="#64cbc8";ctx.fillRect(p.x-25,p.y-5,42,4);ctx.fillStyle="#f5c95e";ctx.fillRect(p.x-25,p.y+3,32,4);
+  }
+}
+
 function drawLocation(id) {
   const loc=locations[id], near=Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65;
   if(loc.kind==="door"){
@@ -420,6 +531,8 @@ function drawLocation(id) {
   const isStore=STORES.some(store=>store.id===id),level=isStore?(run.venues?.[id]??0):1,locked=isStore&&level===0,size=1.45+Math.max(1,level)*.18,venueColor=locked?"#7d8b8c":loc.color;
   if(isStore){
     ctx.save();if(locked)ctx.globalAlpha=.48;drawStorePod(id,loc,level,locked);ctx.restore();
+  }else if(id==="supplier"||id==="board"){
+    drawServicePoint(id,loc);
   }else{
     drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+Math.max(1,level)*8,"#f4ead4","#b7ad99","#cbc2ad");
     drawBlock(loc.x-size*.62,loc.y-size*.5,size*1.24,.32,64+Math.max(1,level)*9,venueColor,"#a64f43","#bf6152");
@@ -567,15 +680,22 @@ function startBuild(type,name,modules=[]) {
   toast(`Build mode · place ${name} on a free tile`);beep(560);
 }
 
+function experiencePreview(moduleIds){
+  const has=id=>moduleIds.includes(id);
+  return `<div class="experience-preview"><div class="preview-top"><span>LIVE WORLD PREVIEW</span><b>${moduleIds.length} modules</b></div><div class="preview-scene">
+    <i class="preview-base"></i>${has("surf")?'<i class="preview-surf"><b></b></i>':""}${has("music")?'<i class="preview-music"><b></b><b></b><b></b></i>':""}${has("sunset")?'<i class="preview-lookout"><b></b></i>':""}${has("social")?'<i class="preview-social"></i>':""}${has("shade")?'<i class="preview-shade"><b></b></i>':""}
+  </div><p>${moduleIds.map(id=>EXPERIENCE_MODULES.find(item=>item.id===id)?.name).filter(Boolean).join(" + ")}</p></div>`;
+}
+
 function openBuildPanel() {
   activeLocation=null;
   const metrics=campusMetrics(run),stats=attractionStats(selectedExperienceModules),experienceCost=1200+stats.cost;
   drawerContent.innerHTML=`<p class="eyebrow">Campus construction · ${run.facilities.length} placed</p><h2>Build the campus</h2><p class="drawer-intro">Place paths, scenery and guest facilities directly in the world. Every build changes student needs and your campus rating.</p>
     <div class="management-strip"><div><small>CAMPUS RATING</small><strong>${metrics.rating}%</strong></div><div><small>EXPECTED GUESTS</small><strong>${metrics.guests}</strong></div><div><small>BUILD BUDGET</small><strong>${formatEuro(run.cash)}</strong></div></div>
     <div class="section-heading"><div><small>CONSTRUCTION CATALOGUE</small><strong>Paths, scenery &amp; amenities</strong></div><span>Click then place on map</span></div>
-    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>`<article class="build-card" style="--build:${item.color}"><span>${item.icon}</span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost?"disabled":""}>Build · ${formatEuro(item.cost)}</button></article>`).join("")}</div>
+    <div class="build-grid">${FACILITY_CATALOGUE.map(item=>`<article class="build-card" style="--build:${item.color}"><span class="facility-preview facility-${item.id}"><i></i></span><div><strong>${item.name}</strong><p>${item.description}</p></div><button data-build="${item.id}" ${run.cash<item.cost?"disabled":""}>Build · ${formatEuro(item.cost)}</button></article>`).join("")}</div>
     <div class="section-heading"><div><small>SIGNATURE ATTRACTION</small><strong>Design a beach experience</strong></div><span>Choose modules piece by piece</span></div>
-    <div class="experience-builder"><div class="module-grid">${EXPERIENCE_MODULES.map(item=>`<button class="module-button ${selectedExperienceModules.includes(item.id)?"selected":""}" data-module="${item.id}"><span>${item.icon}</span><strong>${item.name}</strong><small>${formatEuro(item.cost)} · +${item.excitement} excitement</small></button>`).join("")}</div><div class="rating-console"><small>LIVE DESIGN RATINGS</small><div><span>Excitement <b id="designExcitement">${stats.excitement}</b></span><i><em id="designExcitementBar" style="width:${stats.excitement}%"></em></i></div><div><span>Intensity <b id="designIntensity">${stats.intensity}</b></span><i><em id="designIntensityBar" style="width:${stats.intensity}%"></em></i></div><div><span>Comfort <b id="designComfort">${stats.comfort}</b></span><i><em id="designComfortBar" style="width:${stats.comfort}%"></em></i></div><p id="designVerdict">${experienceVerdict(stats)}</p><button class="action-button orange" id="buildExperience" ${run.cash<experienceCost?"disabled":""}>Place experience · <span id="experienceCost">${formatEuro(experienceCost)}</span></button></div></div>`;
+    <div class="experience-builder"><div class="experience-design">${experiencePreview(selectedExperienceModules)}<div class="module-grid">${EXPERIENCE_MODULES.map(item=>`<button class="module-button ${selectedExperienceModules.includes(item.id)?"selected":""}" data-module="${item.id}"><span>${item.icon}</span><strong>${item.name}</strong><small>${formatEuro(item.cost)} · +${item.excitement} excitement</small></button>`).join("")}</div></div><div class="rating-console"><small>LIVE DESIGN RATINGS</small><div><span>Excitement <b id="designExcitement">${stats.excitement}</b></span><i><em id="designExcitementBar" style="width:${stats.excitement}%"></em></i></div><div><span>Intensity <b id="designIntensity">${stats.intensity}</b></span><i><em id="designIntensityBar" style="width:${stats.intensity}%"></em></i></div><div><span>Comfort <b id="designComfort">${stats.comfort}</b></span><i><em id="designComfortBar" style="width:${stats.comfort}%"></em></i></div><p id="designVerdict">${experienceVerdict(stats)}</p><button class="action-button orange" id="buildExperience" ${run.cash<experienceCost?"disabled":""}>Place experience · <span id="experienceCost">${formatEuro(experienceCost)}</span></button></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
   drawerContent.querySelectorAll("[data-build]").forEach(button=>button.addEventListener("click",()=>{const item=FACILITY_CATALOGUE.find(entry=>entry.id===button.dataset.build);startBuild(item.id,item.name);}));
   drawerContent.querySelectorAll("[data-module]").forEach(button=>button.addEventListener("click",()=>{const id=button.dataset.module;if(selectedExperienceModules.includes(id)&&selectedExperienceModules.length>1)selectedExperienceModules=selectedExperienceModules.filter(item=>item!==id);else if(!selectedExperienceModules.includes(id))selectedExperienceModules.push(id);openBuildPanel();}));
