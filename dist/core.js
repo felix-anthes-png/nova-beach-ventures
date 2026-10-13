@@ -54,6 +54,27 @@ export const EVENT_CATALOGUE = Object.freeze([
   {id:"market",name:"Founders Market",icon:"◇",level:8,cost:5000,duration:240,guestBonus:22,moodBonus:9,description:"Student brands and food pop-ups pull visitors toward every open store."},
   {id:"surfCup",name:"Nova Surf Cup",icon:"≈",level:9,cost:8500,duration:300,guestBonus:34,moodBonus:16,description:"A flagship beach event with the strongest visitor draw."}
 ]);
+export const DJ_EVENT_SLOTS = Object.freeze([
+  {id:"afternoon",name:"Afternoon Session",startMinute:870,duration:120,demand:1,noiseFactor:.9,description:"A lower-risk daytime set between classes."},
+  {id:"sunset",name:"Sunset Session",startMinute:1035,duration:120,demand:1.2,noiseFactor:1.08,description:"A premium golden-hour slot with stronger demand."}
+]);
+export const DJ_STYLES = Object.freeze([
+  {id:"house",name:"Atlantic House",color:"#64cbc8",appeal:1.12,excitement:26,noise:68,comfort:-4,description:"High-energy coastal house with a louder footprint."},
+  {id:"sunset",name:"Sunset Grooves",color:"#f5c95e",appeal:1.05,excitement:18,noise:48,comfort:10,description:"Warm disco and soul built for long, comfortable stays."},
+  {id:"pop",name:"Campus Pop",color:"#ff8060",appeal:1.18,excitement:21,noise:58,comfort:3,description:"Broad appeal and reliable turnout at a balanced intensity."},
+  {id:"indie",name:"Indie Waves",color:"#9a7bc1",appeal:.94,excitement:14,noise:42,comfort:14,description:"A calmer niche set that protects comfort and rating."}
+]);
+export const DJ_ROSTER = Object.freeze([
+  {id:"ines",name:"Inês Vale",tag:"Campus resident",hireCost:900,eventFee:180,appeal:.94,excitement:3,description:"Affordable and dependable for a first event programme."},
+  {id:"marco",name:"Marco Luz",tag:"Lisbon selector",hireCost:2400,eventFee:420,appeal:1.1,excitement:9,description:"A recognisable local name with a stronger crowd pull."},
+  {id:"luma",name:"LUMA",tag:"Coast headliner",hireCost:4800,eventFee:850,appeal:1.3,excitement:16,description:"Expensive, exciting and capable of filling an upgraded deck."}
+]);
+export const DJ_UPGRADES = Object.freeze([
+  {id:"speakers",name:"Sound System",icon:"◖",costs:[1800,3200,5200],excitement:8,noise:7,comfort:0,capacity:0,operating:80,description:"More impact and reach, but more noise to manage."},
+  {id:"lighting",name:"Stage Lighting",icon:"✦",costs:[1400,2600,4200],excitement:7,noise:0,comfort:1,capacity:0,operating:60,description:"Raises spectacle without disturbing nearby spaces."},
+  {id:"shade",name:"Canvas Shade",icon:"⌂",costs:[1200,2200,3600],excitement:0,noise:0,comfort:11,capacity:0,operating:30,description:"Keeps afternoon crowds comfortable for longer."},
+  {id:"capacity",name:"Crowd Deck",icon:"◎",costs:[2000,3600,6000],excitement:2,noise:2,comfort:-1,capacity:15,operating:70,description:"Expands the safe standing area and ticket ceiling."}
+]);
 export const PROGRESSION_LEVELS = Object.freeze([
   {level:1,xp:0,title:"Café Starter",unlock:"Atlantic Café"},{level:2,xp:50,title:"Campus Operator",unlock:"Fuel Bar + queue staff"},
   {level:3,xp:130,title:"Amenity Builder",unlock:"Food Garden + repair staff"},{level:4,xp:240,title:"Retail Founder",unlock:"Merch Lab + student hosts"},
@@ -83,10 +104,32 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
-function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};}
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,products:{},activities:{}};}
+
+function ensureDjOperations(run){if(!run.djOperations)run.djOperations={deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{},lifetimeAttendance:0,lifetimeRevenue:0};if(!run.djOperations.upgrades)run.djOperations.upgrades={};for(const item of DJ_UPGRADES)if(!Number.isInteger(run.djOperations.upgrades[item.id]))run.djOperations.upgrades[item.id]=0;if(!Number.isInteger(run.djOperations.ticketPrice)||run.djOperations.ticketPrice<=0)run.djOperations.ticketPrice=600;if(!DJ_EVENT_SLOTS.some(item=>item.id===run.djOperations.slotId))run.djOperations.slotId="sunset";if(!DJ_STYLES.some(item=>item.id===run.djOperations.styleId))run.djOperations.styleId="sunset";}
+function djDeckExists(run,deckId){return deckId==="pavilion"?Boolean(run.eventVenue):(run.facilities||[]).some(item=>item.id===deckId&&item.type==="experience"&&(item.modules||[]).includes("music"));}
+function priceDemandFactor(price){const ratio=price/800;if(ratio<=.75)return 1.18;if(ratio<=1)return 1.08;if(ratio<=1.5)return 1.08-(ratio-1)*.72;if(ratio<=2)return .72-(ratio-1.5)*.64;return .18;}
+
+export function djEventProjection(run,overrides={}){
+  const ops=structuredClone(run.djOperations||{}),mergedUpgrades={speakers:0,lighting:0,shade:0,capacity:0,...ops.upgrades,...overrides.upgrades};Object.assign(ops,overrides);ops.upgrades=mergedUpgrades;
+  const slot=DJ_EVENT_SLOTS.find(item=>item.id===ops.slotId)||DJ_EVENT_SLOTS[1],style=DJ_STYLES.find(item=>item.id===ops.styleId)||DJ_STYLES[1],dj=DJ_ROSTER.find(item=>item.id===ops.djId)||null;
+  const upgrade=id=>Math.max(0,Math.min(3,ops.upgrades?.[id]||0)),capacity=24+upgrade("capacity")*15;
+  const excitement=Math.min(100,style.excitement+(dj?.excitement||0)+upgrade("speakers")*8+upgrade("lighting")*7+upgrade("capacity")*2);
+  const noise=Math.min(100,Math.round((style.noise+upgrade("speakers")*7+upgrade("capacity")*2)*slot.noiseFactor));
+  const comfort=Math.max(0,Math.min(100,58+style.comfort+upgrade("shade")*11+upgrade("lighting")-upgrade("capacity")-Math.max(0,noise-72)*.45));
+  const operatingCost=300+(dj?.eventFee||0)+DJ_UPGRADES.reduce((sum,item)=>sum+upgrade(item.id)*item.operating,0),ticketPrice=Math.max(1,Number(ops.ticketPrice)||600);
+  const baseGuests=campusMetrics(run).guests,expectedAttendance=Math.max(4,Math.min(capacity,Math.round((baseGuests*.72+excitement*.25+comfort*.08)*(dj?.appeal||.72)*style.appeal*slot.demand*priceDemandFactor(ticketPrice))));
+  const expectedRevenue=expectedAttendance*ticketPrice,expectedProfit=expectedRevenue-operatingCost;
+  return {slot,style,dj,ticketPrice,capacity,excitement,noise,comfort,operatingCost,expectedAttendance,expectedRevenue,expectedProfit,guestBonus:Math.max(4,Math.round(expectedAttendance/3)),moodBonus:Math.max(2,Math.round((excitement+comfort-noise*.35)/12))};
+}
+
+export function configureDjOperations(run,changes={}){const next=structuredClone(run);ensureDjOperations(next);if(changes.deckId!==undefined){if(!djDeckExists(next,changes.deckId))throw new Error("Choose a built DJ deck.");next.djOperations.deckId=changes.deckId;}if(changes.slotId!==undefined){if(!DJ_EVENT_SLOTS.some(item=>item.id===changes.slotId))throw new Error("Choose a valid event time.");next.djOperations.slotId=changes.slotId;}if(changes.styleId!==undefined){if(!DJ_STYLES.some(item=>item.id===changes.styleId))throw new Error("Choose a valid music style.");next.djOperations.styleId=changes.styleId;}if(changes.ticketPrice!==undefined){if(!Number.isInteger(changes.ticketPrice)||changes.ticketPrice<=0)throw new Error("Ticket price must be a positive euro amount with at most two decimals.");next.djOperations.ticketPrice=changes.ticketPrice;}return next;}
+export function hireDj(run,djId,deckId,now=new Date().toISOString()){const dj=DJ_ROSTER.find(item=>item.id===djId);if(!dj)throw new Error("Choose a valid DJ.");const next=configureDjOperations(run,{deckId});if(next.cash<dj.hireCost)throw new Error(`You need ${formatEuro(dj.hireCost)} to hire ${dj.name}.`);next.cash-=dj.hireCost;next.djOperations.djId=dj.id;if(!Array.isArray(next.djHires))next.djHires=[];next.djHires.push({at:now,day:run.currentDay,djId,deckId,cost:dj.hireCost});return next;}
+export function upgradeDjDeck(run,upgradeId,deckId,now=new Date().toISOString()){const item=DJ_UPGRADES.find(entry=>entry.id===upgradeId);if(!item)throw new Error("Unknown deck upgrade.");const next=configureDjOperations(run,{deckId}),level=next.djOperations.upgrades[upgradeId]||0;if(level>=3)throw new Error("This deck upgrade is already at maximum level.");const cost=item.costs[level];if(next.cash<cost)throw new Error(`You need ${formatEuro(cost)} for this upgrade.`);next.cash-=cost;next.djOperations.upgrades[upgradeId]=level+1;if(!Array.isArray(next.djUpgrades))next.djUpgrades=[];next.djUpgrades.push({at:now,day:run.currentDay,deckId,upgradeId,fromLevel:level,toLevel:level+1,cost});return next;}
+export function scheduleDjEvent(run,deckId,now=new Date().toISOString()){const next=configureDjOperations(run,{deckId});if(next.activeEvent)throw new Error("Another event is already live.");if(next.scheduledEvent)throw new Error("An event is already scheduled.");if(!next.djOperations.djId)throw new Error("Hire a DJ before scheduling an event.");const projection=djEventProjection(next);if(next.cash<projection.operatingCost)throw new Error(`You need ${formatEuro(projection.operatingCost)} to operate this event.`);const eventDay=next.clockMinutes<projection.slot.startMinute-10?next.currentDay:next.currentDay+1;next.cash-=projection.operatingCost;next.scheduledEvent={id:"dj-event",name:`${projection.style.name} · ${projection.slot.name}`,source:"dj",deckId,day:eventDay,startMinute:projection.slot.startMinute,duration:projection.slot.duration,styleId:projection.style.id,slotId:projection.slot.id,djId:projection.dj.id,djName:projection.dj.name,ticketPrice:projection.ticketPrice,capacity:projection.capacity,excitement:projection.excitement,noise:projection.noise,comfort:projection.comfort,operatingCost:projection.operatingCost,expectedAttendance:projection.expectedAttendance,expectedRevenue:projection.expectedRevenue,expectedProfit:projection.expectedProfit,guestBonus:projection.guestBonus,moodBonus:projection.moodBonus,scheduledAt:now};return next;}
 
 const GUEST_RELIEF = Object.freeze({
   bench:{energy:42,mood:10}, water:{thirst:70}, restroom:{bladder:78}, foodGarden:{hunger:62,mood:16},
@@ -112,7 +155,10 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     {kind:"landmark",id:"hub",label:"Student Hub",score:13+mood*.34+social*28+quality*.1+((seed+3)%6),reason:optionReason(["social preference",`${quality}% campus quality`])},
     {kind:"landmark",id:"forum",label:"Sunset Forum",score:12+mood*.4+social*20+calm*12+quality*.1+((seed+5)%8),reason:optionReason(["open-air destination",`${quality}% campus quality`])}
   ];
-  if(run.activeEvent&&run.eventVenue){const q=queueSize(context,"landmark","pavilion");options.push({kind:"landmark",id:"pavilion",label:run.activeEvent.name||"Coastline Pavilion",score:92+mood*.35+excitement*35-queuePenalty(q,patience),queueLength:q,reason:optionReason(["live event",q?`${q} waiting`:"no queue"])});}
+  if(run.activeEvent&&(run.eventVenue||run.activeEvent.deckId)){
+    const event=run.activeEvent,isDj=event.source==="dj",ticketPrice=isDj?(event.ticketPrice||0):0,q=queueSize(context,isDj?"event":"landmark",isDj?"dj-event":"pavilion");
+    if(!ticketPrice||ticketPrice<=budget){const priceRatio=ticketPrice/800,score=82+mood*.32+excitement*(isDj?42:35)+(event.excitement||0)*.28+(event.comfort||50)*.12-calm*(event.noise||0)*.22-Math.max(0,priceRatio-1)*18-queuePenalty(q,patience);options.push({kind:isDj?"event":"landmark",id:isDj?"dj-event":"pavilion",type:"pavilion",deckId:event.deckId||"pavilion",label:event.name||"Coastline Pavilion",score,price:ticketPrice,queueLength:q,reason:optionReason([isDj?`${event.styleName||"live music"} event`:"live event",ticketPrice?`${formatEuro(ticketPrice)} ticket`:"free entry",`${event.comfort||50}% comfort`])});}
+  }
   for(const facility of run.facilities||[]){
     const q=queueSize(context,"facility",facility.id);let score=8+quality*.08;
     if(facility.type==="bench")score+=energy*1.08+mood*.18;
@@ -170,7 +216,7 @@ export function attractionStats(moduleIds=[]) {
 
 export function campusMetrics(run) {
   const needs={ hunger:42, thirst:39, bladder:44, energy:46, mood:47, cleanliness:52 };
-  const activeEvent=EVENT_CATALOGUE.find(item=>item.id===run.activeEvent?.id);
+  const activeEvent=EVENT_CATALOGUE.find(item=>item.id===run.activeEvent?.id)||run.activeEvent;
   for(const facility of run.facilities||[]){
     const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type);
     if(blueprint) Object.entries(blueprint.needs||{}).forEach(([key,value])=>needs[key]+=value);
@@ -187,7 +233,8 @@ export function campusMetrics(run) {
   attraction.comfort=Math.min(100,attraction.comfort+(staff.technician||0)*9);
   const satisfaction=Math.round(Object.values(needs).reduce((sum,value)=>sum+value,0)/Object.keys(needs).length);
   const intensityFit=attraction.intensity<=70?10:Math.max(-18,10-(attraction.intensity-70));
-  const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit)));
+  const eventNoisePenalty=activeEvent?Math.max(0,(activeEvent.noise||0)-55)*.2:0,eventComfortBonus=activeEvent?((activeEvent.comfort||50)-50)*.08:0;
+  const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit-eventNoisePenalty+eventComfortBonus)));
   const openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+(staff.entertainer||0)*3):0;
   const guests=Math.max(12,Math.round(10+rating*.27+(run.facilities||[]).length*1.5+(staff.host||0)*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,districts-1)*5+eventBonus));
   return { needs, satisfaction, rating, guests, attraction };
@@ -355,14 +402,23 @@ export function advanceTycoon(run,minutes){
 function ensureTycoonState(run){
   if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
   if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};
+  if(!Number.isFinite(run.today.eventRevenue))run.today.eventRevenue=0;if(!Number.isFinite(run.today.eventCosts))run.today.eventCosts=0;if(!Number.isInteger(run.today.eventAttendance))run.today.eventAttendance=0;
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
+  if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;ensureDjOperations(run);
+}
+
+function processDjEvent(run,minutes){
+  const scheduled=run.scheduledEvent;if(scheduled&&scheduled.day===run.currentDay&&scheduled.startMinute>=run.clockMinutes&&scheduled.startMinute<run.clockMinutes+minutes){run.activeEvent={...scheduled,styleName:DJ_STYLES.find(item=>item.id===scheduled.styleId)?.name||"Live set",remainingMinutes:scheduled.duration,attendance:0,revenue:0,attendanceProgress:0,startedAt:new Date().toISOString()};run.today.eventCosts+=scheduled.operatingCost||0;run.scheduledEvent=null;}
+  if(!run.activeEvent)return;
+  if(run.activeEvent.source!=="dj"){run.activeEvent.remainingMinutes-=minutes;if(run.activeEvent.remainingMinutes<=0)run.activeEvent=null;return;}
+  const event=run.activeEvent,activeMinutes=Math.min(minutes,event.remainingMinutes),target=Math.max(0,event.expectedAttendance||0);event.attendanceProgress=(event.attendanceProgress||0)+target*activeMinutes/Math.max(1,event.duration);const available=Math.max(0,(event.capacity||target)-(event.attendance||0)),arrivals=Math.min(available,Math.floor(event.attendanceProgress));if(arrivals>0){event.attendanceProgress-=arrivals;event.attendance=(event.attendance||0)+arrivals;const revenue=arrivals*(event.ticketPrice||0);event.revenue=(event.revenue||0)+revenue;run.cash+=revenue;run.today.eventRevenue+=revenue;run.today.eventAttendance+=arrivals;run.djOperations.lifetimeAttendance=(run.djOperations.lifetimeAttendance||0)+arrivals;run.djOperations.lifetimeRevenue=(run.djOperations.lifetimeRevenue||0)+revenue;}
+  event.remainingMinutes-=minutes;if(event.remainingMinutes<=0){if(!Array.isArray(run.eventHistory))run.eventHistory=[];run.eventHistory.push({at:event.startedAt,day:run.currentDay,eventId:"dj-event",name:event.name,deckId:event.deckId,styleId:event.styleId,slotId:event.slotId,djId:event.djId,ticketPrice:event.ticketPrice,attendance:event.attendance||0,revenue:event.revenue||0,cost:event.operatingCost||0,grossProfit:(event.revenue||0)-(event.operatingCost||0),excitement:event.excitement,noise:event.noise,comfort:event.comfort});run.reputation=(run.reputation||0)+Math.max(1,Math.round((event.attendance||0)/10));run.activeEvent=null;}
 }
 
 function processSlice(run,minutes){
-  if(run.activeEvent){run.activeEvent.remainingMinutes-=minutes;if(run.activeEvent.remainingMinutes<=0)run.activeEvent=null;}
+  processDjEvent(run,minutes);
   const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),campusFactor=Math.max(.45,metrics.guests/24);
   run.visitorProgress+=metrics.guests*peak.multiplier*minutes/115;
   const arrived=Math.floor(run.visitorProgress);run.visitorProgress-=arrived;run.today.visitors+=arrived;run.totalVisitors+=arrived;
@@ -380,7 +436,7 @@ function processSlice(run,minutes){
 
 function closeTycoonDay(run){
   const metrics=campusMetrics(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
-  const totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,grossProfit:run.today.revenue-run.today.cogs};
+  const totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,grossProfit:run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0)};
   run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,campus:{...metrics,guests:run.today.visitors,activities:{...(run.today.activities||{})}}});
   run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.grossProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
   if(run.history.length>60)run.history=run.history.slice(-60);
