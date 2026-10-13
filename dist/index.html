@@ -10,10 +10,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./premium.css?v=21-dj-operations" />
-    <link rel="stylesheet" href="./facilities-v2.css?v=21-dj-operations" />
-    <link rel="stylesheet" href="./guest-decisions.css?v=21-dj-operations" />
-    <link rel="stylesheet" href="./dj-operations.css?v=21-dj-operations" />
+    <link rel="stylesheet" href="./premium.css?v=22-living-time" />
+    <link rel="stylesheet" href="./facilities-v2.css?v=22-living-time" />
+    <link rel="stylesheet" href="./guest-decisions.css?v=22-living-time" />
+    <link rel="stylesheet" href="./dj-operations.css?v=22-living-time" />
+    <link rel="stylesheet" href="./time-system.css?v=22-living-time" />
   </head>
   <body>
     <div id="game" class="game-shell">
@@ -24,7 +25,7 @@
         </a>
         <div class="run-stats" aria-label="Run status">
           <div class="stat"><span>DAY</span><strong id="dayStat">1</strong></div>
-          <div class="stat time"><span>TIME</span><strong id="timeStat">07:30</strong></div>
+          <button class="stat time time-center" id="timeCenter" aria-label="Open campus schedule"><span>TIME</span><strong id="timeStat">07:30</strong><small id="phaseStat">ARRIVAL</small></button>
           <div class="stat cash"><span>CASH</span><strong id="cashStat">€100.00</strong></div>
           <div class="stat guests"><span>GUESTS</span><strong id="guestStat">24</strong></div>
           <div class="stat rating"><span>RATING</span><strong id="ratingStat">50%</strong></div>
@@ -91,6 +92,7 @@
           <div class="build-notice-actions"><button id="rotateBuild"><kbd>R</kbd> Rotate <b id="buildRotation">0°</b></button><button id="cancelBuild"><kbd>Esc</kbd> Cancel</button></div>
         </div>
         <div id="saleFeed" class="sale-feed hidden"><span>€</span><div><small>LIVE SALE</small><strong id="saleFeedText">Cold Brew sold</strong></div></div>
+        <button id="deliveryChip" class="delivery-chip" aria-label="Open delivery schedule"><span>▣</span><div><small>NEXT DELIVERY</small><strong id="deliveryChipText">08:15 · Morning van</strong></div></button>
 
         <nav class="quick-nav" aria-label="Management toolbar">
           <button data-action="buy"><span>▦</span><strong>Stock</strong><small>Buy inventory</small></button>
@@ -116,7 +118,8 @@
       </div>
 
       <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+      <aside id="dayReport" class="day-report" aria-live="polite" aria-hidden="true"></aside>
     </div>
-    <script type="module" src="./app.js?v=21-dj-operations"></script>
+    <script type="module" src="./app.js?v=22-living-time"></script>
   </body>
 </html>

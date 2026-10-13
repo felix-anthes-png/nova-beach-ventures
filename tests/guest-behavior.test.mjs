@@ -51,6 +51,7 @@ test("queues deter impatient guests more strongly",()=>{
 
 test("personal preferences change which store is most attractive",()=>{
   const run=createRun();
+  run.clockMinutes=720;
   run.venues.merch=1;
   run.stock.coldBrew=3;
   run.stock.tote=3;

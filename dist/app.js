@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=21-dj-operations";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=22-living-time";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -33,6 +33,7 @@ let simulationElapsed = 0;
 let lastPersistAt = 0;
 let lastSaleCount = run.totalSales || 0;
 let saleFeedTimer = null;
+let dayReportTimer = null;
 let guestAgents = [];
 let guestSequence = 0;
 let guestSpawnAccumulator = 0;
@@ -94,6 +95,8 @@ function loadRun() {
       if(!Number.isInteger(parsed.eventVenue))parsed.eventVenue=0;if(!Array.isArray(parsed.eventHistory))parsed.eventHistory=[];
       if(!parsed.djOperations)parsed.djOperations={deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0};
       parsed.djOperations.upgrades={speakers:0,lighting:0,shade:0,capacity:0,...parsed.djOperations.upgrades};if(parsed.scheduledEvent===undefined)parsed.scheduledEvent=null;
+      if(!parsed.storeHours)parsed.storeHours=structuredClone(DEFAULT_STORE_HOURS);STORES.forEach(store=>{if(!parsed.storeHours[store.id])parsed.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};});
+      if(!Array.isArray(parsed.deliveries))parsed.deliveries=[];
       if (!Number.isInteger(parsed.reputation)) parsed.reputation = 0;
       if (!Array.isArray(parsed.upgrades)) parsed.upgrades = [];
       if (!Array.isArray(parsed.facilities)) parsed.facilities = [];
@@ -105,6 +108,7 @@ function loadRun() {
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
       if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};
       if(!parsed.today.activities)parsed.today.activities={};
+      if(!Array.isArray(parsed.today.deliveries))parsed.today.deliveries=[];
       if(!parsed.salesProgress)parsed.salesProgress={};
       if(!Number.isInteger(parsed.totalSales))parsed.totalSales=parsed.history.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0);
       if(!Number.isInteger(parsed.totalVisitors))parsed.totalVisitors=parsed.history.reduce((sum,day)=>sum+(day.campus?.guests||0),0);
@@ -132,17 +136,21 @@ function save(next) {
 function updateHUD() {
   const zone=activeZone();
   const campus=campusMetrics(run),progression=progressionState(run);
+  const phase=campusPhase(run.clockMinutes),light=lightingProfile(run.clockMinutes);
+  $("#game").dataset.light=light.stage;
   $("#zoneName").textContent=zone.name;
   $("#zoneSub").textContent=zone.sub;
   $("#miniMapTitle").textContent=zone.outdoor?"CAMPUS MAP":"ROOM PLAN";
   $("#game").classList.toggle("indoors",!zone.outdoor);
-  $("#weatherIcon").textContent=zone.outdoor?"☀":"⌂";
-  $("#weatherTemp").textContent=zone.outdoor?"24°":"IN";
+  $("#weatherIcon").textContent=zone.outdoor?(light.stage==="dusk"?"◒":light.stage==="sunset"?"◐":"☀"):"⌂";
+  $("#weatherTemp").textContent=zone.outdoor?(light.stage==="dusk"?"20°":light.stage==="sunset"?"22°":"24°"):"IN";
   const peak=crowdPeak(run.clockMinutes);
-  $("#weatherNote").textContent=zone.outdoor?`${formatClock(run.clockMinutes)} · ATLANTIC BREEZE`:zone.sub;
+  $("#weatherNote").textContent=zone.outdoor?`${formatClock(run.clockMinutes)} · ${phase.name.toUpperCase()}`:zone.sub;
   document.querySelectorAll("[data-zone-indicator]").forEach(item=>item.classList.toggle("active",item.dataset.zoneIndicator===zone.id));
   $("#dayStat").textContent = `${run.currentDay}`;
   $("#timeStat").textContent = formatClock(run.clockMinutes);
+  $("#phaseStat").textContent=phase.short;
+  $("#timeCenter").style.setProperty("--phase-color",phase.color);
   $("#cashStat").textContent = formatEuro(run.cash);
   $("#repStat").textContent = `${run.reputation || 0} ★`;
   $("#levelStat").textContent = `LV ${progression.level}`;
@@ -156,10 +164,14 @@ function updateHUD() {
   const activeGuests=guestAgents.length||campus.guests,usingGuests=guestAgents.filter(guest=>guest.state==="using"||guest.state==="queueing").length;
   $("#pulseVenues").textContent = `${activeGuests} live · ${usingGuests} at destinations`;
   $("#pulseMilestone").textContent = progression.next?`Level ${progression.next.level}: ${progression.next.unlock}`:"Nova Legend achieved";
-  $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="evening"?"★":"·";
+  $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="break"?"◇":peak.id==="sunset"?"★":"▰";
   $("#eventDistrict").textContent = `LIVE · ${formatClock(run.clockMinutes)}`;
   const liveEvent=EVENT_CATALOGUE.find(event=>event.id===run.activeEvent?.id)||run.activeEvent;$("#eventTitle").textContent = liveEvent?liveEvent.name:run.scheduledEvent?`${run.scheduledEvent.name} scheduled`:peak.label;
   $("#eventObjective").textContent = liveEvent?`${Math.ceil(run.activeEvent.remainingMinutes)} min · ${run.activeEvent.attendance||0}/${run.activeEvent.capacity||liveEvent.guestBonus} attending`:run.scheduledEvent?`Day ${run.scheduledEvent.day} · ${formatClock(run.scheduledEvent.startMinute)}`:peak.multiplier>1?`${peak.multiplier.toFixed(1)}× customer flow`:"Quiet planning window";
+  const pending=(run.deliveries||[]).filter(item=>item.status==="scheduled").sort((a,b)=>a.arrivalDay-b.arrivalDay||a.arrivalMinute-b.arrivalMinute)[0],nextWindow=nextDeliveryWindow(run),delivery=pending||{arrivalDay:nextWindow.day,arrivalMinute:nextWindow.minute,label:nextWindow.label};
+  $("#deliveryChipText").textContent=`${delivery.arrivalDay===run.currentDay?"TODAY":`DAY ${delivery.arrivalDay}`} · ${formatClock(delivery.arrivalMinute)} · ${delivery.label}`;
+  $("#deliveryChip").classList.toggle("incoming",Boolean(pending&&pending.arrivalDay===run.currentDay&&pending.arrivalMinute-run.clockMinutes<=60));
+  if($("#dayReportLiveTime"))$("#dayReportLiveTime").textContent=`Day ${run.currentDay} is already running · ${formatClock(run.clockMinutes)}`;
   const focusStoreId=run.venuePurchases?.at(-1)?.storeId||"cafe",focusStore=STORES.find(store=>store.id===focusStoreId),focusStock=CATALOGUE.filter(product=>product.storeId===focusStoreId).reduce((sum,product)=>sum+run.stock[product.id],0);
   let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory and students will purchase automatically.`, progress = Math.min(100,openCount*22+campus.rating*.34);
   if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${activeGuests} students are navigating the campus. Watch them queue, use amenities and react to what you build.`;}
@@ -174,9 +186,29 @@ function updateHUD() {
   $("#clockIcon").textContent=run.speed===0?"▶":"Ⅱ";$("#clockLabel").textContent=run.speed===0?"Resume":"Pause";
   $("#game").classList.toggle("build-mode",Boolean(pendingBuild));
   refreshBuildNotice();
+  refreshTimePanelLive();
+  refreshStoreHoursPanelLive();
 }
 
 function formatClock(minutes){const value=Math.floor(minutes||DAY_START),hours=Math.floor(value/60)%24,mins=value%60;return `${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}`;}
+function formatDuration(minutes){const value=Math.max(0,Math.round(minutes)),hours=Math.floor(value/60),mins=value%60;return hours?`${hours}h ${mins?`${mins}m`:""}`.trim():`${mins}m`;}
+function timeInputToMinutes(value){const match=/^(\d{2}):(\d{2})$/.exec(String(value));if(!match)throw new Error("Choose valid opening and closing times.");return Number(match[1])*60+Number(match[2]);}
+
+function lightingProfile(minutes){
+  const stops=[
+    {minute:DAY_START,top:"#79aebd",bottom:"#efd39c",overlay:"#f2aa67",alpha:.08,stage:"morning"},
+    {minute:660,top:"#8dc8d5",bottom:"#d6e4c0",overlay:"#ffffff",alpha:0,stage:"day"},
+    {minute:930,top:"#82bfd1",bottom:"#dce4bc",overlay:"#f5c96c",alpha:.025,stage:"day"},
+    {minute:1050,top:"#6d91ae",bottom:"#efb177",overlay:"#ef795f",alpha:.1,stage:"sunset"},
+    {minute:DAY_END,top:"#203e58",bottom:"#80606a",overlay:"#173747",alpha:.24,stage:"dusk"}
+  ];
+  const value=Math.max(DAY_START,Math.min(DAY_END,minutes)),right=stops.find(stop=>stop.minute>=value)||stops.at(-1),left=stops[Math.max(0,stops.indexOf(right)-1)]||right,span=Math.max(1,right.minute-left.minute),mix=Math.max(0,Math.min(1,(value-left.minute)/span));
+  return {top:mixColor(left.top,right.top,mix),bottom:mixColor(left.bottom,right.bottom,mix),overlay:mixColor(left.overlay,right.overlay,mix),alpha:left.alpha+(right.alpha-left.alpha)*mix,stage:mix>.55?right.stage:left.stage,progress:(value-DAY_START)/(DAY_END-DAY_START)};
+}
+
+function drawAmbientLighting(light,w,h){
+  const sunX=w*(.13+light.progress*.75),sunY=h*(.16+Math.pow(Math.abs(light.progress-.48),1.7)*.35);ctx.save();const glow=ctx.createRadialGradient(sunX,sunY,4,sunX,sunY,Math.max(w,h)*.32);glow.addColorStop(0,light.stage==="sunset"?"rgba(255,196,112,.3)":"rgba(255,245,196,.2)");glow.addColorStop(1,"rgba(255,255,255,0)");ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);if(light.alpha>0){ctx.fillStyle=light.overlay;ctx.globalAlpha=light.alpha;ctx.fillRect(0,0,w,h);}ctx.restore();
+}
 
 function resize() {
   const rect = canvas.getBoundingClientRect();
@@ -235,8 +267,8 @@ function drawWorldLabel(x,y,z,title,accent="#bce65f"){
 function drawWorld(t) {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
-  const zone=activeZone(),sky=ctx.createLinearGradient(0,0,0,h);
-  if(zone.outdoor){sky.addColorStop(0,"#8dc8d5");sky.addColorStop(1,"#d6e4c0");}else{sky.addColorStop(0,"#122d36");sky.addColorStop(1,"#34505a");}
+  const zone=activeZone(),light=lightingProfile(run.clockMinutes),sky=ctx.createLinearGradient(0,0,0,h);
+  if(zone.outdoor){sky.addColorStop(0,light.top);sky.addColorStop(1,light.bottom);}else{sky.addColorStop(0,"#122d36");sky.addColorStop(1,"#34505a");}
   ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
   const cp=isoPoint(camera.x,camera.y);
   ctx.save();
@@ -261,6 +293,7 @@ function drawWorld(t) {
   ].sort((a,b)=>a.depth-b.depth);
   actors.forEach(actor => actor.draw());
   ctx.restore();
+  if(zone.outdoor)drawAmbientLighting(light,w,h);
 }
 
 function drawTerrain(t) {
@@ -686,7 +719,7 @@ function drawGuestAgent(guest,t,index){
 
 function drawStorePod(id,loc,level,locked){
   if(locked){drawVenuePlot(id,loc);return;}
-  const size=1.72+level*.18,accent=loc.color,x=loc.x-size/2,y=loc.y-size*.38,z=40+level*9;
+  const size=1.72+level*.18,open=storeIsOpen(run,id),accent=open?loc.color:"#7f908e",x=loc.x-size/2,y=loc.y-size*.38,z=40+level*9;
   drawBlock(x,y,size,size*.76,z,level===3?"#f7f5ec":"#f1f0e9",level===3?"#94aaa8":"#aeb9b5","#c7ccc7");
   drawFacadeBandY(x+.13,y+size*.76+.01,size-.26,9,z-7,level===3?"#214d59":"#28535c",level+2);
   if(level>=2){drawRaisedSlab(x-.22,y-.18,size+.44,size*.34,z+7,5,"#f8f6ee","#91a09d","#b9c2bd");const terrace=isoPoint(loc.x,y+.05,z+12);ctx.strokeStyle=accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(terrace.x-30,terrace.y-6);ctx.lineTo(terrace.x+30,terrace.y+22);ctx.stroke();}
@@ -694,6 +727,7 @@ function drawStorePod(id,loc,level,locked){
   if(level===3){drawBlock(x+.18,y+.08,size-.36,size*.48,24,"#dae5e0","#7d9796","#a8b9b3");const roof=isoPoint(loc.x,y+.08,z+15);ctx.fillStyle="#315d66";for(let i=0;i<3;i++)ctx.fillRect(roof.x-25+i*18,roof.y-8+i*8,13,7);}
   const awning=isoPoint(loc.x,loc.y+size*.43,z-2);ctx.strokeStyle=accent;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(awning.x-24,awning.y-12);ctx.lineTo(awning.x+24,awning.y+12);ctx.stroke();
   const sign=isoPoint(loc.x,loc.y+size*.4,29);roundedRect(sign.x-27,sign.y-7,54,14,3,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":id==="merch"?"MERCH":id==="beach"?"MARÉ":"SURF",sign.x,sign.y+2);
+  const status=isoPoint(loc.x,loc.y+size*.46,15);roundedRect(status.x-20,status.y-5,40,10,4,open?"#bce65f":"#80908d");ctx.fillStyle="#173743";ctx.font="900 4.5px DM Mono";ctx.fillText(open?"OPEN":"CLOSED",status.x,status.y+1.5);
   if(level>=2){const badge=isoPoint(loc.x-.55,loc.y-.45,z+26);ctx.fillStyle=accent;ctx.beginPath();ctx.arc(badge.x,badge.y,8,0,Math.PI*2);ctx.fill();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 6px DM Mono";ctx.fillText(`L${level}`,badge.x,badge.y+2);}
 }
 
@@ -737,7 +771,7 @@ function drawLocation(id) {
   }
   if(level>1){const flag=isoPoint(loc.x+.5,loc.y-.45,86+level*8);ctx.strokeStyle="#173743";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(flag.x,flag.y+24);ctx.lineTo(flag.x,flag.y-24);ctx.stroke();ctx.fillStyle=loc.color;ctx.beginPath();ctx.moveTo(flag.x,flag.y-23);ctx.lineTo(flag.x+22,flag.y-16);ctx.lineTo(flag.x,flag.y-8);ctx.closePath();ctx.fill();}
   if(near){const q=isoPoint(loc.x,loc.y,3);ctx.strokeStyle="#ffd454";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,55+Math.sin(lastTime*.004)*2,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
-  const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96);roundedRect(tag.x-50,tag.y-11,100,22,11,"rgba(10,37,46,.9)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);
+  const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96),storeState=isStore&&!locked&&!storeIsOpen(run,id)?" · CLOSED":"";roundedRect(tag.x-50,tag.y-11,100,22,11,"rgba(10,37,46,.9)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level+storeState:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);
 }
 
 function drawPlayer(t) {
@@ -769,13 +803,14 @@ function loop(t) {
 
 function tickTycoon(realSeconds){
   if(!run.speed)return;
-  const beforeDay=run.currentDay,beforeSales=run.totalSales||0,beforeProducts=structuredClone(run.today?.products||{});
+  const beforeDay=run.currentDay,beforeSales=run.totalSales||0,beforeProducts=structuredClone(run.today?.products||{}),beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
   run=advanceTycoon(run,realSeconds*8*run.speed);
   if((run.totalSales||0)>beforeSales){
     const soldId=Object.keys(run.today?.products||{}).find(id=>(run.today.products[id]?.unitsSold||0)>(beforeProducts[id]?.unitsSold||0));
     const product=CATALOGUE.find(item=>item.id===soldId);showSaleFeed(product,(run.totalSales||0)-beforeSales);
   }
-  if(run.currentDay!==beforeDay){const closed=run.history.at(-1);toast(`Day ${beforeDay} closed · ${formatEuro(closed?.totals?.revenue||0)} revenue`);beep(640);}
+  const delivered=(run.deliveries||[]).filter(item=>item.status==="delivered");if(delivered.length>beforeDelivered){const latest=delivered.at(-1),product=CATALOGUE.find(item=>item.id===latest.productId);toast(`Delivery arrived · ${latest.quantity}× ${product?.short||"stock"}`);beep(740);}
+  if(run.currentDay!==beforeDay){const closed=run.history.at(-1);showDayReport(closed);beep(640);}
   const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=now;}
   updateHUD();
 }
@@ -801,11 +836,12 @@ function storeTabs(selected, action="supplier") {
 
 function openSupplier(selectedStore="cafe") {
   currentSupplierStore=selectedStore;
-  const store=STORES.find(item=>item.id===selectedStore), products=CATALOGUE.filter(product=>product.storeId===selectedStore), level=run.venues[selectedStore] ?? 0;
+  const store=STORES.find(item=>item.id===selectedStore), products=CATALOGUE.filter(product=>product.storeId===selectedStore), level=run.venues[selectedStore] ?? 0,window=nextDeliveryWindow(run),pending=(run.deliveries||[]).filter(item=>item.status==="scheduled");
   drawerContent.innerHTML = `
-    <p class="eyebrow">Mercado Hub · wholesale market</p><h2>Buy inventory</h2>
-    <p class="drawer-intro">Choose a venue, compare unit economics, and build a portfolio you can actually afford.</p>
+    <p class="eyebrow">Mercado Hub · scheduled logistics</p><h2>Order inventory</h2>
+    <p class="drawer-intro">Orders are paid immediately and reach campus on the next delivery run. Plan around opening hours and rush periods.</p>
     <div class="balance-banner"><span>AVAILABLE CASH</span><strong>${formatEuro(run.cash)}</strong></div>
+    <div class="delivery-window"><span>▣</span><div><small>NEXT ORDER WINDOW</small><strong>${window.day===run.currentDay?"Today":`Day ${window.day}`} · ${formatClock(window.minute)}</strong><em>${window.label}</em></div><b>${pending.length} pending</b></div>
     ${storeTabs(selectedStore)}
     <div class="section-heading"><div><small>STOCKING · LEVEL ${level}</small><strong>${store.name}</strong></div><span>${products.reduce((sum,p)=>sum+run.stock[p.id],0)} units owned</span></div>
     <div class="product-list">${products.map(product => productBuyCard(product)).join("")}</div>`;
@@ -818,16 +854,16 @@ function openSupplier(selectedStore="cafe") {
   drawerContent.querySelectorAll(".qty-input").forEach(input => input.addEventListener("input", () => updateBuyTotal(input.dataset.id)));
   drawerContent.querySelectorAll(".buy-button").forEach(button => button.addEventListener("click", () => {
     const quantity = Number(drawerContent.querySelector(`#qty-${button.dataset.id}`).value);
-    try { save(buyStock(run, button.dataset.id, quantity)); toast(`Stock purchased · ${quantity} units`); beep(520); }
+    try { const next=scheduleDelivery(run,button.dataset.id,quantity),delivery=next.deliveries.at(-1);save(next);toast(`${quantity} units ordered · arrives day ${delivery.arrivalDay} at ${formatClock(delivery.arrivalMinute)}`);beep(520);openSupplier(selectedStore); }
     catch (error) { toast(error.message, true); beep(180); }
   }));
 }
 
 function productBuyCard(product) {
-  const level=run.venues?.[product.storeId]??0,locked=level<(product.tier || 1);
+  const level=run.venues?.[product.storeId]??0,locked=level<(product.tier || 1),incoming=(run.deliveries||[]).filter(item=>item.status==="scheduled"&&item.productId===product.id).reduce((sum,item)=>sum+item.quantity,0);
   return `<article class="product-card ${locked?"locked":""}" style="--product-color:${product.color}">
-    <div class="product-head"><div class="product-icon">${product.icon}</div><div><h3>${product.name}</h3><p>${formatEuro(product.cost)} cost · ${formatEuro(product.reference)} reference</p></div><span class="stock-pill">${run.stock[product.id]} in stock</span></div>
-    <div class="buy-row"><div class="qty-control"><button class="qty-minus" data-id="${product.id}" aria-label="Decrease quantity" ${locked?"disabled":""}>−</button><input class="qty-input" data-id="${product.id}" id="qty-${product.id}" type="number" min="1" step="1" value="1" aria-label="Quantity" ${locked?"disabled":""}><button class="qty-plus" data-id="${product.id}" aria-label="Increase quantity" ${locked?"disabled":""}>+</button></div><button class="action-button buy-button" data-id="${product.id}" ${locked ? "disabled" : ""}>${locked?(level===0?"Venue closed":`Unlock at level ${product.tier}`):`Buy · <span id="total-${product.id}">${formatEuro(product.cost)}</span>`}</button></div>
+    <div class="product-head"><div class="product-icon">${product.icon}</div><div><h3>${product.name}</h3><p>${formatEuro(product.cost)} cost · ${formatEuro(product.reference)} reference</p></div><span class="stock-pill">${run.stock[product.id]} stock${incoming?` · ${incoming} inbound`:""}</span></div>
+    <div class="buy-row"><div class="qty-control"><button class="qty-minus" data-id="${product.id}" aria-label="Decrease quantity" ${locked?"disabled":""}>−</button><input class="qty-input" data-id="${product.id}" id="qty-${product.id}" type="number" min="1" step="1" value="1" aria-label="Quantity" ${locked?"disabled":""}><button class="qty-plus" data-id="${product.id}" aria-label="Increase quantity" ${locked?"disabled":""}>+</button></div><button class="action-button buy-button" data-id="${product.id}" ${locked ? "disabled" : ""}>${locked?(level===0?"Venue closed":`Unlock at level ${product.tier}`):`Order · <span id="total-${product.id}">${formatEuro(product.cost)}</span>`}</button></div>
   </article>`;
 }
 
@@ -838,7 +874,7 @@ function updateBuyTotal(id) {
 
 function openStore(storeId="cafe") {
   const store=STORES.find(item=>item.id===storeId), products=CATALOGUE.filter(product=>product.storeId===storeId);
-  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500,progress=progressionState(run),requiredLevel=STORE_REQUIREMENTS[storeId]||1,districtMissing=storeId==="beach"&&!run.districts?.east?"East Promenade":storeId==="surf"&&!run.districts?.pier?"Ocean Pier":null;
+  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500,progress=progressionState(run),requiredLevel=STORE_REQUIREMENTS[storeId]||1,districtMissing=storeId==="beach"&&!run.districts?.east?"East Promenade":storeId==="surf"&&!run.districts?.pier?"Ocean Pier":null,hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],isOpen=storeIsOpen(run,storeId);
   if(level===0){
     const cost=STORE_UNLOCKS[storeId],ready=progress.level>=requiredLevel&&!districtMissing;drawerContent.innerHTML=`<p class="eyebrow">Expansion opportunity · ${store.short}</p><div class="locked-venue-hero" style="--venue:${store.color}"><span>${store.icon}</span><small>LEVEL ${requiredLevel} VENUE</small><h2>${store.name}</h2><p>${store.pitch} The building appears only after you earn the level, secure its district and purchase the operating license.</p><div class="unlock-requirements"><em class="${progress.level>=requiredLevel?"done":""}">COMPANY LEVEL ${requiredLevel}</em><em class="${!districtMissing?"done":""}">${districtMissing?`ACQUIRE ${districtMissing.toUpperCase()}`:"DISTRICT READY"}</em></div><div><em>OPENING COST</em><strong>${formatEuro(cost)}</strong></div><button class="action-button orange" id="unlockVenue" ${run.cash<cost||!ready?"disabled":""}>${!ready?`Requires level ${requiredLevel}${districtMissing?" + land":""}`:`Open ${store.short}`}</button></div>${storeTabs(storeId,"store")}`;
     drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
@@ -849,6 +885,7 @@ function openStore(storeId="cafe") {
   drawerContent.innerHTML = `
     <p class="eyebrow">Venue management · ${store.short}</p><div class="venue-title"><div><h2>${store.name}</h2><p>${store.pitch}</p></div><div class="level-badge"><small>VENUE LEVEL</small><strong>${level} / 3</strong></div></div>
     <div class="venue-evolution level-${level}" style="--venue:${store.color}"><span class="evo-building"><i></i><b>${store.icon}</b></span><div><small>VISUAL STAGE ${level}</small><strong>${level===1?"Compact campus kiosk":level===2?"Expanded service terrace":"Two-storey flagship"}</strong><p>${level===1?"One counter and a small awning.":level===2?"Faster frontage, terrace seating and stronger identity.":"Premium façade, rooftop fit-out and maximum product range."}</p></div></div>
+    <div class="store-hours-card ${isOpen?"open":"closed"}" id="currentStoreHours" data-store-id="${storeId}"><div><span id="currentStoreState">${isOpen?"OPEN NOW":"CLOSED"}</span><small>${formatClock(hours.open)} — ${formatClock(hours.close)}</small><strong id="currentStoreCountdown">${isOpen?`${formatDuration(hours.close-run.clockMinutes)} remaining`:run.clockMinutes<hours.open?`Opens in ${formatDuration(hours.open-run.clockMinutes)}`:"Closed for today"}</strong></div><label>OPEN<input id="storeOpenTime" type="time" min="07:30" max="17:30" value="${formatClock(hours.open)}"></label><label>CLOSE<input id="storeCloseTime" type="time" min="09:30" max="19:30" value="${formatClock(hours.close)}"></label><button id="saveStoreHours">Apply hours</button></div>
     <div class="upgrade-track"><span style="width:${level/3*100}%"></span></div>
     ${level<3?`<button class="upgrade-button" id="upgradeVenue">Upgrade to level ${level+1}<small>Unlock ${products.find(p=>p.tier===level+1)?.name} · ${formatEuro(upgradeCost)}</small></button>`:`<div class="max-level">★ Flagship venue · all products unlocked</div>`}
     ${storeTabs(storeId,"store")}
@@ -864,6 +901,7 @@ function openStore(storeId="cafe") {
   drawerContent.querySelectorAll(".set-price").forEach(button => button.addEventListener("click",()=>commitPrice(button.dataset.id)));
   if($("#upgradeVenue")) $("#upgradeVenue").addEventListener("click",()=>{try{save(upgradeVenue(run,storeId));toast(`${store.name} upgraded to level ${level+1}`);beep(720);}catch(error){toast(error.message,true);beep(180);}});
   $("#visitSupplier").addEventListener("click",()=>{currentSupplierStore=storeId;openLocation("supplier");});
+  $("#saveStoreHours").addEventListener("click",()=>{try{save(setStoreHours(run,storeId,timeInputToMinutes($("#storeOpenTime").value),timeInputToMinutes($("#storeCloseTime").value)));toast(`${store.short} hours updated`);beep(560);openStore(storeId);}catch(error){toast(error.message,true);beep(180);}});
   $("#venueClock").addEventListener("click",()=>{setGameSpeed(run.speed===0?1:0);openStore(storeId);});
 }
 
@@ -1042,27 +1080,68 @@ function commitPrice(id) {
   catch(error){ toast(error.message,true); openStore(CATALOGUE.find(product=>product.id===id)?.storeId || "cafe"); beep(180); }
 }
 
+function openTimePanel(){
+  activeLocation=null;const phase=campusPhase(run.clockMinutes),dayProgress=Math.max(0,Math.min(100,(run.clockMinutes-DAY_START)/(DAY_END-DAY_START)*100)),pending=(run.deliveries||[]).filter(item=>item.status==="scheduled").sort((a,b)=>a.arrivalDay-b.arrivalDay||a.arrivalMinute-b.arrivalMinute),deliveredToday=run.today?.deliveries||[];
+  drawerContent.innerHTML=`<p class="eyebrow">Living campus · day ${run.currentDay}</p><div class="time-panel-title"><div><small>CURRENT CAMPUS RHYTHM</small><h2 id="livePhaseTitle">${formatClock(run.clockMinutes)} · ${phase.name}</h2><p id="livePhaseDescription">${phase.description}</p></div><span id="liveFootfall" style="--phase:${phase.color}">${phase.multiplier.toFixed(2)}×<small>FOOTFALL</small></span></div>
+    <div class="day-track"><i id="liveDayFill" style="width:${dayProgress}%"></i><b id="liveDayMarker" style="left:${dayProgress}%"></b>${CAMPUS_DAY_PHASES.map(item=>`<span style="width:${(item.end-item.start)/(DAY_END-DAY_START)*100}%;--phase:${item.color}"></span>`).join("")}</div>
+    <div class="section-heading"><div><small>CAMPUS TIMETABLE</small><strong>A day with distinct trading windows</strong></div><span>07:30 — 19:30</span></div>
+    <div class="campus-phase-grid">${CAMPUS_DAY_PHASES.map(item=>`<article data-campus-phase="${item.id}" class="${item.id===phase.id?"active":""}" style="--phase:${item.color}"><span>${formatClock(item.start)}</span><div><strong>${item.name}</strong><p>${item.description}</p></div><em>${item.multiplier.toFixed(2)}×</em></article>`).join("")}</div>
+    <div class="section-heading"><div><small>STORE OPERATIONS</small><strong>Opening hours control live sales</strong></div><span>Closed shops disappear from guest choices</span></div>
+    <div class="hours-overview">${STORES.map(store=>{const hours=run.storeHours?.[store.id]||DEFAULT_STORE_HOURS[store.id],opened=storeIsOpen(run,store.id),unlocked=(run.venues?.[store.id]||0)>0;return `<button data-time-store="${store.id}" class="${opened?"open":"closed"} ${!unlocked?"locked":""}" style="--store:${store.color}"><span>${store.icon}</span><div><strong>${store.short}</strong><small>${unlocked?`${formatClock(hours.open)} — ${formatClock(hours.close)}`:"NOT BUILT"}</small></div><em>${!unlocked?"LOCKED":opened?"OPEN":"CLOSED"}</em></button>`}).join("")}</div>
+    <div class="section-heading"><div><small>LOGISTICS BOARD</small><strong>Scheduled campus deliveries</strong></div><span>${deliveredToday.length} arrived today</span></div>
+    <div class="delivery-slots">${DELIVERY_WINDOWS.map(slot=>`<div data-delivery-minute="${slot.minute}" class="${run.clockMinutes+5>=slot.minute?"passed":""}"><span>${formatClock(slot.minute)}</span><strong>${slot.label}</strong><small>${run.clockMinutes>=slot.minute?"departed":run.clockMinutes+5>=slot.minute?"cutoff passed":"accepting orders"}</small></div>`).join("")}</div>
+    <div class="delivery-manifest">${pending.length?pending.slice(0,8).map(item=>{const product=CATALOGUE.find(entry=>entry.id===item.productId);return `<div><span>▣</span><div><strong>${item.quantity}× ${product?.short||item.productId}</strong><small>${item.arrivalDay===run.currentDay?"Today":`Day ${item.arrivalDay}`} · ${formatClock(item.arrivalMinute)} · ${item.label}</small></div><em>${formatEuro(item.total)}</em></div>`}).join(""):`<div class="empty-state compact"><span>✓</span>No stock is waiting in the logistics queue.</div>`}</div>
+    <button class="action-button secondary" id="openSupplierFromTime">Order inventory for the next delivery</button>`;
+  drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");drawer.scrollTop=0;
+  drawerContent.querySelectorAll("[data-time-store]").forEach(button=>button.addEventListener("click",()=>openStore(button.dataset.timeStore)));
+  $("#openSupplierFromTime").addEventListener("click",()=>openSupplier(currentSupplierStore||"cafe"));
+}
+
+function refreshTimePanelLive(){
+  if(!$("#livePhaseTitle"))return;const phase=campusPhase(run.clockMinutes),progress=Math.max(0,Math.min(100,(run.clockMinutes-DAY_START)/(DAY_END-DAY_START)*100));
+  $("#livePhaseTitle").textContent=`${formatClock(run.clockMinutes)} · ${phase.name}`;$("#livePhaseDescription").textContent=phase.description;$("#liveFootfall").childNodes[0].nodeValue=`${phase.multiplier.toFixed(2)}×`;$("#liveFootfall").style.setProperty("--phase",phase.color);$("#liveDayFill").style.width=`${progress}%`;$("#liveDayMarker").style.left=`${progress}%`;
+  drawerContent.querySelectorAll("[data-campus-phase]").forEach(card=>card.classList.toggle("active",card.dataset.campusPhase===phase.id));
+  drawerContent.querySelectorAll("[data-time-store]").forEach(button=>{if(button.classList.contains("locked"))return;const opened=storeIsOpen(run,button.dataset.timeStore);button.classList.toggle("open",opened);button.classList.toggle("closed",!opened);button.querySelector("em").textContent=opened?"OPEN":"CLOSED";});
+  drawerContent.querySelectorAll("[data-delivery-minute]").forEach(card=>{const minute=Number(card.dataset.deliveryMinute),passed=run.clockMinutes+5>=minute;card.classList.toggle("passed",passed);card.querySelector("small").textContent=run.clockMinutes>=minute?"departed":passed?"cutoff passed":"accepting orders";});
+}
+
+function refreshStoreHoursPanelLive(){
+  const card=$("#currentStoreHours");if(!card)return;const storeId=card.dataset.storeId,hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],opened=storeIsOpen(run,storeId);card.classList.toggle("open",opened);card.classList.toggle("closed",!opened);$("#currentStoreState").textContent=opened?"OPEN NOW":"CLOSED";$("#currentStoreCountdown").textContent=opened?`${formatDuration(hours.close-run.clockMinutes)} remaining`:run.clockMinutes<hours.open?`Opens in ${formatDuration(hours.open-run.clockMinutes)}`:"Closed for today";
+}
+
 function openLedger() {
   const gain=overallResult(run), inv=inventoryValue(run);
   const venueResults=STORES.map(store=>{const ids=new Set(CATALOGUE.filter(p=>p.storeId===store.id).map(p=>p.id));const items=run.history.flatMap(day=>day.items).filter(item=>ids.has(item.productId));return {store,units:items.reduce((s,i)=>s+i.unitsSold,0),revenue:items.reduce((s,i)=>s+i.revenue,0),profit:items.reduce((s,i)=>s+i.grossProfit,0)}});
-  const djEvents=(run.eventHistory||[]).filter(item=>item.eventId==="dj-event"),djRevenue=djEvents.reduce((sum,item)=>sum+(item.revenue||0),0),djProfit=djEvents.reduce((sum,item)=>sum+(item.grossProfit||0),0);
+  const djEvents=(run.eventHistory||[]).filter(item=>item.eventId==="dj-event"),djRevenue=djEvents.reduce((sum,item)=>sum+(item.revenue||0),0),djProfit=djEvents.reduce((sum,item)=>sum+(item.grossProfit||0),0),pendingDeliveries=(run.deliveries||[]).filter(item=>item.status==="scheduled"),deliveredCount=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
   drawerContent.innerHTML=`<p class="eyebrow">Live company finance · autosaved</p><h2>Portfolio performance</h2><p class="drawer-intro">The business runs continuously. Compare shops, inspect closed days, and decide where to reinvest.</p>
     <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>NET WORTH CHANGE</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div><div><small>TOTAL VISITORS</small><strong>${run.totalVisitors||0}</strong></div></div>
+    <div class="ledger-rhythm"><div><small>CURRENT WINDOW</small><strong>${campusPhase(run.clockMinutes).name}</strong><span>${campusPhase(run.clockMinutes).multiplier.toFixed(2)}× footfall</span></div><div><small>LOGISTICS</small><strong>${pendingDeliveries.length} pending</strong><span>${deliveredCount} deliveries completed</span></div><button id="ledgerSchedule">View campus schedule</button></div>
     <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>All-time trading performance</strong></div><span>Day ${run.currentDay} · ${formatClock(run.clockMinutes)}</span></div>
     <div class="venue-kpis">${venueResults.map(v=>`<div style="border-top:3px solid ${v.store.color}"><small>${v.store.short.toUpperCase()}</small><strong>${formatEuro(v.profit)}</strong><span>${v.units} sold · ${formatEuro(v.revenue)} revenue</span></div>`).join("")}</div>
     ${djEvents.length?`<div class="section-heading"><div><small>ATTRACTION OPERATIONS</small><strong>Atlantic Sessions</strong></div><span>${djEvents.length} completed events</span></div><div class="venue-kpis"><div style="border-top:3px solid #64cbc8"><small>TICKET REVENUE</small><strong>${formatEuro(djRevenue)}</strong><span>${run.djOperations?.lifetimeAttendance||0} lifetime attendees</span></div><div style="border-top:3px solid #bce65f"><small>EVENT PROFIT</small><strong>${formatEuro(djProfit)}</strong><span>after operating costs</span></div><div style="border-top:3px solid #f5c95e"><small>AVERAGE CROWD</small><strong>${Math.round(djEvents.reduce((sum,item)=>sum+(item.attendance||0),0)/djEvents.length)}</strong><span>guests per set</span></div></div>`:""}
     <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Closed trading days</strong></div><span>Latest 60 saved</span></div>
     <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>The first day is still running.<br>Sales appear here automatically at 19:30.</div>`}</div>`;
+  $("#ledgerSchedule").addEventListener("click",openTimePanel);
 }
 
 function historyCard(day) {
-  const interactions=Object.values(day.campus?.activities||{}).reduce((sum,value)=>sum+value,0),eventRevenue=day.totals.eventRevenue||0,eventCosts=day.totals.eventCosts||0,totalRevenue=day.totals.revenue+eventRevenue,rows=day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")+`${eventRevenue||eventCosts?`<tr><td>DJ event</td><td>${day.totals.eventAttendance||0}</td><td>${formatEuro(eventRevenue)}</td><td>${formatEuro(eventCosts)}</td><td>${formatEuro(eventRevenue-eventCosts)}</td></tr>`:""}`;return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span>+${formatEuro(totalRevenue)}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied${interactions?` · ${interactions} campus uses`:""}</div>`:""}<table class="mini-table"><thead><tr><th>Product / event</th><th>Units / guests</th><th>Revenue</th><th>Costs</th><th>Profit</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
+  const interactions=Object.values(day.campus?.activities||{}).reduce((sum,value)=>sum+value,0),eventRevenue=day.totals.eventRevenue||0,eventCosts=day.totals.eventCosts||0,profit=day.totals.grossProfit||0;
+  const rows=day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")+`${eventRevenue||eventCosts?`<tr><td>DJ event</td><td>${day.totals.eventAttendance||0}</td><td>${formatEuro(eventRevenue)}</td><td>${formatEuro(eventCosts)}</td><td>${formatEuro(eventRevenue-eventCosts)}</td></tr>`:""}`;
+  return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span class="${profit<0?"negative":""}">${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied${interactions?` · ${interactions} campus uses`:""}${day.totals.deliveredUnits?` · ${day.totals.deliveredUnits} units delivered`:""}</div>`:""}<table class="mini-table"><thead><tr><th>Product / event</th><th>Units / guests</th><th>Revenue</th><th>Costs</th><th>Profit</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
 }
+
+function showDayReport(day){
+  if(!day)return;const report=$("#dayReport"),eventRevenue=day.totals.eventRevenue||0,totalRevenue=day.totals.revenue+eventRevenue,profit=day.totals.grossProfit||0,best=day.items.filter(item=>item.unitsSold>0).sort((a,b)=>b.grossProfit-a.grossProfit)[0],product=CATALOGUE.find(item=>item.id===best?.productId);
+  report.innerHTML=`<button class="day-report-close" aria-label="Dismiss day report">×</button><div class="day-report-head"><span>DAY ${day.day}</span><div><small>TRADING CLOSED · CAMPAIGN CONTINUES</small><strong>${profit>=0?"Profitable day":"Investment day"}</strong></div><em>${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</em></div><div class="day-report-grid"><div><small>TOTAL REVENUE</small><strong>${formatEuro(totalRevenue)}</strong></div><div><small>UNITS SOLD</small><strong>${day.totals.unitsSold}</strong></div><div><small>VISITORS</small><strong>${day.campus?.guests||0}</strong></div><div><small>DELIVERED</small><strong>${day.totals.deliveredUnits||0}</strong></div></div><p>${product?`${product.short} led the day with ${best.unitsSold} sold and ${formatEuro(best.grossProfit)} gross profit.`:"No products sold today. Review stock, prices and opening hours before the next rush."}</p><div class="day-report-actions"><span id="dayReportLiveTime">Day ${run.currentDay} is already running · ${formatClock(run.clockMinutes)}</span><button id="dayReportFinance">Open full ledger</button></div>`;
+  report.classList.add("show");report.setAttribute("aria-hidden","false");clearTimeout(dayReportTimer);dayReportTimer=setTimeout(()=>hideDayReport(),12000);report.querySelector(".day-report-close").addEventListener("click",hideDayReport);$("#dayReportFinance").addEventListener("click",()=>{hideDayReport();openLedger();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");});
+}
+
+function hideDayReport(){const report=$("#dayReport");report.classList.remove("show");report.setAttribute("aria-hidden","true");clearTimeout(dayReportTimer);}
 
 function confirmNewRun() {
   modalCard.className="modal-card";
   modalCard.innerHTML=`<p class="eyebrow">Replace your tycoon?</p><h2 id="modalTitle">Start a new campus company</h2><p>This replaces your saved business with <strong>€100.00 cash</strong>, Atlantic Café at level one, zero stock, no construction and an empty ledger. Cancelling keeps everything exactly as it is.</p><div class="modal-actions"><button class="action-button secondary" data-close>Cancel</button><button class="action-button orange" id="replaceRun">Replace company</button></div>`;
-  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;guestAgents=[];guestSpawnAccumulator=0;closeDrawer();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
+  showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;guestAgents=[];guestSpawnAccumulator=0;closeDrawer();hideDayReport();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
 }
 
 function showModal(){modal.classList.remove("hidden");}
@@ -1082,6 +1161,8 @@ $("#rotateBuild").addEventListener("click",rotatePendingBuild);
 $("#cancelBuild").addEventListener("click",cancelBuildMode);
 $("#newRunButton").addEventListener("click",confirmNewRun);
 $("#soundButton").addEventListener("click",()=>{soundOn=!soundOn;$("#soundButton").classList.toggle("muted",!soundOn);$("#soundButton").textContent=soundOn?"♪":"×";});
+$("#timeCenter").addEventListener("click",openTimePanel);
+$("#deliveryChip").addEventListener("click",openTimePanel);
 document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>{
   const action=button.dataset.action;
   if(action==="buy")openLocation("supplier");
