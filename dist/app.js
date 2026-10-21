@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=23-guest-sales";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, districtForStore, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=24-staff-operations";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -81,7 +81,7 @@ function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.distr
 function loadRun() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (parsed && [1,2,3].includes(parsed.version) && Array.isArray(parsed.history)) {
+    if (parsed && [1,2,3,4].includes(parsed.version) && Array.isArray(parsed.history)) {
       if (!parsed.player) parsed.player = { x:21, y:18, zone:"campus" };
       if (!parsed.player.zone || !ZONES[parsed.player.zone]) parsed.player = { x:Math.min(41,Math.max(1,parsed.player.x||21)), y:Math.min(25.7,Math.max(7.5,parsed.player.y||18)), zone:"campus" };
       CATALOGUE.forEach(product => {
@@ -102,7 +102,7 @@ function loadRun() {
       parsed.facilities.forEach(facility=>{if(!Number.isInteger(facility.rotation))facility.rotation=0;});
       if (!parsed.staff) parsed.staff = { service:0, caretaker:0, technician:0, host:0, entertainer:0 };
       STAFF_CATALOGUE.forEach(role=>{if(!Number.isInteger(parsed.staff[role.id]))parsed.staff[role.id]=0;});
-      parsed.version=3;parsed.completed=false;parsed.salesMode="guests";if(!Array.isArray(parsed.guestSales))parsed.guestSales=[];
+      parsed.version=4;parsed.completed=false;parsed.salesMode="guests";if(!Array.isArray(parsed.guestSales))parsed.guestSales=[];
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
       if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};
@@ -115,7 +115,7 @@ function loadRun() {
       if(!parsed.facilityUsage)parsed.facilityUsage={};
       if(!parsed.venueVisits)parsed.venueVisits={};
       if(!parsed.guestEconomy)parsed.guestEconomy={purchases:0,spend:0,walkaways:0};
-      return parsed;
+      return migrateStaffOperations(parsed);
     }
   } catch (_) {}
   const fresh = createRun();
@@ -134,7 +134,7 @@ function save(next) {
 
 function updateHUD() {
   const zone=activeZone();
-  const campus=campusMetrics(run),progression=progressionState(run);
+  const campus=campusMetrics(run),progression=progressionState(run),operations=operationsSnapshot(run);
   const phase=campusPhase(run.clockMinutes),light=lightingProfile(run.clockMinutes);
   $("#game").dataset.light=light.stage;
   $("#zoneName").textContent=zone.name;
@@ -161,7 +161,7 @@ function updateHUD() {
   const lockedVenue=STORES.find(store=>(run.venues?.[store.id]??0)===0),openCount=STORES.filter(store=>(run.venues?.[store.id]??0)>0).length;
   $("#pulseDemand").textContent = `${Math.round(demandCapacity*Math.max(.45,campus.guests/24))} potential sales`;
   const activeGuests=guestAgents.length||campus.guests,usingGuests=guestAgents.filter(guest=>guest.state==="using"||guest.state==="queueing").length;
-  $("#pulseVenues").textContent = `${activeGuests} live · ${usingGuests} at destinations`;
+  $("#pulseVenues").textContent = operations.openIssues?`${operations.openIssues} work orders · ${operations.closedAssets} closures`:`${activeGuests} live · ${usingGuests} at destinations`;
   $("#pulseMilestone").textContent = progression.next?`Level ${progression.next.level}: ${progression.next.unlock}`:"Nova Legend achieved";
   $("#eventIcon").textContent = peak.id==="lunch"?"☀":peak.id==="arrival"?"↗":peak.id==="break"?"◇":peak.id==="sunset"?"★":"▰";
   $("#eventDistrict").textContent = `LIVE · ${formatClock(run.clockMinutes)}`;
@@ -178,6 +178,9 @@ function updateHUD() {
   const venueDistrictReady=lockedVenue&&(!["beach","surf"].includes(lockedVenue.id)||(lockedVenue.id==="beach"?run.districts?.east:run.districts?.pier));
   if(lockedVenue&&run.cash>=STORE_UNLOCKS[lockedVenue.id]&&progression.level>=(STORE_REQUIREMENTS[lockedVenue.id]||1)&&venueDistrictReady){title=`You can open ${lockedVenue.name}`;text="Reinvest your profits in the next venue, then stock its first product.";}
   if(progression.next&&progression.progress>=75){title=`Level ${progression.next.level} is close`;text=`Keep serving guests to unlock ${progression.next.unlock}. ${progression.xp}/${progression.next.xp} XP.`;}
+  if(operations.litter&&!operations.closedAssets){title="Campus cleanup needed";text=`${operations.litter} litter ${operations.litter===1?"spill is":"spills are"} lowering cleanliness. Assign an on-shift caretaker to the affected district.`;}
+  if(operations.closedAssets){title=`${operations.closedAssets} ${operations.closedAssets===1?"asset is":"assets are"} temporarily closed`;text="Assign an on-shift technician to the affected district. Guests will avoid the asset until the repair is complete.";}
+  if(operations.payrollDue){title="Operations team is off duty";text=`Settle ${formatEuro(operations.payrollDue)} in overdue wages to resume queue support, cleaning and repairs.`;}
   $("#missionTitle").textContent = title;
   $("#missionText").textContent = text;
   $("#missionProgress").style.width = `${progress}%`;
@@ -187,6 +190,7 @@ function updateHUD() {
   refreshBuildNotice();
   refreshTimePanelLive();
   refreshStoreHoursPanelLive();
+  refreshOperationsPanelLive();
 }
 
 function formatClock(minutes){const value=Math.floor(minutes||DAY_START),hours=Math.floor(value/60)%24,mins=value%60;return `${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}`;}
@@ -284,6 +288,7 @@ function drawWorld(t) {
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
+    ...operationsWorldActors(t),
     ...liveCrowd(t)
   ]:drawRoomActors(t);
   const actors=[...worldActors,
@@ -558,13 +563,13 @@ function updateCampusGuests(dt){
   while(guestAgents.length<desired&&guestSpawnAccumulator>.34){guestAgents.push(createGuestAgent());guestSpawnAccumulator-=.34;}
   if(guestAgents.length>desired){guestAgents.filter(guest=>guest.state!=="leaving").sort((a,b)=>b.age-a.age).slice(0,guestAgents.length-desired).forEach(sendGuestHome);}
   for(const guest of guestAgents){
-    if(guest.target?.kind==="facility"){const point=targetPointFor(guest.target);if(!point){sendGuestToNextActivity(guest);}else if(guest.state==="walking"){guest.target.x=point.x;guest.target.y=point.y;}}
+    if(guest.target?.kind==="facility"){const point=targetPointFor(guest.target);if(!point||assetIsClosed(run,"facility",guest.target.id)){guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;sendGuestToNextActivity(guest);}else if(guest.state==="walking"){guest.target.x=point.x;guest.target.y=point.y;}}
     guest.age+=dt*speed;Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+dt*speed*(key==="mood"?.18:.3)));
     if(guest.state==="walking"||guest.state==="leaving"){const point=guest.route[guest.routeIndex];if(!point){beginGuestActivity(guest);continue;}if(moveGuestToward(guest,point,GUEST_SPEED*dt*Math.min(2.2,Math.sqrt(speed)))){guest.routeIndex+=1;if(guest.routeIndex>=guest.route.length)beginGuestActivity(guest);}}
     else if(guest.state==="using"){guest.timer-=dt*speed;if(guest.timer<=0)completeGuestActivity(guest);}
   }
   const queues=new Map();for(const guest of guestAgents.filter(item=>item.state==="queueing")){const key=guest.target.id;if(!queues.has(key))queues.set(key,[]);queues.get(key).push(guest);}
-  for(const queue of queues.values()){queue.sort((a,b)=>a.id-b.id);queue.forEach((guest,index)=>{const diagonal=guest.target.id!=="snack",point={x:guest.target.x-index*(diagonal?.48:.52),y:guest.target.y+index*(diagonal?.48:.2)};moveGuestToward(guest,point,GUEST_SPEED*dt*1.4);guest.activity=index?`Waiting · ${index+1} in line`:`Being served at ${guest.target.label}`;if(index>0){guest.waited=(guest.waited||0)+dt*speed;if(guest.waited>guest.maxWait){guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+14);run.guestEconomy.walkaways+=1;guest.thought="I waited long enough — another place is a better use of my time.";sendGuestToNextActivity(guest);return;}}if(index===0){guest.timer-=dt*speed*(1+(run.staff?.service||0)*.35);if(guest.timer<=0)completeGuestActivity(guest);}});}
+  for(const queue of queues.values()){queue.sort((a,b)=>a.id-b.id);queue.forEach((guest,index)=>{const diagonal=guest.target.id!=="snack",point={x:guest.target.x-index*(diagonal?.48:.52),y:guest.target.y+index*(diagonal?.48:.2)};moveGuestToward(guest,point,GUEST_SPEED*dt*1.4);guest.activity=index?`Waiting · ${index+1} in line`:`Being served at ${guest.target.label}`;if(index>0){guest.waited=(guest.waited||0)+dt*speed;if(guest.waited>guest.maxWait){guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+14);run.guestEconomy.walkaways+=1;guest.thought="I waited long enough — another place is a better use of my time.";sendGuestToNextActivity(guest);return;}}if(index===0){const queueLeads=activeStaffCount(run,"service",districtForStore(guest.target.id));guest.timer-=dt*speed*(1+queueLeads*.35);if(guest.timer<=0)completeGuestActivity(guest);}});}
   guestAgents=guestAgents.filter(guest=>!guest.remove);
 }
 
@@ -575,6 +580,14 @@ function liveCrowd(t){
   if(activityPulse&&activityPulse.until>t)actors.push({depth:activityPulse.x+activityPulse.y+.2,draw:()=>drawActivityPulse(activityPulse,t)});
   return actors;
 }
+
+const STAFF_PATROLS={coast:[{x:10.5,y:18.4},{x:25.2,y:19.4},{x:35.5,y:17.2}],east:[{x:42.7,y:18.6},{x:46.4,y:16.8},{x:47.2,y:21.1}],pier:[{x:50.4,y:18.2},{x:53.4,y:19.2},{x:54.6,y:15.2}]};
+function issueWorldPoint(issue){if(Number.isFinite(issue.x)&&Number.isFinite(issue.y))return {x:issue.x,y:issue.y};if(issue.targetKind==="store")return guestTargetPoints[issue.targetId]||null;if(issue.targetKind==="venue"&&issue.targetId==="pavilion")return guestTargetPoints.pavilion;const facility=(run.facilities||[]).find(item=>item.id===issue.targetId);return facility?{x:facility.x,y:facility.y}:null;}
+function assignedIssue(worker){const type=worker.roleId==="caretaker"?"litter":worker.roleId==="technician"?"breakdown":null;if(!type)return null;return (run.operations?.issues||[]).find(issue=>issue.type===type&&issue.districtId===worker.districtId)||null;}
+function staffWorldPoint(worker,index,t){const issue=assignedIssue(worker),target=issueWorldPoint(issue);if(target)return {x:target.x+.48+(index%2)*.18,y:target.y+.38+(index%3)*.12,working:true,issue};const route=STAFF_PATROLS[worker.districtId]||STAFF_PATROLS.coast,a=route[index%route.length],b=route[(index+1)%route.length],wave=(Math.sin(t*.00035+index*1.7)+1)/2;return {x:a.x+(b.x-a.x)*wave,y:a.y+(b.y-a.y)*wave,working:false,issue:null};}
+function drawStaffWorker(worker,index,t){const role=STAFF_CATALOGUE.find(item=>item.id===worker.roleId),point=staffWorldPoint(worker,index,t);drawPersonFigure(point.x,point.y,t,index+90,{color:role?.color||"#bce65f",phase:index*.57,moving:!point.working,direction:index%2?1:-1});const badge=isoPoint(point.x,point.y,64);ctx.save();ctx.fillStyle="#173743";ctx.beginPath();ctx.arc(badge.x,badge.y,9,0,Math.PI*2);ctx.fill();ctx.strokeStyle=role?.color||"#bce65f";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 7px DM Mono";ctx.fillText(role?.icon||"·",badge.x,badge.y+2.5);ctx.restore();}
+function drawOperationsIssue(issue,t){const point=issueWorldPoint(issue);if(!point)return;const p=isoPoint(point.x,point.y,8);if(issue.type==="litter"){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-.24);[[-12,0,"#f5c95e"],[-2,5,"#ff8060"],[9,-2,"#e7eee4"]].forEach(([x,y,color],index)=>{ctx.fillStyle=color;ctx.fillRect(x,y,8+index*2,4);ctx.strokeStyle="#31535a";ctx.lineWidth=.8;ctx.strokeRect(x,y,8+index*2,4);});ctx.restore();}else{const pulse=1+Math.sin(t*.008)*.08;ctx.save();ctx.translate(p.x,p.y-28);ctx.scale(pulse,pulse);ctx.fillStyle="rgba(23,55,67,.95)";ctx.beginPath();ctx.arc(0,0,14,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#ff8060";ctx.lineWidth=3;ctx.stroke();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="900 11px DM Mono";ctx.fillText("⚙",0,4);ctx.restore();}const tag=isoPoint(point.x,point.y,52);roundedRect(tag.x-34,tag.y-6,68,12,5,"rgba(12,39,47,.9)");ctx.fillStyle=issue.type==="litter"?"#64cbc8":"#ff8060";ctx.fillRect(tag.x-31,tag.y+2,Math.max(2,62*(issue.progress||0)/(issue.required||1)),2);ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="800 4.7px DM Mono";ctx.fillText(issue.type==="litter"?"CLEANUP NEEDED":"TEMPORARILY CLOSED",tag.x,tag.y-1);}
+function operationsWorldActors(t){const actors=(run.operations?.issues||[]).map(issue=>{const point=issueWorldPoint(issue)||{x:0,y:0};return {depth:point.x+point.y+.05,draw:()=>drawOperationsIssue(issue,t)}});if(run.operations?.payrollDue)return actors;for(const [index,worker] of (run.staffRoster||[]).entries()){if(!staffIsOnShift(worker,run.clockMinutes))continue;const point=staffWorldPoint(worker,index,t);actors.push({depth:point.x+point.y+.1,draw:()=>drawStaffWorker(worker,index,t)});}return actors;}
 
 function djEventCrowd(t){
   const event=run.activeEvent;if(event?.source!=="dj")return [];let center;if(event.deckId==="pavilion")center=guestTargetPoints.pavilion;else{const facility=(run.facilities||[]).find(item=>item.id===event.deckId);if(facility)center={x:facility.x,y:facility.y+.85};}if(!center)return [];
@@ -724,7 +737,7 @@ function drawGuestAgent(guest,t,index){
 
 function drawStorePod(id,loc,level,locked){
   if(locked){drawVenuePlot(id,loc);return;}
-  const size=1.72+level*.18,open=storeIsOpen(run,id),accent=open?loc.color:"#7f908e",x=loc.x-size/2,y=loc.y-size*.38,z=40+level*9;
+  const size=1.72+level*.18,broken=assetIsClosed(run,"store",id),open=storeIsOpen(run,id),accent=open?loc.color:broken?"#ff8060":"#7f908e",x=loc.x-size/2,y=loc.y-size*.38,z=40+level*9;
   drawBlock(x,y,size,size*.76,z,level===3?"#f7f5ec":"#f1f0e9",level===3?"#94aaa8":"#aeb9b5","#c7ccc7");
   drawFacadeBandY(x+.13,y+size*.76+.01,size-.26,9,z-7,level===3?"#214d59":"#28535c",level+2);
   if(level>=2){drawRaisedSlab(x-.22,y-.18,size+.44,size*.34,z+7,5,"#f8f6ee","#91a09d","#b9c2bd");const terrace=isoPoint(loc.x,y+.05,z+12);ctx.strokeStyle=accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(terrace.x-30,terrace.y-6);ctx.lineTo(terrace.x+30,terrace.y+22);ctx.stroke();}
@@ -732,7 +745,7 @@ function drawStorePod(id,loc,level,locked){
   if(level===3){drawBlock(x+.18,y+.08,size-.36,size*.48,24,"#dae5e0","#7d9796","#a8b9b3");const roof=isoPoint(loc.x,y+.08,z+15);ctx.fillStyle="#315d66";for(let i=0;i<3;i++)ctx.fillRect(roof.x-25+i*18,roof.y-8+i*8,13,7);}
   const awning=isoPoint(loc.x,loc.y+size*.43,z-2);ctx.strokeStyle=accent;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(awning.x-24,awning.y-12);ctx.lineTo(awning.x+24,awning.y+12);ctx.stroke();
   const sign=isoPoint(loc.x,loc.y+size*.4,29);roundedRect(sign.x-27,sign.y-7,54,14,3,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":id==="merch"?"MERCH":id==="beach"?"MARÉ":"SURF",sign.x,sign.y+2);
-  const status=isoPoint(loc.x,loc.y+size*.46,15);roundedRect(status.x-20,status.y-5,40,10,4,open?"#bce65f":"#80908d");ctx.fillStyle="#173743";ctx.font="900 4.5px DM Mono";ctx.fillText(open?"OPEN":"CLOSED",status.x,status.y+1.5);
+  const status=isoPoint(loc.x,loc.y+size*.46,15);roundedRect(status.x-20,status.y-5,40,10,4,open?"#bce65f":broken?"#ff8060":"#80908d");ctx.fillStyle="#173743";ctx.font="900 4.5px DM Mono";ctx.fillText(open?"OPEN":broken?"REPAIR":"CLOSED",status.x,status.y+1.5);
   if(level>=2){const badge=isoPoint(loc.x-.55,loc.y-.45,z+26);ctx.fillStyle=accent;ctx.beginPath();ctx.arc(badge.x,badge.y,8,0,Math.PI*2);ctx.fill();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 6px DM Mono";ctx.fillText(`L${level}`,badge.x,badge.y+2);}
 }
 
@@ -808,9 +821,11 @@ function loop(t) {
 
 function tickTycoon(realSeconds){
   if(!run.speed)return;
-  const beforeDay=run.currentDay,beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
+  const beforeDay=run.currentDay,beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length,beforeIssues=run.operations?.issues?.length||0,beforeResolved=run.operations?.totalIssuesResolved||0;
   run=advanceTycoon(run,realSeconds*8*run.speed);
   const delivered=(run.deliveries||[]).filter(item=>item.status==="delivered");if(delivered.length>beforeDelivered){const latest=delivered.at(-1),product=CATALOGUE.find(item=>item.id===latest.productId);toast(`Delivery arrived · ${latest.quantity}× ${product?.short||"stock"}`);beep(740);}
+  if((run.operations?.issues?.length||0)>beforeIssues){const latest=run.operations.issues.at(-1);toast(latest.type==="breakdown"?`${latest.label} closed · technician needed`:`Litter reported in ${OPERATIONS_DISTRICTS.find(item=>item.id===latest.districtId)?.name}` ,latest.type==="breakdown");beep(latest.type==="breakdown"?170:390);}
+  if((run.operations?.totalIssuesResolved||0)>beforeResolved){toast("Work order completed · campus service restored");beep(680);}
   if(run.currentDay!==beforeDay){const closed=run.history.at(-1);showDayReport(closed);beep(640);}
   const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=now;}
   updateHUD();
@@ -1040,13 +1055,36 @@ function openGuestPanel() {
     <div class="section-heading"><div><small>GUEST NEEDS</small><strong>What students are feeling</strong></div><span>Updated instantly</span></div>
     <div class="needs-grid">${Object.entries(metrics.needs).map(([key,value])=>`<div><span>${needLabels[key]} <b>${value}%</b></span><i><em style="width:${value}%"></em></i></div>`).join("")}</div>
     <div class="guest-thought"><span>☺</span><div><small>LATEST GUEST THOUGHT</small><strong>“${guestThought(metrics,needLabels)}”</strong></div></div>
-    <div class="section-heading"><div><small>OPERATIONS TEAM</small><strong>Hire permanent campus staff</strong></div><span>${Object.values(run.staff).reduce((a,b)=>a+b,0)} employed</span></div>
-    <div class="staff-grid">${STAFF_CATALOGUE.map(role=>{const locked=progress.level<(role.level||1);return `<article class="${locked?"staff-locked":""}"><span>${locked?"⌁":role.icon}</span><div><strong>${role.name}</strong><p>${role.description}</p><small>${locked?`UNLOCKS AT LEVEL ${role.level}`:`${run.staff[role.id]||0} hired`}</small></div><button data-hire="${role.id}" ${run.cash<role.cost||locked?"disabled":""}>${locked?`Level ${role.level} required`:`Hire · ${formatEuro(role.cost)}`}</button></article>`}).join("")}</div>
+    <div class="section-heading"><div><small>OPERATIONS TEAM</small><strong>Staff now work real shifts</strong></div><span>${operationsSnapshot(run).onShift} on duty</span></div>
+    <button class="operations-link" id="openOperations"><span>⚙</span><div><strong>Open staff &amp; maintenance operations</strong><small>Assign districts, schedule shifts, monitor litter, repairs and payroll.</small></div><em>${operationsSnapshot(run).openIssues} open issues</em></button>
     <div class="section-heading"><div><small>BEST ATTRACTION</small><strong>Excitement ${metrics.attraction.excitement} · Intensity ${metrics.attraction.intensity} · Comfort ${metrics.attraction.comfort}</strong></div></div>`;
   drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
   drawerContent.querySelectorAll("[data-guest-id]").forEach(button=>button.addEventListener("click",()=>{const guest=guestAgents.find(item=>item.id===Number(button.dataset.guestId));if(guest)openGuestProfile(guest);}));
-  drawerContent.querySelectorAll("[data-hire]").forEach(button=>button.addEventListener("click",()=>{try{save(hireStaff(run,button.dataset.hire));toast("Staff member hired for the run");beep(630);openGuestPanel();}catch(error){toast(error.message,true);}}));
+  $("#openOperations").addEventListener("click",openOperationsPanel);
 }
+
+const STAFF_NAMES=["Marta","Diogo","Rita","João","Sara","Nuno","Lia","Miguel","Catarina","André","Eva","Tomé"];
+function workerDisplayName(worker,index){return `${STAFF_NAMES[index%STAFF_NAMES.length]} ${String(index+1).padStart(2,"0")}`;}
+function operationsTargetLabel(issue){if(!issue)return "District patrol";return issue.type==="litter"?"Cleaning litter":`Repairing ${issue.label}`;}
+function openOperationsPanel(){
+  activeLocation=null;migrateStaffOperations(run);const summary=operationsSnapshot(run),progress=progressionState(run),unlockedDistricts=OPERATIONS_DISTRICTS.filter(district=>run.districts?.[district.id]);
+  const issueRows=(run.operations?.issues||[]).map(issue=>{const district=OPERATIONS_DISTRICTS.find(item=>item.id===issue.districtId),responder=issue.type==="litter"?"caretaker":"technician",assigned=activeStaffCount(run,responder,issue.districtId),percent=Math.round((issue.progress||0)/(issue.required||1)*100);return `<article class="ops-issue ${issue.type}" data-ops-issue="${issue.id}"><span>${issue.type==="litter"?"⌁":"⚙"}</span><div><small>${district?.name||issue.districtId} · ${assigned?`${assigned} responding`:"unassigned"}</small><strong>${issue.type==="litter"?"Litter spill":`${issue.label} closed`}</strong><i><em style="width:${percent}%"></em></i></div><b>${percent}%</b></article>`;}).join("");
+  const roster=(run.staffRoster||[]).map((worker,index)=>{const role=STAFF_CATALOGUE.find(item=>item.id===worker.roleId),shift=STAFF_SHIFTS.find(item=>item.id===worker.shiftId),issue=assignedIssue(worker),onShift=staffIsOnShift(worker,run.clockMinutes)&&!run.operations.payrollDue,status=run.operations.payrollDue?"PAYROLL HOLD":onShift?(issue?"RESPONDING":"ON PATROL"):"OFF SHIFT";return `<article class="worker-card" style="--staff:${role?.color||"#bce65f"}"><div class="worker-avatar"><span>${role?.icon||"·"}</span><i></i></div><div class="worker-identity"><small>${role?.name||worker.roleId}</small><strong>${workerDisplayName(worker,index)}</strong><em class="${onShift?"active":""}">${status} · ${operationsTargetLabel(issue)}</em></div><div class="worker-controls"><label>District<select data-worker-district="${worker.id}">${unlockedDistricts.map(district=>`<option value="${district.id}" ${district.id===worker.districtId?"selected":""}>${district.name}</option>`).join("")}</select></label><label>Shift<select data-worker-shift="${worker.id}">${STAFF_SHIFTS.map(item=>`<option value="${item.id}" ${item.id===worker.shiftId?"selected":""}>${item.name} · ${item.label}</option>`).join("")}</select></label></div><div class="worker-wage"><small>DAILY WAGE</small><strong>${formatEuro(staffDailyWage(worker))}</strong></div></article>`;}).join("");
+  drawerContent.innerHTML=`<p class="eyebrow">Campus operations · day ${run.currentDay}</p><div class="ops-title"><div><h2>Staff, care &amp; maintenance</h2><p>Workers only affect the district and hours you assign. Litter lowers cleanliness; failures close stores and amenities until a technician completes the repair.</p></div><span id="operationsClock">${formatClock(run.clockMinutes)}<small>LIVE SHIFT CLOCK</small></span></div>
+    ${summary.payrollDue?`<div class="payroll-alert"><span>!</span><div><strong>Payroll is overdue</strong><small>All staff are off duty until ${formatEuro(summary.payrollDue)} is paid.</small></div><button id="settlePayroll" ${run.cash<=0?"disabled":""}>Pay now</button></div>`:""}
+    <div class="ops-kpis"><div><small>ON DUTY</small><strong>${summary.onShift}</strong><em>${run.staffRoster.length} employed</em></div><div><small>OPEN ISSUES</small><strong>${summary.openIssues}</strong><em>${summary.closedAssets} closures</em></div><div><small>DAILY PAYROLL</small><strong>${formatEuro(summary.payroll)}</strong><em>charged at 19:30</em></div><div><small>JOBS COMPLETED</small><strong>${run.operations?.totalIssuesResolved||0}</strong><em>${run.today?.issuesResolved||0} today</em></div></div>
+    <div class="section-heading"><div><small>DISTRICT COVERAGE</small><strong>Where the team is working</strong></div><span>Live cleanliness and incidents</span></div><div class="district-ops-grid">${summary.districts.map(district=>`<article style="--district:${district.color}"><span>${district.cleanliness}%</span><div><strong>${district.name}</strong><small>${district.onShift} on duty · ${district.issues} issues</small><i><em style="width:${district.cleanliness}%"></em></i></div></article>`).join("")}</div>
+    <div class="section-heading"><div><small>LIVE WORK ORDERS</small><strong>Campus response queue</strong></div><span>${summary.openIssues?"Resolved automatically by assigned staff":"Campus clear"}</span></div><div class="ops-issue-list">${issueRows||`<div class="ops-empty"><span>✓</span><div><strong>No open work orders</strong><small>The campus is clean and every asset is operational.</small></div></div>`}</div>
+    <div class="section-heading"><div><small>TEAM ROSTER</small><strong>Assign every employee</strong></div><span>Changes save immediately</span></div><div class="worker-roster">${roster||`<div class="ops-empty"><span>＋</span><div><strong>No employees yet</strong><small>Hire a specialist below when the role unlocks.</small></div></div>`}</div>
+    <div class="section-heading"><div><small>RECRUITMENT</small><strong>Expand the operations team</strong></div><span>Fee now · wage each day</span></div><div class="staff-hire-grid">${STAFF_CATALOGUE.map(role=>{const locked=progress.level<(role.level||1);return `<article style="--staff:${role.color}" class="${locked?"locked":""}"><span>${locked?"⌁":role.icon}</span><div><small>${locked?`LEVEL ${role.level} REQUIRED`:`${formatEuro(role.wage)} full-day wage`}</small><strong>${role.name}</strong><p>${role.description}</p></div><button data-hire="${role.id}" ${locked||run.cash<role.cost?"disabled":""}>${locked?"Locked":`Recruit · ${formatEuro(role.cost)}`}</button></article>`}).join("")}</div>`;
+  drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");
+  drawerContent.querySelectorAll("[data-worker-district]").forEach(select=>select.addEventListener("change",()=>{try{save(assignStaff(run,select.dataset.workerDistrict,select.value));toast("District assignment saved");openOperationsPanel();}catch(error){toast(error.message,true);}}));
+  drawerContent.querySelectorAll("[data-worker-shift]").forEach(select=>select.addEventListener("change",()=>{try{save(setStaffShift(run,select.dataset.workerShift,select.value));toast("Shift saved immediately");openOperationsPanel();}catch(error){toast(error.message,true);}}));
+  drawerContent.querySelectorAll("[data-hire]").forEach(button=>button.addEventListener("click",()=>{try{save(hireStaff(run,button.dataset.hire));toast("Employee recruited · assign their district and shift");beep(630);openOperationsPanel();}catch(error){toast(error.message,true);}}));
+  if($("#settlePayroll"))$("#settlePayroll").addEventListener("click",()=>{const before=run.operations.payrollDue;save(settlePayroll(run));const paid=before-run.operations.payrollDue;toast(`${formatEuro(paid)} paid${run.operations.payrollDue?" · balance remains":" · team back on duty"}`);openOperationsPanel();});
+}
+
+function refreshOperationsPanelLive(){const clock=$("#operationsClock");if(!clock)return;clock.childNodes[0].nodeValue=formatClock(run.clockMinutes);const cards=[...drawerContent.querySelectorAll("[data-ops-issue]")],issues=run.operations?.issues||[];if(cards.length!==issues.length||cards.some(card=>!issues.some(issue=>issue.id===card.dataset.opsIssue))){const scroll=drawer.scrollTop;openOperationsPanel();drawer.scrollTop=scroll;return;}for(const card of cards){const issue=issues.find(item=>item.id===card.dataset.opsIssue),percent=Math.round((issue.progress||0)/(issue.required||1)*100);card.querySelector("i em").style.width=`${percent}%`;card.querySelector("b").textContent=`${percent}%`;}}
 
 function activityName(kind,id){if(kind==="store")return STORES.find(item=>item.id===id)?.name||id;const facility=(run.facilities||[]).find(item=>item.id===id);if(facility)return facility.name;return id==="academy"?"Academic Wing":id==="hub"?"Student Hub":id==="forum"?"Sunset Forum":id==="pavilion"?"Coastline Pavilion":id;}
 function guestHotspots(){const rows=new Map();for(const guest of guestAgents.filter(item=>item.target&&item.target.kind!=="exit")){const key=`${guest.target.kind}:${guest.target.id}`,row=rows.get(key)||{...guest.target,live:0,visits:run.today?.activities?.[key]||0};row.live+=1;rows.set(key,row);}for(const [key,visits] of Object.entries(run.today?.activities||{})){if(rows.has(key))continue;const split=key.indexOf(":"),kind=key.slice(0,split),id=key.slice(split+1),facility=(run.facilities||[]).find(item=>item.id===id);rows.set(key,{kind,id,type:facility?.type,label:activityName(kind,id),live:0,visits});}return [...rows.values()].sort((a,b)=>b.live-a.live||b.visits-a.visits).slice(0,6);}
@@ -1111,29 +1149,30 @@ function refreshStoreHoursPanelLive(){
 }
 
 function openLedger() {
-  const gain=overallResult(run), inv=inventoryValue(run);
+  const gain=overallResult(run), inv=inventoryValue(run),operations=operationsSnapshot(run);
   const venueResults=STORES.map(store=>{const ids=new Set(CATALOGUE.filter(p=>p.storeId===store.id).map(p=>p.id));const items=run.history.flatMap(day=>day.items).filter(item=>ids.has(item.productId));return {store,units:items.reduce((s,i)=>s+i.unitsSold,0),revenue:items.reduce((s,i)=>s+i.revenue,0),profit:items.reduce((s,i)=>s+i.grossProfit,0)}});
   const djEvents=(run.eventHistory||[]).filter(item=>item.eventId==="dj-event"),djRevenue=djEvents.reduce((sum,item)=>sum+(item.revenue||0),0),djProfit=djEvents.reduce((sum,item)=>sum+(item.grossProfit||0),0),pendingDeliveries=(run.deliveries||[]).filter(item=>item.status==="scheduled"),deliveredCount=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
   drawerContent.innerHTML=`<p class="eyebrow">Live company finance · autosaved</p><h2>Portfolio performance</h2><p class="drawer-intro">The business runs continuously. Compare shops, inspect closed days, and decide where to reinvest.</p>
     <div class="report-grid"><div><small>CASH</small><strong>${formatEuro(run.cash)}</strong></div><div><small>STOCK VALUE</small><strong>${formatEuro(inv)}</strong></div><div><small>NET WORTH CHANGE</small><strong class="${gain>=0?"result-positive":"result-negative"}">${formatEuro(gain)}</strong></div><div><small>TOTAL VISITORS</small><strong>${run.totalVisitors||0}</strong></div></div>
+    <div class="ledger-rhythm operations-ledger"><div><small>OPERATIONS PAYROLL</small><strong>${formatEuro(run.operations?.totalWagesPaid||0)} paid</strong><span>${operations.payrollDue?`${formatEuro(operations.payrollDue)} overdue`:`${formatEuro(operations.payroll)} next close`}</span></div><div><small>MAINTENANCE</small><strong>${run.operations?.totalIssuesResolved||0} jobs complete</strong><span>${operations.openIssues} open · ${operations.closedAssets} closed assets</span></div><button id="ledgerOperations">Open operations</button></div>
     <div class="ledger-rhythm"><div><small>CURRENT WINDOW</small><strong>${campusPhase(run.clockMinutes).name}</strong><span>${campusPhase(run.clockMinutes).multiplier.toFixed(2)}× footfall</span></div><div><small>LOGISTICS</small><strong>${pendingDeliveries.length} pending</strong><span>${deliveredCount} deliveries completed</span></div><button id="ledgerSchedule">View campus schedule</button></div>
     <div class="section-heading"><div><small>VENUE COMPARISON</small><strong>All-time trading performance</strong></div><span>Day ${run.currentDay} · ${formatClock(run.clockMinutes)}</span></div>
     <div class="venue-kpis">${venueResults.map(v=>`<div style="border-top:3px solid ${v.store.color}"><small>${v.store.short.toUpperCase()}</small><strong>${formatEuro(v.profit)}</strong><span>${v.units} sold · ${formatEuro(v.revenue)} revenue</span></div>`).join("")}</div>
     ${djEvents.length?`<div class="section-heading"><div><small>ATTRACTION OPERATIONS</small><strong>Atlantic Sessions</strong></div><span>${djEvents.length} completed events</span></div><div class="venue-kpis"><div style="border-top:3px solid #64cbc8"><small>TICKET REVENUE</small><strong>${formatEuro(djRevenue)}</strong><span>${run.djOperations?.lifetimeAttendance||0} lifetime attendees</span></div><div style="border-top:3px solid #bce65f"><small>EVENT PROFIT</small><strong>${formatEuro(djProfit)}</strong><span>after operating costs</span></div><div style="border-top:3px solid #f5c95e"><small>AVERAGE CROWD</small><strong>${Math.round(djEvents.reduce((sum,item)=>sum+(item.attendance||0),0)/djEvents.length)}</strong><span>guests per set</span></div></div>`:""}
     <div class="section-heading"><div><small>DAILY LEDGER</small><strong>Closed trading days</strong></div><span>Latest 60 saved</span></div>
     <div class="history-list">${run.history.length?run.history.map(historyCard).reverse().join(""):`<div class="empty-state"><span>▤</span>The first day is still running.<br>Sales appear here automatically at 19:30.</div>`}</div>`;
-  $("#ledgerSchedule").addEventListener("click",openTimePanel);
+  $("#ledgerSchedule").addEventListener("click",openTimePanel);$("#ledgerOperations").addEventListener("click",openOperationsPanel);
 }
 
 function historyCard(day) {
-  const interactions=Object.values(day.campus?.activities||{}).reduce((sum,value)=>sum+value,0),eventRevenue=day.totals.eventRevenue||0,eventCosts=day.totals.eventCosts||0,profit=day.totals.grossProfit||0;
-  const rows=day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")+`${eventRevenue||eventCosts?`<tr><td>DJ event</td><td>${day.totals.eventAttendance||0}</td><td>${formatEuro(eventRevenue)}</td><td>${formatEuro(eventCosts)}</td><td>${formatEuro(eventRevenue-eventCosts)}</td></tr>`:""}`;
-  return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span class="${profit<0?"negative":""}">${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied${interactions?` · ${interactions} campus uses`:""}${day.totals.deliveredUnits?` · ${day.totals.deliveredUnits} units delivered`:""}</div>`:""}<table class="mini-table"><thead><tr><th>Product / event</th><th>Units / guests</th><th>Revenue</th><th>Costs</th><th>Profit</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
+  const interactions=Object.values(day.campus?.activities||{}).reduce((sum,value)=>sum+value,0),eventRevenue=day.totals.eventRevenue||0,eventCosts=day.totals.eventCosts||0,profit=day.totals.operatingProfit??day.totals.grossProfit??0,wages=day.totals.staffWages||0;
+  const rows=day.items.filter(item=>item.unitsSold>0).map(item=>{const p=CATALOGUE.find(x=>x.id===item.productId);return `<tr><td>${p.short}</td><td>${item.unitsSold}</td><td>${formatEuro(item.revenue)}</td><td>${formatEuro(item.cogs)}</td><td>${formatEuro(item.grossProfit)}</td></tr>`}).join("")+`${eventRevenue||eventCosts?`<tr><td>DJ event</td><td>${day.totals.eventAttendance||0}</td><td>${formatEuro(eventRevenue)}</td><td>${formatEuro(eventCosts)}</td><td>${formatEuro(eventRevenue-eventCosts)}</td></tr>`:""}${wages?`<tr><td>Staff payroll</td><td>—</td><td>—</td><td>${formatEuro(wages)}</td><td>−${formatEuro(wages)}</td></tr>`:""}`;
+  return `<details class="history-day"><summary><strong>Day ${day.day}</strong><span class="${profit<0?"negative":""}">${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</span></summary><div class="history-detail">${day.campus?`<div class="history-campus">${day.campus.guests} visitors · ${day.campus.rating}% rating · ${day.campus.satisfaction}% satisfied${interactions?` · ${interactions} campus uses`:""}${day.totals.deliveredUnits?` · ${day.totals.deliveredUnits} units delivered`:""}${day.totals.issuesResolved?` · ${day.totals.issuesResolved} work orders closed`:""}</div>`:""}<table class="mini-table"><thead><tr><th>Product / event</th><th>Units / guests</th><th>Revenue</th><th>Costs</th><th>Profit</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No sales recorded</td></tr>`}</tbody></table></div></details>`;
 }
 
 function showDayReport(day){
-  if(!day)return;const report=$("#dayReport"),eventRevenue=day.totals.eventRevenue||0,totalRevenue=day.totals.revenue+eventRevenue,profit=day.totals.grossProfit||0,best=day.items.filter(item=>item.unitsSold>0).sort((a,b)=>b.grossProfit-a.grossProfit)[0],product=CATALOGUE.find(item=>item.id===best?.productId);
-  report.innerHTML=`<button class="day-report-close" aria-label="Dismiss day report">×</button><div class="day-report-head"><span>DAY ${day.day}</span><div><small>TRADING CLOSED · CAMPAIGN CONTINUES</small><strong>${profit>=0?"Profitable day":"Investment day"}</strong></div><em>${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</em></div><div class="day-report-grid"><div><small>TOTAL REVENUE</small><strong>${formatEuro(totalRevenue)}</strong></div><div><small>UNITS SOLD</small><strong>${day.totals.unitsSold}</strong></div><div><small>VISITORS</small><strong>${day.campus?.guests||0}</strong></div><div><small>DELIVERED</small><strong>${day.totals.deliveredUnits||0}</strong></div></div><p>${product?`${product.short} led the day with ${best.unitsSold} sold and ${formatEuro(best.grossProfit)} gross profit.`:"No products sold today. Review stock, prices and opening hours before the next rush."}</p><div class="day-report-actions"><span id="dayReportLiveTime">Day ${run.currentDay} is already running · ${formatClock(run.clockMinutes)}</span><button id="dayReportFinance">Open full ledger</button></div>`;
+  if(!day)return;const report=$("#dayReport"),eventRevenue=day.totals.eventRevenue||0,totalRevenue=day.totals.revenue+eventRevenue,profit=day.totals.operatingProfit??day.totals.grossProfit??0,best=day.items.filter(item=>item.unitsSold>0).sort((a,b)=>b.grossProfit-a.grossProfit)[0],product=CATALOGUE.find(item=>item.id===best?.productId);
+  report.innerHTML=`<button class="day-report-close" aria-label="Dismiss day report">×</button><div class="day-report-head"><span>DAY ${day.day}</span><div><small>TRADING CLOSED · CAMPAIGN CONTINUES</small><strong>${profit>=0?"Profitable day":"Investment day"}</strong></div><em>${profit>=0?"+":"−"}${formatEuro(Math.abs(profit))}</em></div><div class="day-report-grid"><div><small>TOTAL REVENUE</small><strong>${formatEuro(totalRevenue)}</strong></div><div><small>STAFF WAGES</small><strong>${formatEuro(day.totals.staffWages||0)}</strong></div><div><small>VISITORS</small><strong>${day.campus?.guests||0}</strong></div><div><small>WORK ORDERS</small><strong>${day.totals.issuesResolved||0}</strong></div></div><p>${day.totals.payrollShortfall?`${formatEuro(day.totals.payrollShortfall)} of payroll remains unpaid, so staff are off duty.`:product?`${product.short} led sales; after payroll, the day closed at ${profit>=0?"a profit":"a loss"}.`:"No products sold today. Staff wages and operations still continue."}</p><div class="day-report-actions"><span id="dayReportLiveTime">Day ${run.currentDay} is already running · ${formatClock(run.clockMinutes)}</span><button id="dayReportFinance">Open full ledger</button></div>`;
   report.classList.add("show");report.setAttribute("aria-hidden","false");clearTimeout(dayReportTimer);dayReportTimer=setTimeout(()=>hideDayReport(),12000);report.querySelector(".day-report-close").addEventListener("click",hideDayReport);$("#dayReportFinance").addEventListener("click",()=>{hideDayReport();openLedger();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");});
 }
 
@@ -1171,6 +1210,7 @@ document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventLi
   if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
   if(action==="clock")setGameSpeed(run.speed===0?1:0);
   if(action==="guests")openGuestPanel();
+  if(action==="operations")openOperationsPanel();
   if(action==="progress")openProgressPanel();
   if(action==="ledger")openLocation("board");
 }));
