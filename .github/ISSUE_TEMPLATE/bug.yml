@@ -1,0 +1,39 @@
+name: Bug report
+description: Report incorrect gameplay, persistence, or presentation
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+      description: What happened, including any visible balances, time, stock, or queue state?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include whether a reload, speed change, day boundary, or older save is involved.
+    validations:
+      required: true
+  - type: dropdown
+    id: persistence
+    attributes:
+      label: Does reloading change the result?
+      options:
+        - Not tested
+        - No, the bug remains
+        - Yes, the bug disappears
+        - Yes, data is duplicated or lost
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and viewport
+      placeholder: Safari 18, desktop 1440×900

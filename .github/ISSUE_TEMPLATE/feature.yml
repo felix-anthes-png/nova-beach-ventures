@@ -1,0 +1,36 @@
+name: Feature batch
+description: Propose one connected player-facing outcome
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Player problem
+      description: What is currently unclear, shallow, or unavailable?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe what the player should be able to understand and do.
+    validations:
+      required: true
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules and edge cases
+      description: Include money, stock, time, queues, saving, and rejection behaviour where relevant.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Acceptance evidence
+      description: List concrete Given/When/Then examples and the required manual checks.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What should remain outside this batch?
