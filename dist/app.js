@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity } from "./core.js?v=22-living-time";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=23-guest-sales";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -31,7 +31,6 @@ let objectTransform = null;
 let selectedExperienceModules = ["music","shade"];
 let simulationElapsed = 0;
 let lastPersistAt = 0;
-let lastSaleCount = run.totalSales || 0;
 let saleFeedTimer = null;
 let dayReportTimer = null;
 let guestAgents = [];
@@ -82,7 +81,7 @@ function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.distr
 function loadRun() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (parsed && [1,2].includes(parsed.version) && Array.isArray(parsed.history)) {
+    if (parsed && [1,2,3].includes(parsed.version) && Array.isArray(parsed.history)) {
       if (!parsed.player) parsed.player = { x:21, y:18, zone:"campus" };
       if (!parsed.player.zone || !ZONES[parsed.player.zone]) parsed.player = { x:Math.min(41,Math.max(1,parsed.player.x||21)), y:Math.min(25.7,Math.max(7.5,parsed.player.y||18)), zone:"campus" };
       CATALOGUE.forEach(product => {
@@ -103,7 +102,7 @@ function loadRun() {
       parsed.facilities.forEach(facility=>{if(!Number.isInteger(facility.rotation))facility.rotation=0;});
       if (!parsed.staff) parsed.staff = { service:0, caretaker:0, technician:0, host:0, entertainer:0 };
       STAFF_CATALOGUE.forEach(role=>{if(!Number.isInteger(parsed.staff[role.id]))parsed.staff[role.id]=0;});
-      parsed.version=2;parsed.completed=false;
+      parsed.version=3;parsed.completed=false;parsed.salesMode="guests";if(!Array.isArray(parsed.guestSales))parsed.guestSales=[];
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
       if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};
@@ -173,7 +172,7 @@ function updateHUD() {
   $("#deliveryChip").classList.toggle("incoming",Boolean(pending&&pending.arrivalDay===run.currentDay&&pending.arrivalMinute-run.clockMinutes<=60));
   if($("#dayReportLiveTime"))$("#dayReportLiveTime").textContent=`Day ${run.currentDay} is already running · ${formatClock(run.clockMinutes)}`;
   const focusStoreId=run.venuePurchases?.at(-1)?.storeId||"cafe",focusStore=STORES.find(store=>store.id===focusStoreId),focusStock=CATALOGUE.filter(product=>product.storeId===focusStoreId).reduce((sum,product)=>sum+run.stock[product.id],0);
-  let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory and students will purchase automatically.`, progress = Math.min(100,openCount*22+campus.rating*.34);
+  let title = `Stock ${focusStore.name}`, text = `${focusStore.short} is open. Buy its first inventory so visible guests can queue and purchase.`, progress = Math.min(100,openCount*22+campus.rating*.34);
   if(totalStock>0){title=peak.id==="lunch"?"Lunch rush is live":peak.id==="arrival"?"Morning crowd incoming":"Grow your campus business";text=`${activeGuests} students are navigating the campus. Watch them queue, use amenities and react to what you build.`;}
   else if(focusStock===0&&focusStoreId!=="cafe"){text=`Your new ${focusStore.short} needs stock before its first queue can form.`;}
   const venueDistrictReady=lockedVenue&&(!["beach","surf"].includes(lockedVenue.id)||(lockedVenue.id==="beach"?run.districts?.east:run.districts?.pier));
@@ -539,8 +538,14 @@ function beginGuestActivity(guest){
 }
 
 function completeGuestActivity(guest){
-  const type=guest.target.type||guest.target.id,isPurchase=["store","event"].includes(guest.target.kind)&&Number.isFinite(guest.target.price)&&guest.target.price<=guest.budget;run=recordGuestActivity(run,guest.target);
-  if(isPurchase){guest.budget-=guest.target.price;guest.spent+=guest.target.price;run.guestEconomy.purchases+=1;run.guestEconomy.spend+=guest.target.price;guest.thought=guest.target.kind==="event"?`That ${formatEuro(guest.target.price)} ticket was worth it.`:`I bought ${guest.target.productName} for ${formatEuro(guest.target.price)}.`;}
+  const type=guest.target.type||guest.target.id;let isPurchase=false;
+  if(guest.target.kind==="store"){
+    try{const price=run.prices[guest.target.productId];run=completeGuestSale(run,guest.target.productId,guest.budget,guest.id);guest.budget-=price;guest.spent+=price;isPurchase=true;guest.thought=`I bought ${guest.target.productName} for ${formatEuro(price)}.`;showSaleFeed(CATALOGUE.find(item=>item.id===guest.target.productId),1);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=performance.now();}
+    catch(error){run.guestEconomy.walkaways+=1;guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+14);guest.thought=error.message.includes("stock")?"It sold out while I was waiting — I’ll try somewhere else.":"I changed my mind at the counter.";localStorage.setItem(STORAGE_KEY,JSON.stringify(run));sendGuestToNextActivity(guest);return;}
+  }else{
+    run=recordGuestActivity(run,guest.target);
+    if(guest.target.kind==="event"&&Number.isFinite(guest.target.price)&&guest.target.price<=guest.budget){guest.budget-=guest.target.price;guest.spent+=guest.target.price;isPurchase=true;guest.thought=`That ${formatEuro(guest.target.price)} ticket was worth it.`;}
+  }
   guest.needs=applyGuestNeedRelief(guest.needs,type);guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.visits+=1;activityPulse={x:guest.x,y:guest.y,text:isPurchase?(guest.target.kind==="event"?`${guest.name} joined the set`:`${guest.name} bought ${guest.target.productName}`):`${guest.name} used ${guest.target.label}`,until:performance.now()+1700};
   Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+7+Math.round(guestRandom(guest.id,guest.visits*3)*8)));
   if(guest.visits>=3||guest.age>62||guestRandom(guest.id,guest.visits+20)>.82)sendGuestHome(guest);else sendGuestToNextActivity(guest);
@@ -803,12 +808,8 @@ function loop(t) {
 
 function tickTycoon(realSeconds){
   if(!run.speed)return;
-  const beforeDay=run.currentDay,beforeSales=run.totalSales||0,beforeProducts=structuredClone(run.today?.products||{}),beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
+  const beforeDay=run.currentDay,beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length;
   run=advanceTycoon(run,realSeconds*8*run.speed);
-  if((run.totalSales||0)>beforeSales){
-    const soldId=Object.keys(run.today?.products||{}).find(id=>(run.today.products[id]?.unitsSold||0)>(beforeProducts[id]?.unitsSold||0));
-    const product=CATALOGUE.find(item=>item.id===soldId);showSaleFeed(product,(run.totalSales||0)-beforeSales);
-  }
   const delivered=(run.deliveries||[]).filter(item=>item.status==="delivered");if(delivered.length>beforeDelivered){const latest=delivered.at(-1),product=CATALOGUE.find(item=>item.id===latest.productId);toast(`Delivery arrived · ${latest.quantity}× ${product?.short||"stock"}`);beep(740);}
   if(run.currentDay!==beforeDay){const closed=run.history.at(-1);showDayReport(closed);beep(640);}
   const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=now;}
@@ -1031,7 +1032,7 @@ function openGuestPanel() {
   activeLocation=null;const metrics=campusMetrics(run),progress=progressionState(run),needLabels={hunger:"Hunger",thirst:"Thirst",bladder:"Bladder",energy:"Energy",mood:"Happiness",cleanliness:"Cleanliness"},live=guestAgents.length,walking=guestAgents.filter(guest=>guest.state==="walking"||guest.state==="leaving").length,queueing=guestAgents.filter(guest=>guest.state==="queueing").length,using=guestAgents.filter(guest=>guest.state==="using").length,hotspots=guestHotspots(),averageBudget=live?guestAgents.reduce((sum,guest)=>sum+guest.budget,0)/live:0,averagePatience=live?guestAgents.reduce((sum,guest)=>sum+guest.queuePatience,0)/live:0;
   const weakest=Object.entries(metrics.needs).sort((a,b)=>a[1]-b[1])[0];
   drawerContent.innerHTML=`<p class="eyebrow">Guest intelligence · decision simulation</p><h2>Students with real priorities</h2><p class="drawer-intro">Every guest weighs urgent needs, remaining cash, prices, queue time, campus quality and personal preferences before choosing a destination.</p>
-    <div class="guest-hero decision-hero"><div><small>LIVE GUESTS</small><strong>${live}</strong><em>${walking} currently deciding</em></div><div><small>AVERAGE BUDGET</small><strong>${formatEuro(averageBudget)}</strong><em>cash left per guest</em></div><div><small>QUEUE PATIENCE</small><strong>${Math.round(averagePatience)}%</strong><em>${queueing} waiting right now</em></div><div><small>WALKAWAYS</small><strong>${run.guestEconomy?.walkaways||0}</strong><em>${run.guestEconomy?.purchases||0} simulated purchases</em></div></div>
+    <div class="guest-hero decision-hero"><div><small>LIVE GUESTS</small><strong>${live}</strong><em>${walking} currently deciding</em></div><div><small>AVERAGE BUDGET</small><strong>${formatEuro(averageBudget)}</strong><em>cash left per guest</em></div><div><small>QUEUE PATIENCE</small><strong>${Math.round(averagePatience)}%</strong><em>${queueing} waiting right now</em></div><div><small>WALKAWAYS</small><strong>${run.guestEconomy?.walkaways||0}</strong><em>${run.guestEconomy?.purchases||0} completed shop purchases</em></div></div>
     <div class="section-heading"><div><small>LIVE ACTIVITY</small><strong>Where guests are right now</strong></div><span>Updates as they move</span></div>
     <div class="guest-hotspots">${hotspots.length?hotspots.map(item=>`<div><span>${GUEST_ICONS[item.type||item.id]||"·"}</span><strong>${item.label}</strong><small>${item.live} live · ${item.visits} visits</small></div>`).join(""):`<div class="build-empty">Students are arriving and choosing their first destinations.</div>`}</div>
     <div class="section-heading"><div><small>INDIVIDUAL GUESTS</small><strong>Follow a student journey</strong></div><span>Click a guest in the world</span></div>

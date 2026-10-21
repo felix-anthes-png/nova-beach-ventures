@@ -43,3 +43,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Use browser storage and a static host rather than a backend.
 
 **Reason:** The core experience must work with supplied content, survive reloads, and avoid a paid service or live integration.
+
+## D008 — Make visible service authoritative
+
+**Decision:** A shop transaction is created when a visible guest completes service, not by a separate background sales loop.
+
+**Reason:** Stock, queues, staffing, guest budgets, and the financial report should describe the same event the player sees in the world.

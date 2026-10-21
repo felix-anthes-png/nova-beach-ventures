@@ -23,6 +23,7 @@ The design has three goals:
 - Begin with Atlantic Café and unlock four additional commercial venues.
 - Buy stock through scheduled morning, midday, and afternoon deliveries.
 - Set prices and opening hours, then watch demand react in real time.
+- Serve visible guests: every completed shop visit moves one unit of stock and posts the matching revenue and COGS.
 - Build paths, scenery, amenities, social spaces, and managed attractions.
 - Hire service, cleaning, repair, hosting, and entertainment staff.
 - Upgrade stores through three visible levels and acquire two new districts.
@@ -44,6 +45,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Guest decisions | Needs, budget, patience, preferences, and queue response | [`specs/guest-decisions.md`](specs/guest-decisions.md) · `codex/guest-decision-system` |
 | DJ operations | Scheduled, staffed, priced, and upgradeable live events | [`specs/dj-operations.md`](specs/dj-operations.md) · `codex/managed-dj-events` |
 | Living campus time | Day phases, lighting, opening hours, deliveries, daily reports | [`specs/time-system.md`](specs/time-system.md) · `codex/living-campus-time` |
+| Guest-driven sales | Visible counter service is the source of shop transactions | [`specs/guest-driven-sales.md`](specs/guest-driven-sales.md) · `feature/guest-driven-sales` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -67,7 +69,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The 28 automated checks cover building placement, progression, guest decisions, DJ operations, scheduled deliveries, store hours, and continuous day progression. Pull requests run the same checks in GitHub Actions.
+The 35 automated checks cover building placement, progression, guest decisions and sales, DJ operations, scheduled deliveries, store hours, and continuous day progression. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 
@@ -97,7 +99,8 @@ The 28 automated checks cover building placement, progression, guest decisions, 
 - Money is stored as integer cents and stock as whole units.
 - A product has fixed purchase cost and reference price.
 - Base demand is 10 units at or below the reference price, 5 units above reference through 2× reference, and 0 above 2× reference.
-- Live sales additionally reflect campus footfall, store level, opening hours, queues, and the current day phase.
+- Guests only consider products that are affordable, in stock, within the demand range, and available at an open store.
+- A shop sale occurs only when a visible guest finishes service; queue staffing therefore controls throughput.
 - Revenue increases cash; cost of goods sold is reported but never deducted twice.
 - Remaining inventory carries forward and cash or stock cannot become negative.
 - A completed campus day is recorded once, then the campaign continues the following morning.
