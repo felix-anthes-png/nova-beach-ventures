@@ -123,7 +123,7 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 2, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 3, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
 function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,products:{},activities:{},deliveries:[]};}
@@ -193,9 +193,9 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
   for(const store of STORES){
     if((run.venues?.[store.id]??0)<1)continue;
     if(!storeIsOpen(run,store.id,run.clockMinutes))continue;
-    const products=CATALOGUE.filter(product=>product.storeId===store.id&&run.stock?.[product.id]>0);
+    const products=CATALOGUE.filter(product=>product.storeId===store.id&&run.stock?.[product.id]>0&&(run.today?.products?.[product.id]?.unitsSold||0)<demandFor(run.prices?.[product.id]??product.reference,product.reference));
     if(!products.length)continue;
-    const affordable=products.map(product=>({...product,price:run.prices?.[product.id]??product.reference})).filter(product=>product.price<=budget);
+    const affordable=products.map(product=>({...product,price:run.prices?.[product.id]??product.reference})).filter(product=>product.price<=budget&&demandFor(product.price,product.reference)>0&&(demandFor(product.price,product.reference)>=10||Math.abs(Math.floor(seed))%10<demandFor(product.price,product.reference)));
     if(!affordable.length)continue;
     const choice=affordable.sort((a,b)=>(a.price/a.reference)-(b.price/b.reference)||a.price-b.price)[0],priceRatio=choice.price/choice.reference,q=queueSize(context,"store",store.id);
     let score=10+quality*.14+Math.max(-42,30-priceRatio*20)-queuePenalty(q,patience);
@@ -203,7 +203,7 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     else if(store.id==="snack")score+=hunger*.92+thirst*.6;
     else score+=mood*.52+12;
     if(store.id==="cafe")score+=food*22+drinks*18;else if(store.id==="snack"||store.id==="beach")score+=food*16+drinks*26;else if(store.id==="merch")score+=shopping*35;else if(store.id==="surf")score+=shopping*18+excitement*28;
-    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,queueLength:q,reason:optionReason([priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price",q?`${q} in queue`:"no queue",`${quality}% campus quality`])});
+    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,baseDemand:demandFor(choice.price,choice.reference),queueLength:q,reason:optionReason([priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price",q?`${q} in queue`:"no queue",`${quality}% campus quality`])});
   }
   return options.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
 }
@@ -214,13 +214,37 @@ export function applyGuestNeedRelief(needs={},destinationType){
   return next;
 }
 
-export function recordGuestActivity(run,destination){
-  if(!destination?.id||!destination.kind)throw new Error("Choose a valid guest destination.");
-  const next=structuredClone(run);if(!next.today)next.today=createToday();if(!next.today.activities)next.today.activities={};
+function recordGuestActivityInPlace(next,destination){
+  if(!next.today)next.today=createToday();if(!next.today.activities)next.today.activities={};
   const key=`${destination.kind}:${destination.id}`;next.today.activities[key]=(next.today.activities[key]||0)+1;
   next.totalCampusInteractions=(next.totalCampusInteractions||0)+1;
   if(destination.kind==="facility"){if(!next.facilityUsage)next.facilityUsage={};next.facilityUsage[destination.id]=(next.facilityUsage[destination.id]||0)+1;}
   if(destination.kind==="store"){if(!next.venueVisits)next.venueVisits={};next.venueVisits[destination.id]=(next.venueVisits[destination.id]||0)+1;}
+}
+
+export function recordGuestActivity(run,destination){
+  if(!destination?.id||!destination.kind)throw new Error("Choose a valid guest destination.");
+  const next=structuredClone(run);recordGuestActivityInPlace(next,destination);
+  return next;
+}
+
+export function completeGuestSale(run,productId,guestBudget,guestId=null,now=new Date().toISOString()){
+  const product=CATALOGUE.find(item=>item.id===productId);if(!product)throw new Error("Choose a valid product.");
+  const price=run.prices?.[productId];
+  if(!Number.isInteger(price)||price<=0)throw new Error("Selling price must be a positive euro amount with at most two decimals.");
+  if(!Number.isInteger(guestBudget)||guestBudget<price)throw new Error("This guest cannot afford the purchase.");
+  if((run.venues?.[product.storeId]??0)<(product.tier||1))throw new Error("This product is not unlocked yet.");
+  if(!storeIsOpen(run,product.storeId,run.clockMinutes))throw new Error("This store is currently closed.");
+  const dailyDemand=demandFor(price,product.reference);if(dailyDemand<=0)throw new Error("The price is above this product's demand range.");
+  if((run.today?.products?.[productId]?.unitsSold||0)>=dailyDemand)throw new Error("Today's demand for this product has been served.");
+  if(!Number.isInteger(run.stock?.[productId])||run.stock[productId]<=0)throw new Error("This product is out of stock.");
+  const next=structuredClone(run);ensureTycoonState(next);const revenue=price,cogs=product.cost;
+  next.stock[productId]-=1;next.cash+=revenue;next.today.revenue+=revenue;next.today.cogs+=cogs;next.today.unitsSold+=1;next.totalSales+=1;
+  const row=next.today.products[productId]||{unitsSold:0,revenue:0,cogs:0};row.unitsSold+=1;row.revenue+=revenue;row.cogs+=cogs;next.today.products[productId]=row;
+  next.guestEconomy.purchases+=1;next.guestEconomy.spend+=revenue;
+  recordGuestActivityInPlace(next,{kind:"store",id:product.storeId});
+  next.guestSales.push({id:`sale-${next.currentDay}-${next.totalSales}`,at:now,day:next.currentDay,minute:next.clockMinutes,guestId,storeId:product.storeId,productId,price,revenue,cogs,grossProfit:revenue-cogs});
+  if(next.guestSales.length>200)next.guestSales=next.guestSales.slice(-200);
   return next;
 }
 
@@ -454,6 +478,8 @@ function ensureTycoonState(run){
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
+  run.version=3;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
+  if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
   if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};
   if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);
@@ -480,20 +506,9 @@ function processDjEvent(run,minutes){
 function processSlice(run,minutes){
   processDeliveries(run,minutes);
   processDjEvent(run,minutes);
-  const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),campusFactor=Math.max(.45,metrics.guests/24);
+  const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes);
   run.visitorProgress+=metrics.guests*peak.multiplier*minutes/115;
   const arrived=Math.floor(run.visitorProgress);run.visitorProgress-=arrived;run.today.visitors+=arrived;run.totalVisitors+=arrived;
-  for(const product of CATALOGUE){
-    const level=run.venues?.[product.storeId]??0;if(level<(product.tier||1))continue;
-    if(!storeIsOpen(run,product.storeId,run.clockMinutes))continue;
-    const base=demandFor(run.prices[product.id],product.reference),venueFactor=1+(level-1)*.34;
-    run.salesProgress[product.id]=(run.salesProgress[product.id]||0)+base*campusFactor*venueFactor*peak.multiplier*minutes/720;
-    let units=Math.min(run.stock[product.id],Math.floor(run.salesProgress[product.id]));
-    if(units<=0){if(run.stock[product.id]<=0)run.salesProgress[product.id]=Math.min(.95,run.salesProgress[product.id]);continue;}
-    run.salesProgress[product.id]-=units;const revenue=units*run.prices[product.id],cogs=units*product.cost;
-    run.stock[product.id]-=units;run.cash+=revenue;run.today.revenue+=revenue;run.today.cogs+=cogs;run.today.unitsSold+=units;run.totalSales+=units;
-    const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};row.unitsSold+=units;row.revenue+=revenue;row.cogs+=cogs;run.today.products[product.id]=row;
-  }
 }
 
 function closeTycoonDay(run){

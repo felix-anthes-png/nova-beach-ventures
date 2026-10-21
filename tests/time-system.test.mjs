@@ -9,7 +9,8 @@ import {
   setStoreHours,
   scheduleDelivery,
   advanceTycoon,
-  guestDestinationOptions
+  guestDestinationOptions,
+  completeGuestSale
 } from "../dist/core.js";
 
 test("the campus timetable changes cleanly at every boundary",()=>{
@@ -22,7 +23,7 @@ test("the campus timetable changes cleanly at every boundary",()=>{
   assert.equal(campusPhase(1050).id,"sunset");
 });
 
-test("store opening hours gate both sales and guest decisions",()=>{
+test("store opening hours gate guest decisions and completed sales",()=>{
   let run=createRun();
   run.stock.coldBrew=50;
   run=setStoreHours(run,"cafe",600,900);
@@ -32,8 +33,10 @@ test("store opening hours gate both sales and guest decisions",()=>{
   const before=run.stock.coldBrew;
   run=advanceTycoon(run,100);
   assert.equal(run.stock.coldBrew,before);
+  assert.throws(()=>completeGuestSale(run,"coldBrew",1000),/closed/);
   run=advanceTycoon(run,300);
-  assert.ok(run.stock.coldBrew<before);
+  run=completeGuestSale(run,"coldBrew",1000);
+  assert.equal(run.stock.coldBrew,before-1);
   assert.throws(()=>setStoreHours(run,"cafe",700,760),/at least two hours/);
 });
 

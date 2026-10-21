@@ -4,6 +4,12 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Guest-driven sales
+
+- Made visible counter service the source of shop revenue, stock movement, and COGS.
+- Removed background product sales from time progression.
+- Added atomic transaction records and acceptance coverage for affordability, stock, opening hours, demand boundaries, persistence, and daily reconciliation.
+
 ### Project workflow
 
 - Added a documented feature-branch and pull-request process.
