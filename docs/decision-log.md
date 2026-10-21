@@ -49,3 +49,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** A shop transaction is created when a visible guest completes service, not by a separate background sales loop.
 
 **Reason:** Stock, queues, staffing, guest budgets, and the financial report should describe the same event the player sees in the world.
+
+## D009 — Make staffing operational rather than permanent
+
+**Decision:** Model staff as individual scheduled employees assigned to one district, with wages and task-specific responses.
+
+**Reason:** A permanent global bonus does not create management decisions. Shifts, payroll, litter, closures, and repairs make coverage visible, local, and financially accountable.

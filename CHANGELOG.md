@@ -4,6 +4,12 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Staff, maintenance, and cleanliness operations
+
+- Replaced permanent staff bonuses with individual employees, shifts, district assignments, and daily wages.
+- Added deterministic litter and equipment failures, visible workers, repair progress, and temporary closures.
+- Added an operations console plus payroll and work-order reconciliation in the daily ledger.
+
 ### Guest-driven sales
 
 - Made visible counter service the source of shop revenue, stock movement, and COGS.

@@ -39,11 +39,23 @@ export const FACILITY_FOOTPRINTS = Object.freeze({
 });
 
 export const STAFF_CATALOGUE = Object.freeze([
-  { id:"service", name:"Queue Lead", icon:"↗", cost:900, level:2, description:"Moves shop queues faster and keeps guests from walking away." },
-  { id:"caretaker", name:"Campus Caretaker", icon:"⌁", cost:1000, level:2, description:"Improves cleanliness across every unlocked district." },
-  { id:"technician", name:"Experience Technician", icon:"⚙", cost:1200, level:3, description:"Handles repairs and raises attraction comfort." },
-  { id:"host", name:"Student Host", icon:"◎", cost:1400, level:4, description:"Guides visitors toward shops and campus amenities." },
-  { id:"entertainer", name:"Coast Entertainer", icon:"★", cost:1800, level:6, description:"Raises happiness and makes live events draw a larger crowd." }
+  { id:"service", name:"Queue Lead", icon:"↗", color:"#bce65f", cost:900, wage:360, level:2, description:"Works a venue district and speeds up its live shop queues." },
+  { id:"caretaker", name:"Campus Caretaker", icon:"⌁", color:"#64cbc8", cost:1000, wage:320, level:2, description:"Patrols one district and clears litter before rating falls." },
+  { id:"technician", name:"Experience Technician", icon:"⚙", color:"#f5c95e", cost:1200, wage:440, level:3, description:"Repairs failed stores and amenities so they can reopen." },
+  { id:"host", name:"Student Host", icon:"◎", color:"#ff8060", cost:1400, wage:380, level:4, description:"Guides visitors in one district while their shift is active." },
+  { id:"entertainer", name:"Coast Entertainer", icon:"★", color:"#9a7bc1", cost:1800, wage:480, level:6, description:"Builds mood and event energy during an assigned shift." }
+]);
+
+export const STAFF_SHIFTS = Object.freeze([
+  {id:"morning",name:"Morning",start:450,end:810,wageFactor:.7,label:"07:30–13:30"},
+  {id:"full",name:"Full day",start:450,end:1170,wageFactor:1,label:"07:30–19:30"},
+  {id:"late",name:"Late",start:810,end:1170,wageFactor:.7,label:"13:30–19:30"}
+]);
+
+export const OPERATIONS_DISTRICTS = Object.freeze([
+  {id:"coast",name:"Core Campus",color:"#64cbc8"},
+  {id:"east",name:"East Promenade",color:"#f2b94b"},
+  {id:"pier",name:"Ocean Pier",color:"#479fb5"}
 ]);
 
 export const EXPERIENCE_MODULES = Object.freeze([
@@ -123,13 +135,15 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 3, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 4, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
-function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,products:{},activities:{},deliveries:[]};}
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,issuesResolved:0,products:{},activities:{},deliveries:[]};}
+
+function createOperationsState(){return {issues:[],history:[],litterLoad:0,breakdownLoad:0,nextIssueSequence:1,payrollDue:0,totalWagesPaid:0,totalIssuesResolved:0};}
 
 function ensureDjOperations(run){if(!run.djOperations)run.djOperations={deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{},lifetimeAttendance:0,lifetimeRevenue:0};if(!run.djOperations.upgrades)run.djOperations.upgrades={};for(const item of DJ_UPGRADES)if(!Number.isInteger(run.djOperations.upgrades[item.id]))run.djOperations.upgrades[item.id]=0;if(!Number.isInteger(run.djOperations.ticketPrice)||run.djOperations.ticketPrice<=0)run.djOperations.ticketPrice=600;if(!DJ_EVENT_SLOTS.some(item=>item.id===run.djOperations.slotId))run.djOperations.slotId="sunset";if(!DJ_STYLES.some(item=>item.id===run.djOperations.styleId))run.djOperations.styleId="sunset";}
-function djDeckExists(run,deckId){return deckId==="pavilion"?Boolean(run.eventVenue):(run.facilities||[]).some(item=>item.id===deckId&&item.type==="experience"&&(item.modules||[]).includes("music"));}
+function djDeckExists(run,deckId){return deckId==="pavilion"?Boolean(run.eventVenue&&!assetIsClosed(run,"venue","pavilion")):(run.facilities||[]).some(item=>item.id===deckId&&item.type==="experience"&&(item.modules||[]).includes("music")&&!assetIsClosed(run,"facility",item.id));}
 function priceDemandFactor(price){const ratio=price/800;if(ratio<=.75)return 1.18;if(ratio<=1)return 1.08;if(ratio<=1.5)return 1.08-(ratio-1)*.72;if(ratio<=2)return .72-(ratio-1.5)*.64;return .18;}
 
 export function djEventProjection(run,overrides={}){
@@ -174,11 +188,12 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     {kind:"landmark",id:"hub",label:"Student Hub",score:13+mood*.34+social*28+quality*.1+((seed+3)%6),reason:optionReason(["social preference",`${quality}% campus quality`])},
     {kind:"landmark",id:"forum",label:"Sunset Forum",score:12+mood*.4+social*20+calm*12+quality*.1+((seed+5)%8),reason:optionReason(["open-air destination",`${quality}% campus quality`])}
   ];
-  if(run.activeEvent&&(run.eventVenue||run.activeEvent.deckId)){
+  if(run.activeEvent&&(run.eventVenue||run.activeEvent.deckId)&&!assetIsClosed(run,run.activeEvent.deckId==="pavilion"?"venue":"facility",run.activeEvent.deckId)){
     const event=run.activeEvent,isDj=event.source==="dj",ticketPrice=isDj?(event.ticketPrice||0):0,q=queueSize(context,isDj?"event":"landmark",isDj?"dj-event":"pavilion");
     if(!ticketPrice||ticketPrice<=budget){const priceRatio=ticketPrice/800,score=82+mood*.32+excitement*(isDj?42:35)+(event.excitement||0)*.28+(event.comfort||50)*.12-calm*(event.noise||0)*.22-Math.max(0,priceRatio-1)*18-queuePenalty(q,patience);options.push({kind:isDj?"event":"landmark",id:isDj?"dj-event":"pavilion",type:"pavilion",deckId:event.deckId||"pavilion",label:event.name||"Coastline Pavilion",score,price:ticketPrice,queueLength:q,reason:optionReason([isDj?`${event.styleName||"live music"} event`:"live event",ticketPrice?`${formatEuro(ticketPrice)} ticket`:"free entry",`${event.comfort||50}% comfort`])});}
   }
   for(const facility of run.facilities||[]){
+    if(assetIsClosed(run,"facility",facility.id))continue;
     const q=queueSize(context,"facility",facility.id);let score=8+quality*.08;
     if(facility.type==="bench")score+=energy*1.08+mood*.18;
     else if(facility.type==="water")score+=thirst*1.35;
@@ -258,29 +273,79 @@ export function attractionStats(moduleIds=[]) {
   };
 }
 
+export function districtForPosition(x=0){return x>=49.5?"pier":x>=41?"east":"coast";}
+export function districtForStore(storeId){return storeId==="surf"?"pier":storeId==="beach"?"east":"coast";}
+
+function shiftFor(worker){return STAFF_SHIFTS.find(item=>item.id===worker?.shiftId)||STAFF_SHIFTS[1];}
+export function staffDailyWage(worker){const role=STAFF_CATALOGUE.find(item=>item.id===worker?.roleId);return role?Math.round(role.wage*shiftFor(worker).wageFactor):0;}
+
+function legacyRoster(run){
+  const roster=[];for(const role of STAFF_CATALOGUE){const count=Math.max(0,Math.floor(run.staff?.[role.id]||0));for(let index=0;index<count;index++)roster.push({id:`staff-${role.id}-${index+1}`,roleId:role.id,districtId:"coast",shiftId:"full",hiredDay:run.currentDay||1,hiredAt:null});}return roster;
+}
+
+function ensureOperationsState(run){
+  if(!Array.isArray(run.staffRoster))run.staffRoster=legacyRoster(run);
+  if(!run.staff)run.staff={};for(const role of STAFF_CATALOGUE)run.staff[role.id]=run.staffRoster.filter(worker=>worker.roleId===role.id).length;
+  for(const worker of run.staffRoster){if(!STAFF_SHIFTS.some(item=>item.id===worker.shiftId))worker.shiftId="full";if(!OPERATIONS_DISTRICTS.some(item=>item.id===worker.districtId)||!run.districts?.[worker.districtId])worker.districtId="coast";}
+  if(!run.operations)run.operations=createOperationsState();const operations=run.operations;
+  if(!Array.isArray(operations.issues))operations.issues=[];if(!Array.isArray(operations.history))operations.history=[];
+  if(!Number.isFinite(operations.litterLoad))operations.litterLoad=0;if(!Number.isFinite(operations.breakdownLoad))operations.breakdownLoad=0;
+  if(!Number.isInteger(operations.nextIssueSequence)||operations.nextIssueSequence<1)operations.nextIssueSequence=1;
+  if(!Number.isInteger(operations.payrollDue)||operations.payrollDue<0)operations.payrollDue=0;
+  if(!Number.isInteger(operations.totalWagesPaid)||operations.totalWagesPaid<0)operations.totalWagesPaid=0;
+  if(!Number.isInteger(operations.totalIssuesResolved)||operations.totalIssuesResolved<0)operations.totalIssuesResolved=0;
+  return run;
+}
+
+export function migrateStaffOperations(run){ensureOperationsState(run);run.version=4;return run;}
+
+export function staffIsOnShift(worker,minutes){const shift=shiftFor(worker);return minutes>=shift.start&&minutes<shift.end;}
+export function activeStaffCount(run,roleId,districtId="coast",minutes=run.clockMinutes){ensureOperationsState(run);if(run.operations.payrollDue>0)return 0;return run.staffRoster.filter(worker=>worker.roleId===roleId&&worker.districtId===districtId&&staffIsOnShift(worker,minutes)).length;}
+export function dailyPayroll(run){ensureOperationsState(run);return run.staffRoster.reduce((sum,worker)=>sum+staffDailyWage(worker),0);}
+
+export function assignStaff(run,staffId,districtId){
+  if(!OPERATIONS_DISTRICTS.some(item=>item.id===districtId)||!run.districts?.[districtId])throw new Error("Acquire that district before assigning staff there.");
+  const next=structuredClone(run);ensureOperationsState(next);const worker=next.staffRoster.find(item=>item.id===staffId);if(!worker)throw new Error("That staff member no longer exists.");worker.districtId=districtId;return next;
+}
+
+export function setStaffShift(run,staffId,shiftId){
+  if(!STAFF_SHIFTS.some(item=>item.id===shiftId))throw new Error("Choose a valid shift.");
+  const next=structuredClone(run);ensureOperationsState(next);const worker=next.staffRoster.find(item=>item.id===staffId);if(!worker)throw new Error("That staff member no longer exists.");worker.shiftId=shiftId;return next;
+}
+
+export function settlePayroll(run){const next=structuredClone(run);ensureOperationsState(next);const amount=Math.min(next.cash,next.operations.payrollDue);next.cash-=amount;next.operations.payrollDue-=amount;next.operations.totalWagesPaid+=amount;return next;}
+
+export function assetIsClosed(run,targetKind,targetId){ensureOperationsState(run);return run.operations.issues.some(issue=>issue.type==="breakdown"&&issue.targetKind===targetKind&&issue.targetId===targetId);}
+
+export function operationsSnapshot(run){
+  ensureOperationsState(run);const open=run.operations.issues,closedAssets=open.filter(issue=>issue.type==="breakdown").length,litter=open.filter(issue=>issue.type==="litter").length;
+  const districts=OPERATIONS_DISTRICTS.filter(district=>run.districts?.[district.id]).map(district=>{const issues=open.filter(issue=>issue.districtId===district.id),onShift=run.staffRoster.filter(worker=>worker.districtId===district.id&&staffIsOnShift(worker,run.clockMinutes)).length;return {...district,issues:issues.length,litter:issues.filter(issue=>issue.type==="litter").length,breakdowns:issues.filter(issue=>issue.type==="breakdown").length,onShift,cleanliness:Math.max(0,Math.min(100,94-issues.filter(issue=>issue.type==="litter").length*14))};});
+  return {openIssues:open.length,closedAssets,litter,payroll:dailyPayroll(run),payrollDue:run.operations.payrollDue,onShift:run.staffRoster.filter(worker=>staffIsOnShift(worker,run.clockMinutes)).length,districts};
+}
+
 export function campusMetrics(run) {
+  ensureOperationsState(run);
   const needs={ hunger:42, thirst:39, bladder:44, energy:46, mood:47, cleanliness:52 };
   const activeEvent=EVENT_CATALOGUE.find(item=>item.id===run.activeEvent?.id)||run.activeEvent;
   for(const facility of run.facilities||[]){
     const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type);
     if(blueprint) Object.entries(blueprint.needs||{}).forEach(([key,value])=>needs[key]+=value);
   }
-  const staff=run.staff||{};
-  needs.cleanliness+=(staff.caretaker||0)*15;
-  needs.mood+=(staff.host||0)*12;
-  needs.energy+=(staff.host||0)*4;
-  needs.mood+=(staff.entertainer||0)*11;
+  const activeRole=role=>run.operations.payrollDue>0?0:run.staffRoster.filter(worker=>worker.roleId===role&&staffIsOnShift(worker,run.clockMinutes)).length,openIssues=run.operations.issues||[];
+  needs.cleanliness+=activeRole("caretaker")*5-openIssues.filter(issue=>issue.type==="litter").length*8;
+  needs.mood+=activeRole("host")*6+activeRole("entertainer")*7-openIssues.filter(issue=>issue.type==="breakdown").length*3;
+  needs.energy+=activeRole("host")*2;
   needs.mood+=activeEvent?.moodBonus||0;
   Object.keys(needs).forEach(key=>needs[key]=Math.max(0,Math.min(100,needs[key])));
   const experiences=(run.facilities||[]).filter(item=>item.type==="experience");
   const attraction=experiences.reduce((best,item)=>{const stats=attractionStats(item.modules);return stats.excitement>best.excitement?stats:best;},{excitement:0,intensity:0,comfort:42,cost:0});
-  attraction.comfort=Math.min(100,attraction.comfort+(staff.technician||0)*9);
+  attraction.comfort=Math.min(100,attraction.comfort+activeRole("technician")*4);
   const satisfaction=Math.round(Object.values(needs).reduce((sum,value)=>sum+value,0)/Object.keys(needs).length);
   const intensityFit=attraction.intensity<=70?10:Math.max(-18,10-(attraction.intensity-70));
   const eventNoisePenalty=activeEvent?Math.max(0,(activeEvent.noise||0)-55)*.2:0,eventComfortBonus=activeEvent?((activeEvent.comfort||50)-50)*.08:0;
   const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit-eventNoisePenalty+eventComfortBonus)));
-  const openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+(staff.entertainer||0)*3):0;
-  const guests=Math.max(12,Math.round(10+rating*.27+(run.facilities||[]).length*1.5+(staff.host||0)*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,districts-1)*5+eventBonus));
+  const openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0;
+  const guests=Math.max(12,Math.round(10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,districts-1)*5+eventBonus));
   return { needs, satisfaction, rating, guests, attraction };
 }
 
@@ -370,9 +435,9 @@ export function hireStaff(run,staffId,now=new Date().toISOString()) {
   const role=STAFF_CATALOGUE.find(item=>item.id===staffId);if(!role)throw new Error("Unknown staff role.");
   if(progressionState(run).level<(role.level||1))throw new Error(`Reach company level ${role.level} to hire ${role.name}.`);
   if(run.cash<role.cost) throw new Error(`You need ${formatEuro(role.cost)} but only have ${formatEuro(run.cash)}.`);
-  const next=structuredClone(run);if(!next.staff)next.staff={caretaker:0,technician:0,host:0};
-  next.cash-=role.cost;next.staff[staffId]=(next.staff[staffId]||0)+1;
-  if(!Array.isArray(next.staffHires))next.staffHires=[];next.staffHires.push({at:now,day:run.currentDay,staffId,cost:role.cost});
+  const next=structuredClone(run);ensureOperationsState(next);const ordinal=next.staffRoster.filter(worker=>worker.roleId===staffId).length+1,id=`staff-${staffId}-${next.currentDay}-${next.staffRoster.length+1}`;
+  next.cash-=role.cost;next.staffRoster.push({id,roleId:staffId,districtId:"coast",shiftId:"full",hiredDay:next.currentDay,hiredAt:now});next.staff[staffId]=ordinal;
+  if(!Array.isArray(next.staffHires))next.staffHires=[];next.staffHires.push({at:now,day:run.currentDay,staffId,staffRecordId:id,cost:role.cost});
   return next;
 }
 
@@ -412,7 +477,7 @@ export function campusPhase(minutes){
 
 export function storeIsOpen(run,storeId,minutes=run.clockMinutes){
   const hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId];
-  return Boolean(hours&&minutes>=hours.open&&minutes<hours.close);
+  return Boolean(hours&&minutes>=hours.open&&minutes<hours.close&&!assetIsClosed(run,"store",storeId));
 }
 
 export function setStoreHours(run,storeId,open,close){
@@ -475,14 +540,56 @@ function ensureTycoonState(run){
   if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
   if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};
   if(!Number.isFinite(run.today.eventRevenue))run.today.eventRevenue=0;if(!Number.isFinite(run.today.eventCosts))run.today.eventCosts=0;if(!Number.isInteger(run.today.eventAttendance))run.today.eventAttendance=0;
+  if(!Number.isInteger(run.today.staffWages))run.today.staffWages=0;if(!Number.isInteger(run.today.staffWagesPaid))run.today.staffWagesPaid=0;if(!Number.isInteger(run.today.issuesResolved))run.today.issuesResolved=0;
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  run.version=3;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
+  run.version=4;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
   if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
   if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};
-  if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);
+  if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);ensureOperationsState(run);
+}
+
+const LITTER_POINTS=Object.freeze({
+  coast:[{x:12.5,y:18.8},{x:25.4,y:19.7},{x:34.7,y:17.3},{x:18.2,y:22.1}],
+  east:[{x:42.6,y:18.5},{x:46.4,y:16.5},{x:47.1,y:21.5}],
+  pier:[{x:50.4,y:18.2},{x:53.8,y:19.6},{x:55.1,y:15.2}]
+});
+
+function unlockedDistricts(run){return OPERATIONS_DISTRICTS.filter(district=>run.districts?.[district.id]);}
+function breakdownTargets(run,districtId){
+  const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0&&districtForStore(store.id)===districtId).map(store=>({targetKind:"store",targetId:store.id,label:store.name,districtId}));
+  const facilities=(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)&&districtForPosition(facility.x)===districtId).map(facility=>({targetKind:"facility",targetId:facility.id,label:facility.name,districtId}));
+  if(districtId==="east"&&run.eventVenue)facilities.push({targetKind:"venue",targetId:"pavilion",label:"Coastline Pavilion",districtId});
+  return [...stores,...facilities].filter(target=>!assetIsClosed(run,target.targetKind,target.targetId));
+}
+
+export function addOperationsIssue(run,type,districtId="coast",targetKind=null,targetId=null){
+  if(!["litter","breakdown"].includes(type))throw new Error("Unknown operations issue.");
+  if(!run.districts?.[districtId])throw new Error("That district is not part of the campus yet.");
+  const next=structuredClone(run);ensureOperationsState(next);const sequence=next.operations.nextIssueSequence++;
+  if(type==="litter"){
+    const points=LITTER_POINTS[districtId]||LITTER_POINTS.coast,point=points[(sequence-1)%points.length];next.operations.issues.push({id:`issue-${sequence}`,type,districtId,targetKind:"ground",targetId:`${districtId}-${sequence}`,label:"Litter spill",x:point.x,y:point.y,progress:0,required:45,createdDay:next.currentDay,createdMinute:next.clockMinutes});
+  }else{
+    const targets=breakdownTargets(next,districtId),chosen=targetKind&&targetId?targets.find(target=>target.targetKind===targetKind&&target.targetId===targetId):targets[(sequence-1)%Math.max(1,targets.length)];if(!chosen)throw new Error("There is no operational asset to break down in this district.");
+    next.operations.issues.push({id:`issue-${sequence}`,type,districtId,targetKind:chosen.targetKind,targetId:chosen.targetId,label:chosen.label,progress:0,required:90,createdDay:next.currentDay,createdMinute:next.clockMinutes});
+  }
+  return next;
+}
+
+function createIssueInPlace(run,type,districtId){const next=addOperationsIssue(run,type,districtId);run.operations=next.operations;}
+
+function processOperations(run,minutes){
+  ensureOperationsState(run);const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),districts=unlockedDistricts(run);
+  run.operations.litterLoad+=metrics.guests*peak.multiplier*minutes/2400;
+  const assetCount=Object.values(run.venues||{}).filter(Boolean).length+(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)).length+(run.eventVenue?1:0);
+  run.operations.breakdownLoad+=assetCount*minutes/900;
+  while(run.operations.litterLoad>=1&&run.operations.issues.filter(issue=>issue.type==="litter").length<8){run.operations.litterLoad-=1;const district=districts[(run.operations.nextIssueSequence-1)%districts.length];createIssueInPlace(run,"litter",district.id);}
+  while(run.operations.breakdownLoad>=1&&run.operations.issues.filter(issue=>issue.type==="breakdown").length<4){run.operations.breakdownLoad-=1;const candidates=districts.filter(district=>breakdownTargets(run,district.id).length);if(!candidates.length)break;const district=candidates[(run.operations.nextIssueSequence-1)%candidates.length];createIssueInPlace(run,"breakdown",district.id);}
+  const resolved=[];
+  for(const issue of run.operations.issues){const role=issue.type==="litter"?"caretaker":"technician",workers=activeStaffCount(run,role,issue.districtId,run.clockMinutes);if(!workers)continue;issue.progress=Math.min(issue.required,issue.progress+minutes*workers);if(issue.progress>=issue.required)resolved.push(issue);}
+  if(resolved.length){for(const issue of resolved){run.operations.history.push({...issue,resolvedDay:run.currentDay,resolvedMinute:run.clockMinutes+minutes});run.today.issuesResolved+=1;run.operations.totalIssuesResolved+=1;run.reputation=(run.reputation||0)+1;}run.operations.issues=run.operations.issues.filter(issue=>!resolved.some(item=>item.id===issue.id));if(run.operations.history.length>120)run.operations.history=run.operations.history.slice(-120);}
 }
 
 function processDeliveries(run,minutes){
@@ -506,6 +613,7 @@ function processDjEvent(run,minutes){
 function processSlice(run,minutes){
   processDeliveries(run,minutes);
   processDjEvent(run,minutes);
+  processOperations(run,minutes);
   const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes);
   run.visitorProgress+=metrics.guests*peak.multiplier*minutes/115;
   const arrived=Math.floor(run.visitorProgress);run.visitorProgress-=arrived;run.today.visitors+=arrived;run.totalVisitors+=arrived;
@@ -513,9 +621,10 @@ function processSlice(run,minutes){
 
 function closeTycoonDay(run){
   const metrics=campusMetrics(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
-  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit:run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0)};
+  const wageDue=run.operations.payrollDue>0?0:dailyPayroll(run),wagesPaid=Math.min(run.cash,wageDue),wageShortfall=wageDue-wagesPaid;run.cash-=wagesPaid;run.operations.payrollDue+=wageShortfall;run.operations.totalWagesPaid+=wagesPaid;run.today.staffWages=wageDue;run.today.staffWagesPaid=wagesPaid;
+  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),grossProfit=run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,staffWages:wageDue,staffWagesPaid:wagesPaid,payrollShortfall:wageShortfall,issuesResolved:run.today.issuesResolved||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit,operatingProfit:grossProfit-wageDue};
   run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,deliveries:structuredClone(run.today.deliveries||[]),storeHours:structuredClone(run.storeHours||{}),campus:{...metrics,guests:run.today.visitors,activities:{...(run.today.activities||{})}}});
-  run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.grossProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
+  run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.operatingProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
   if(run.history.length>60)run.history=run.history.slice(-60);
 }
 
@@ -523,7 +632,7 @@ export function inventoryValue(run) {
   return CATALOGUE.reduce((sum, product) => sum + run.stock[product.id] * product.cost, 0);
 }
 
-export function overallResult(run) { return run.cash + inventoryValue(run) - INITIAL_CASH; }
+export function overallResult(run) { ensureOperationsState(run);return run.cash + inventoryValue(run) - run.operations.payrollDue - INITIAL_CASH; }
 export function formatEuro(cents) { return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(cents / 100); }
 
 export function upgradeVenue(run, storeId, now = new Date().toISOString()) {
