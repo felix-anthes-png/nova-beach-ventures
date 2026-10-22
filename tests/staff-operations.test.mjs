@@ -12,6 +12,7 @@ import {
   addOperationsIssue,
   assetIsClosed,
   advanceTycoon,
+  dailyOperatingCosts,
   migrateStaffOperations
 } from "../dist/core.js";
 
@@ -57,11 +58,13 @@ test("a breakdown closes a store until a district technician repairs it",()=>{
 
 test("day close charges wages once and records operating profit",()=>{
   let run=hireStaff(fundedRun(),"service"),afterRecruitment=run.cash;
+  const overhead=dailyOperatingCosts(run).total;
   run=advanceTycoon(run,DAY_END-DAY_START);
-  assert.equal(run.cash,afterRecruitment-360);
+  assert.equal(run.cash,afterRecruitment-360-overhead);
   assert.equal(run.history[0].totals.staffWages,360);
   assert.equal(run.history[0].totals.staffWagesPaid,360);
-  assert.equal(run.history[0].totals.operatingProfit,run.history[0].totals.grossProfit-360);
+  assert.equal(run.history[0].totals.operatingCosts,overhead);
+  assert.equal(run.history[0].totals.operatingProfit,run.history[0].totals.grossProfit-360-overhead);
 });
 
 test("unaffordable payroll never makes cash negative and pauses the team",()=>{
@@ -78,7 +81,7 @@ test("legacy staff counts migrate exactly once into the roster",()=>{
   const run=createRun();run.version=3;run.staff={service:0,caretaker:2,technician:1,host:0,entertainer:0};delete run.staffRoster;delete run.operations;
   migrateStaffOperations(run);const ids=run.staffRoster.map(worker=>worker.id);
   migrateStaffOperations(run);
-  assert.equal(run.version,4);
+  assert.equal(run.version,5);
   assert.equal(run.staffRoster.length,3);
   assert.equal(new Set(ids).size,3);
   assert.deepEqual(run.staff,{service:0,caretaker:2,technician:1,host:0,entertainer:0});

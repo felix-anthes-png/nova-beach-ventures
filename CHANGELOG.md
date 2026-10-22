@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Tycoon integration and balancing
+
+- Connected campus rating, operating profit, product availability, work orders, and queue walkaways to persistent attendance momentum.
+- Added daily store and district operating costs, overdue campus bills, and venue-level service-speed trade-offs.
+- Added a control room that explains management health, costs, priorities, seven-day traffic, and the reasons momentum changed.
+- Expanded daily reports and ledgers to reconcile payroll, overhead, operating profit, and attendance outlook.
+
 ### Staff, maintenance, and cleanliness operations
 
 - Replaced permanent staff bonuses with individual employees, shifts, district assignments, and daily wages.
