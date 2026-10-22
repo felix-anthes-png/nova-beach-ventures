@@ -399,6 +399,22 @@ export function tycoonPulse(run){
   return {score,status:score>=82?"Thriving":score>=66?"Healthy":score>=48?"Under pressure":"At risk",guestScore,operationsScore,commercialScore,stockCoverage,priceScore,cleanliness,momentum:performance.momentum,momentumFactor:metrics.momentumFactor,projectedGuests:metrics.guests,projectedProfit,costs,alerts:alerts.slice(0,5)};
 }
 
+export function managementOverview(run){
+  const metrics=campusMetrics(run),operations=operationsSnapshot(run),pulse=tycoonPulse(run),phase=campusPhase(run.clockMinutes);
+  const stores=STORES.map(store=>{
+    const level=run.venues?.[store.id]||0,products=CATALOGUE.filter(product=>product.storeId===store.id&&(product.tier||1)<=level),stockUnits=products.reduce((sum,product)=>sum+(run.stock?.[product.id]||0),0),stocked=products.filter(product=>(run.stock?.[product.id]||0)>0).length;
+    const coverage=products.length?Math.round(stocked/products.length*100):0,closed=level>0&&assetIsClosed(run,"venue",store.id),open=level>0&&storeIsOpen(run,store.id)&&!closed;
+    const sales=products.reduce((sum,product)=>sum+(run.today?.products?.[product.id]?.revenue||0),0),cogs=products.reduce((sum,product)=>sum+(run.today?.products?.[product.id]?.cogs||0),0);
+    return {id:store.id,name:store.name,short:store.short,color:store.color,districtId:districtForStore(store.id),level,open,closed,status:!level?"locked":closed?"repair":open?"open":"closed",products:products.length,stocked,stockUnits,stockCoverage:coverage,revenue:sales,grossProfit:sales-cogs,dailyCost:storeOperatingCost(run,store.id)};
+  });
+  const districts=operations.districts.map(district=>{
+    const venues=stores.filter(store=>store.level>0&&store.districtId===district.id),facilities=(run.facilities||[]).filter(facility=>districtForPosition(facility.x)===district.id);
+    return {...district,venues:venues.length,openVenues:venues.filter(store=>store.open).length,stockUnits:venues.reduce((sum,store)=>sum+store.stockUnits,0),facilities:facilities.length};
+  });
+  const needs=Object.entries(metrics.needs).map(([id,value])=>({id,label:id[0].toUpperCase()+id.slice(1),value})).sort((a,b)=>a.value-b.value);
+  return {phase:{id:phase.id,name:phase.name,multiplier:phase.multiplier},guests:metrics.guests,rating:metrics.rating,satisfaction:metrics.satisfaction,momentum:pulse.momentum,score:pulse.score,status:pulse.status,projectedProfit:pulse.projectedProfit,alerts:pulse.alerts,weakestNeeds:needs.slice(0,3),stores,districts};
+}
+
 function closeDayMomentum(run,operatingProfit,metrics,stockCoverage){
   const performance=ensurePerformanceState(run),before=performance.momentum,issues=run.operations?.issues?.length||0,walkaways=run.today?.walkaways||0;
   const drivers=[

@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="./time-system.css?v=25-tycoon-integration" />
     <link rel="stylesheet" href="./staff-operations.css?v=25-tycoon-integration" />
     <link rel="stylesheet" href="./tycoon-integration.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./management-overlays.css?v=26-management-overlays" />
   </head>
   <body>
     <div id="game" class="game-shell">
@@ -52,6 +53,19 @@
           <span data-zone-indicator="academy"><i>03</i> ACADEMIC</span>
           <span data-zone-indicator="hub"><i>04</i> STUDENT HUB</span>
         </div>
+
+        <section class="map-intelligence" aria-label="Management map overlays">
+          <div class="map-intelligence-title"><span>◇</span><div><small>MANAGEMENT LENS</small><strong id="overlayTitle">Guest flow</strong></div><kbd>M</kbd></div>
+          <div class="overlay-switcher" role="group" aria-label="Choose a map overlay">
+            <button class="active" data-overlay="flow" title="Guest flow (1)"><span>↗</span><b>Flow</b><kbd>1</kbd></button>
+            <button data-overlay="needs" title="Guest needs (2)"><span>♥</span><b>Needs</b><kbd>2</kbd></button>
+            <button data-overlay="trade" title="Commercial performance (3)"><span>€</span><b>Trade</b><kbd>3</kbd></button>
+            <button data-overlay="operations" title="Operations coverage (4)"><span>⚙</span><b>Ops</b><kbd>4</kbd></button>
+          </div>
+          <div class="overlay-legend" id="overlayLegend" aria-live="polite"></div>
+        </section>
+
+        <section class="decision-feed" id="decisionFeed" aria-label="Management alerts"></section>
 
         <section class="mission-card" aria-live="polite">
           <div class="mission-kicker"><span class="live-dot"></span> CURRENT MISSION</div>
@@ -123,6 +137,6 @@
       <div id="toastRegion" class="toast-region" aria-live="polite"></div>
       <aside id="dayReport" class="day-report" aria-live="polite" aria-hidden="true"></aside>
     </div>
-    <script type="module" src="./app.js?v=25-tycoon-integration"></script>
+    <script type="module" src="./app.js?v=26-management-overlays"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, districtForStore, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=25-tycoon-integration";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, districtForStore, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=26-management-overlays";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -37,6 +37,9 @@ let guestAgents = [];
 let guestSequence = 0;
 let guestSpawnAccumulator = 0;
 let activityPulse = null;
+const OVERLAY_STORAGE_KEY="nova-beach-ventures-overlay";
+const OVERLAY_MODES=["flow","needs","trade","operations"];
+let managementOverlay=OVERLAY_MODES.includes(localStorage.getItem(OVERLAY_STORAGE_KEY))?localStorage.getItem(OVERLAY_STORAGE_KEY):"flow";
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
@@ -193,6 +196,28 @@ function updateHUD() {
   refreshTimePanelLive();
   refreshStoreHoursPanelLive();
   refreshOperationsPanelLive();
+  renderManagementHUD();
+}
+
+const overlayCopy={
+  flow:{title:"Guest flow",legend:[["#bce65f","Walking"],["#f5c95e","Queueing"],["#64cbc8","Using"]]},
+  needs:{title:"Campus needs",legend:[["#ff8060","Pressure"],["#f5c95e","Average"],["#64cbc8","Covered"]]},
+  trade:{title:"Commercial",legend:[["#bce65f","Trading"],["#f5c95e","Low stock"],["#ff8060","Blocked"]]},
+  operations:{title:"Operations",legend:[["#64cbc8","Covered"],["#f5c95e","Work order"],["#ff8060","Closed"]]}
+};
+
+function setManagementOverlay(mode,announce=true){
+  if(!OVERLAY_MODES.includes(mode))return;managementOverlay=mode;localStorage.setItem(OVERLAY_STORAGE_KEY,mode);renderManagementHUD();if(announce)toast(`${overlayCopy[mode].title} overlay active`);
+}
+
+function renderManagementHUD(){
+  const overview=managementOverview(run),copy=overlayCopy[managementOverlay];
+  $("#overlayTitle").textContent=copy.title;
+  $("#overlayLegend").innerHTML=copy.legend.map(([color,label])=>`<span><i style="--legend:${color}"></i>${label}</span>`).join("");
+  document.querySelectorAll("[data-overlay]").forEach(button=>{const active=button.dataset.overlay===managementOverlay;button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));});
+  const alerts=overview.alerts.slice(0,3),feed=$("#decisionFeed");
+  feed.innerHTML=`<div class="decision-feed-head"><span>LIVE BRIEFING</span><b>${overview.score}</b><small>${overview.status}</small></div>${alerts.map((alert,index)=>`<button data-alert-action="${alert.action}" class="decision-alert ${alert.severity}"><span>${alert.severity==="good"?"✓":index+1}</span><div><strong>${alert.title}</strong><small>${alert.detail}</small></div><em>OPEN</em></button>`).join("")}`;
+  feed.querySelectorAll("[data-alert-action]").forEach(button=>button.addEventListener("click",()=>openPulseAction(button.dataset.alertAction)));
 }
 
 function formatClock(minutes){const value=Math.floor(minutes||DAY_START),hours=Math.floor(value/60)%24,mins=value%60;return `${String(hours).padStart(2,"0")}:${String(mins).padStart(2,"0")}`;}
@@ -269,6 +294,43 @@ function drawWorldLabel(x,y,z,title,accent="#bce65f"){
   ctx.fillStyle=accent;ctx.beginPath();ctx.arc(p.x-35,p.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 6px DM Mono";ctx.fillText(title,p.x+4,p.y+2);ctx.restore();
 }
 
+function overlayMarker(x,y,z,title,value,color="#bce65f",danger=false){
+  const p=isoPoint(x,y,z);ctx.save();ctx.shadowColor="rgba(3,22,28,.3)";ctx.shadowBlur=11;roundedRect(p.x-47,p.y-13,94,26,8,"rgba(5,27,35,.92)");ctx.shadowBlur=0;ctx.fillStyle=color;ctx.fillRect(p.x-47,p.y-13,4,26);ctx.fillStyle="#819ba0";ctx.textAlign="left";ctx.font="700 5.5px DM Mono";ctx.fillText(title.toUpperCase(),p.x-36,p.y-3);ctx.fillStyle=danger?"#ff9b82":"#fff";ctx.font="800 7px Manrope";ctx.fillText(value,p.x-36,p.y+7);ctx.restore();
+}
+
+function overlayDistrict(x,y,w,h,color,alpha=.16){
+  const points=[isoPoint(x,y,10),isoPoint(x+w,y,10),isoPoint(x+w,y+h,10),isoPoint(x,y+h,10)];ctx.save();ctx.fillStyle=color;ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.closePath();ctx.fill();ctx.globalAlpha=.72;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.stroke();ctx.restore();
+}
+
+function storeOverlayPoint(storeId){return {cafe:{x:20,y:12.9},snack:{x:28,y:21.4},merch:{x:34.5,y:14.8},beach:{x:45.9,y:20.5},surf:{x:53.1,y:16.1}}[storeId];}
+
+function operationsIssuePoint(issue){
+  if(Number.isFinite(issue.x)&&Number.isFinite(issue.y))return issue;
+  if(issue.targetKind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===issue.targetId);if(facility)return facility;}
+  if(issue.targetKind==="store")return storeOverlayPoint(issue.targetId);
+  if(issue.targetId==="pavilion")return locations.pavilion;
+  return issue.districtId==="pier"?{x:53,y:17}:issue.districtId==="east"?{x:45,y:17}:{x:24,y:17};
+}
+
+function drawManagementOverlay(t){
+  if(currentZone!=="campus"||pendingBuild)return;const overview=managementOverview(run);
+  if(managementOverlay==="flow"){
+    ctx.save();ctx.lineCap="round";for(const guest of guestAgents.filter(item=>item.target&&item.target.kind!=="exit").slice(0,26)){const target=guest.route?.[guest.routeIndex]||guest.target,a=isoPoint(guest.x,guest.y,7),b=isoPoint(target.x,target.y,7),color=guest.state==="queueing"?"#f5c95e":guest.state==="using"?"#64cbc8":"#bce65f";ctx.strokeStyle=color;ctx.globalAlpha=guest.state==="walking"?.18:.42;ctx.lineWidth=guest.state==="walking"?1.3:2.2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+    ctx.restore();const queueing=guestAgents.filter(guest=>guest.state==="queueing").length,using=guestAgents.filter(guest=>guest.state==="using").length;overlayMarker(run.player.x-.2,run.player.y-1.5,96,overview.phase.name,`${guestAgents.length} live · ${queueing} queue · ${using} using`,"#bce65f");
+  }
+  if(managementOverlay==="needs"){
+    const amenityColors={water:"#64cbc8",restroom:"#7e9ec5",bench:"#f5c95e",foodGarden:"#ff9b61",bin:"#78c77a"};for(const facility of (run.facilities||[]).filter(item=>amenityColors[item.type])){const p=isoPoint(facility.x,facility.y,8),radius=46+(facility.type==="foodGarden"?22:0);ctx.save();ctx.fillStyle=amenityColors[facility.type];ctx.globalAlpha=.1;ctx.beginPath();ctx.ellipse(p.x,p.y,radius,radius*.42,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=.65;ctx.strokeStyle=amenityColors[facility.type];ctx.lineWidth=1.5;ctx.setLineDash([6,5]);ctx.stroke();ctx.restore();}
+    const weak=overview.weakestNeeds;overlayMarker(20.5,15.5,114,"Weakest need",`${weak[0].label} ${weak[0].value}% · ${weak[1].label} ${weak[1].value}%`,weak[0].value<50?"#ff8060":"#f5c95e",weak[0].value<45);
+  }
+  if(managementOverlay==="trade"){
+    for(const store of overview.stores.filter(item=>item.level)){const point=storeOverlayPoint(store.id),queues=guestAgents.filter(guest=>guest.state==="queueing"&&guest.target?.id===store.id).length,color=store.closed?"#ff8060":store.stockCoverage<50?"#f5c95e":"#bce65f",value=store.closed?"REPAIR REQUIRED":!store.open?"CLOSED BY SCHEDULE":`${store.stockUnits} units · ${queues} in queue`;overlayMarker(point.x,point.y,132,store.short,value,color,store.closed||store.stockCoverage===0);}
+  }
+  if(managementOverlay==="operations"){
+    const geometry={coast:[2,14.1,37,9],east:[40.5,9.7,8.2,12.6],pier:[49.2,13.4,6.4,6.7]};for(const district of overview.districts){const [x,y,w,h]=geometry[district.id],color=district.breakdowns?"#ff8060":district.issues?"#f5c95e":"#64cbc8";overlayDistrict(x,y,w,h,color,district.issues ? .2 : .1);overlayMarker(x+w*.5,y+h*.45,102,district.name,`${district.cleanliness}% clean · ${district.onShift} staff · ${district.issues} jobs`,color,Boolean(district.breakdowns));}
+    for(const issue of run.operations?.issues||[]){const point=operationsIssuePoint(issue),pulse=10+Math.sin(t*.006)*2;ctx.save();ctx.fillStyle=issue.type==="breakdown"?"rgba(255,128,96,.23)":"rgba(245,201,94,.22)";ctx.beginPath();ctx.arc(isoPoint(point.x,point.y,15).x,isoPoint(point.x,point.y,15).y,pulse,0,Math.PI*2);ctx.fill();ctx.restore();}
+  }
+}
+
 function drawWorld(t) {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
@@ -298,6 +360,7 @@ function drawWorld(t) {
     {depth:run.player.x+run.player.y,draw:()=>drawPlayer(t)}
   ].sort((a,b)=>a.depth-b.depth);
   actors.forEach(actor => actor.draw());
+  drawManagementOverlay(t);
   ctx.restore();
   if(zone.outdoor)drawAmbientLighting(light,w,h);
 }
@@ -846,7 +909,8 @@ function interactWith(id){const loc=locations[id];if(loc.kind==="door")changeZon
 function moveTo(id) { const loc=locations[id];if(loc.zone!==currentZone)return;const zone=activeZone();run.player={x:Math.max(zone.minX,Math.min(zone.maxX,loc.x)),y:Math.max(zone.minY,Math.min(zone.maxY,loc.y+1.3)),zone:currentZone};camera.x=run.player.x;camera.y=run.player.y;save(run);interactWith(id); }
 function changeZone(zoneId,spawn){const zone=ZONES[zoneId];if(!zone)return;closeDrawer();currentZone=zoneId;const point=spawn||zone.spawn;run.player={x:point.x,y:point.y,zone:zoneId};camera.x=point.x;camera.y=point.y;targetPoint=null;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();const game=$("#game");game.classList.add("zone-transition");setTimeout(()=>game.classList.remove("zone-transition"),420);toast(zone.outdoor?"Back on the Nova coast":"Entered "+zone.name);beep(zone.outdoor?520:620);}
 function openLocation(id) { activeLocation=id; locations[id].panel(); drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); }
-function closeDrawer() { activeLocation=null; drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); }
+function markManagementPanel(action){document.querySelectorAll(".quick-nav button").forEach(button=>button.classList.toggle("active-panel",button.dataset.action===action));}
+function closeDrawer() { activeLocation=null; drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); markManagementPanel(null); }
 
 function storeTabs(selected, action="supplier") {
   return `<div class="store-tabs">${STORES.map(store=>`<button class="store-tab ${selected===store.id?"active":""}" data-store="${store.id}" data-mode="${action}"><span>${store.icon}</span>${store.short}</button>`).join("")}</div>`;
@@ -1167,7 +1231,7 @@ function openPulsePanel(){
   if($("#settleOperatingCosts"))$("#settleOperatingCosts").addEventListener("click",()=>{const before=run.performance.operatingDue;save(settleOperatingCosts(run));toast(`${formatEuro(before-run.performance.operatingDue)} in campus bills paid`);openPulsePanel();});
 }
 
-function openPulseAction(action){if(action==="operations")openOperationsPanel();else if(action==="finance")openLedger();else if(action==="stock")openLocation("supplier");else if(action==="stores")openPortfolio();else if(action==="build")openBuildPanel();else openProgressPanel();}
+function openPulseAction(action){const panelAction=action==="finance"?"ledger":action==="stock"?"buy":action==="progress"?"progress":action;markManagementPanel(panelAction);if(action==="operations")openOperationsPanel();else if(action==="finance")openLedger();else if(action==="stock")openLocation("supplier");else if(action==="stores")openPortfolio();else if(action==="build")openBuildPanel();else openProgressPanel();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
 
 function openLedger() {
   const gain=overallResult(run), inv=inventoryValue(run),operations=operationsSnapshot(run),pulse=tycoonPulse(run);
@@ -1213,7 +1277,7 @@ function beep(frequency){if(!soundOn)return;try{const audio=new AudioContext();c
 function setGameSpeed(speed){const requested=Number(speed);if(pendingBuild&&requested>0){toast("Finish or cancel construction before resuming the clock",true);return;}run.speed=requested;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
 
 window.addEventListener("resize",resize);
-window.addEventListener("keydown",event=>{const key=event.key.toLowerCase();if(key==="r"&&pendingBuild){rotatePendingBuild();event.preventDefault();return;}if(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)){keys.add(key);targetPoint=null;event.preventDefault();}if(key==="e"&&modal.classList.contains("hidden")&&!pendingBuild){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild)cancelBuildMode();hideModal();closeDrawer();}});
+window.addEventListener("keydown",event=>{const key=event.key.toLowerCase(),typing=["INPUT","SELECT","TEXTAREA"].includes(event.target?.tagName);if(!typing&&!event.metaKey&&!event.ctrlKey&&!event.altKey&&OVERLAY_MODES.includes(({"1":"flow","2":"needs","3":"trade","4":"operations"})[key])){setManagementOverlay(({"1":"flow","2":"needs","3":"trade","4":"operations"})[key]);event.preventDefault();return;}if(!typing&&key==="m"&&!pendingBuild){setManagementOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(managementOverlay)+1)%OVERLAY_MODES.length]);event.preventDefault();return;}if(key==="r"&&pendingBuild){rotatePendingBuild();event.preventDefault();return;}if(!typing&&["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)){keys.add(key);targetPoint=null;event.preventDefault();}if(!typing&&key==="e"&&modal.classList.contains("hidden")&&!pendingBuild){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild)cancelBuildMode();hideModal();closeDrawer();}});
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
 canvas.addEventListener("mousemove",event=>{if(pendingBuild){const point=canvasWorldPoint(event);updateBuildCursor(point.x,point.y);}});
 canvas.addEventListener("mouseleave",()=>{if(pendingBuild){buildCursor=null;refreshBuildNotice();}});
@@ -1229,6 +1293,7 @@ $("#worldPulse").addEventListener("click",openPulsePanel);
 $("#worldPulse").addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openPulsePanel();}});
 document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventListener("click",()=>{
   const action=button.dataset.action;
+  markManagementPanel(action==="clock"?null:action);
   if(action==="buy")openLocation("supplier");
   if(action==="build"){if(pendingBuild)cancelBuildMode();openBuildPanel();}
   if(action==="stores"){activeLocation=null;openPortfolio();drawer.classList.add("open");drawer.setAttribute("aria-hidden","false");}
@@ -1238,6 +1303,7 @@ document.querySelectorAll(".quick-nav button").forEach(button=>button.addEventLi
   if(action==="progress")openProgressPanel();
   if(action==="ledger")openLocation("board");
 }));
+document.querySelectorAll("[data-overlay]").forEach(button=>button.addEventListener("click",()=>setManagementOverlay(button.dataset.overlay,false)));
 document.querySelectorAll("[data-speed]").forEach(button=>button.addEventListener("click",()=>setGameSpeed(button.dataset.speed)));
 modal.addEventListener("click",event=>{if(event.target===modal)hideModal();});
 

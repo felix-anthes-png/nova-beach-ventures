@@ -61,3 +61,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Charge readable daily costs for open venues and acquired districts, make venue levels increase both throughput and overhead, and let each closing day update future attendance momentum.
 
 **Reason:** Existing systems should form one feedback loop. Growth is more satisfying when additional guests create both revenue and operational pressure, while the player can see exactly why the next day is stronger or weaker.
+
+## D011 — Explain state before adding more systems
+
+**Decision:** Add map lenses and contextual management signals before expanding the simulation again.
+
+**Reason:** A tycoon game becomes harder to play when important state is scattered across separate panels. Showing flow, needs, commercial readiness, and operational risk in the world makes existing decisions faster and more legible without hiding the underlying rules.

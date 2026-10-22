@@ -50,11 +50,17 @@ Turned a visual attraction into an operation with programme, ticket price, DJ, c
 
 Added smooth lighting, six timetable phases, opening hours, scheduled deliveries, phase-specific footfall, and an end-of-day report that does not stop the campaign. Rules are covered by `tests/time-system.test.mjs`.
 
+## 9. Management overlays
+
+**Checkpoint:** `feature/management-overlays`
+
+Added four world-space information lenses, a prioritised live briefing, direct navigation into corrective actions, keyboard controls, and deterministic management summaries. Rules are covered by `tests/management-overlays.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 8:
+At the end of milestone 9:
 
-- 28 automated tests pass.
+- 55 automated tests pass.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
