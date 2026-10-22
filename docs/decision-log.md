@@ -67,3 +67,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Add map lenses and contextual management signals before expanding the simulation again.
 
 **Reason:** A tycoon game becomes harder to play when important state is scattered across separate panels. Showing flow, needs, commercial readiness, and operational risk in the world makes existing decisions faster and more legible without hiding the underlying rules.
+
+## D012 — Let districts express an operating identity
+
+**Decision:** Give stores and facilities one of three shared focuses and reward matching choices only inside the same district.
+
+**Reason:** Upgrades become more meaningful when they define how a venue operates, and construction becomes more strategic when placement can support a nearby business. A capped local bonus keeps the relationship visible without replacing the base pricing, stock, staffing, and queue rules.

@@ -77,6 +77,45 @@ export const STORES = Object.freeze([
   { id: "surf", name: "Carcavelos Surf Shack", short: "Surf Shack", icon: "≈", color: "#479fb5", pitch: "Beach essentials and surf-day rentals beside the new pier." }
 ]);
 
+export const SPECIALIZATION_FOCUSES = Object.freeze([
+  {id:"flow",name:"Flow",color:"#64cbc8",icon:"↗",description:"Faster service and shorter queues."},
+  {id:"wellbeing",name:"Wellbeing",color:"#bce65f",icon:"○",description:"More comfort, stronger needs and longer visits."},
+  {id:"experience",name:"Experience",color:"#ff8060",icon:"✦",description:"More destination appeal and campus identity."}
+]);
+
+export const STORE_SPECIALIZATIONS = Object.freeze([
+  {id:"cafe-express",storeId:"cafe",name:"Lecture Express",focus:"flow",cost:1200,service:1.25,appeal:3,operating:90,needs:{energy:2},description:"A high-throughput counter tuned for the rush between lectures."},
+  {id:"cafe-study",storeId:"cafe",name:"Study House",focus:"wellbeing",cost:1400,service:1.02,appeal:9,operating:120,needs:{energy:4,mood:3},description:"Quiet tables, charging points and longer, calmer visits."},
+  {id:"cafe-roastery",storeId:"cafe",name:"Atlantic Roastery",focus:"experience",cost:1700,service:.94,appeal:17,operating:180,needs:{mood:5},description:"A premium coffee ritual that turns the café into a destination."},
+  {id:"snack-express",storeId:"snack",name:"Grab & Go",focus:"flow",cost:1500,service:1.28,appeal:3,operating:110,needs:{hunger:2},description:"Pre-built bowls and a fast pickup lane for peak periods."},
+  {id:"snack-wellness",storeId:"snack",name:"Wellness Kitchen",focus:"wellbeing",cost:1800,service:1,appeal:10,operating:150,needs:{hunger:5,energy:3},description:"Healthy campus food with a stronger satisfaction effect."},
+  {id:"snack-social",storeId:"snack",name:"Fuel Social",focus:"experience",cost:2100,service:.95,appeal:18,operating:210,needs:{mood:5},description:"A colourful social counter designed to pull people together."},
+  {id:"merch-click",storeId:"merch",name:"Campus Click & Collect",focus:"flow",cost:1900,service:1.22,appeal:5,operating:130,needs:{},description:"A compact collection desk that processes shoppers quickly."},
+  {id:"merch-essentials",storeId:"merch",name:"Student Essentials",focus:"wellbeing",cost:2200,service:1.04,appeal:11,operating:160,needs:{mood:3},description:"Useful campus goods with a friendly, practical identity."},
+  {id:"merch-drops",storeId:"merch",name:"Nova Limited Drops",focus:"experience",cost:2700,service:.92,appeal:21,operating:240,needs:{mood:6},description:"Limited collections create buzz and destination shopping."},
+  {id:"beach-service",storeId:"beach",name:"Promenade Service",focus:"flow",cost:2200,service:1.3,appeal:4,operating:160,needs:{thirst:2},description:"A dual-sided bar built to absorb the sunset queue."},
+  {id:"beach-lounge",storeId:"beach",name:"Mare Lounge",focus:"wellbeing",cost:2600,service:1,appeal:13,operating:210,needs:{thirst:4,mood:4},description:"Shade, seating and coastal comfort keep guests on campus."},
+  {id:"beach-sunset",storeId:"beach",name:"Sunset Club",focus:"experience",cost:3200,service:.9,appeal:24,operating:320,needs:{mood:8},description:"A landmark evening concept that thrives around events."},
+  {id:"surf-rental",storeId:"surf",name:"Fast Rental Dock",focus:"flow",cost:2500,service:1.24,appeal:6,operating:180,needs:{},description:"Pre-sized equipment and a rapid return lane improve throughput."},
+  {id:"surf-local",storeId:"surf",name:"Local Surf Base",focus:"wellbeing",cost:2900,service:1.01,appeal:14,operating:230,needs:{energy:3,mood:4},description:"Beginner guidance and local knowledge build confidence."},
+  {id:"surf-pro",storeId:"surf",name:"Atlantic Pro Shop",focus:"experience",cost:3500,service:.92,appeal:25,operating:350,needs:{mood:7},description:"Specialist gear and a bold identity attract surf enthusiasts."}
+]);
+
+export const FACILITY_SPECIALIZATIONS = Object.freeze([
+  {id:"scenery-shade",type:"scenery",name:"Shade Grove",focus:"wellbeing",cost:350,appeal:5,needs:{energy:4,mood:3},description:"Dense coastal planting creates a cooler recovery point."},
+  {id:"scenery-landmark",type:"scenery",name:"Campus Landmark",focus:"experience",cost:450,appeal:10,needs:{mood:5},description:"Graphic planting and a marker create a memorable meeting point."},
+  {id:"bench-study",type:"bench",name:"Study Nook",focus:"wellbeing",cost:500,appeal:6,needs:{energy:7,mood:2},description:"Shade and charging turn a bench into a productive pause."},
+  {id:"bench-social",type:"bench",name:"Social Steps",focus:"experience",cost:650,appeal:11,needs:{mood:7},description:"Grouped seating encourages visible campus life."},
+  {id:"bin-sort",type:"bin",name:"Rapid Sort Point",focus:"flow",cost:350,appeal:3,needs:{cleanliness:7},description:"Clear sorting and a larger opening reduce litter pressure."},
+  {id:"bin-eco",type:"bin",name:"Circular Campus Hub",focus:"wellbeing",cost:500,appeal:7,needs:{cleanliness:9,mood:2},description:"A planted recycling hub makes sustainability visible."},
+  {id:"water-fast",type:"water",name:"Bottle Express",focus:"flow",cost:600,appeal:4,needs:{thirst:8},description:"Multiple taps serve more guests during short breaks."},
+  {id:"water-calm",type:"water",name:"Hydration Garden",focus:"wellbeing",cost:800,appeal:9,needs:{thirst:10,mood:3},description:"Refill taps, shade and planting form a calmer stop."},
+  {id:"restroom-capacity",type:"restroom",name:"High-Capacity Pod",focus:"flow",cost:900,appeal:4,needs:{bladder:12},description:"An extra module keeps relief queues moving at lunch."},
+  {id:"restroom-comfort",type:"restroom",name:"Comfort Suite",focus:"wellbeing",cost:1100,appeal:9,needs:{bladder:8,cleanliness:7,mood:2},description:"Better finish, accessibility and care raise campus comfort."},
+  {id:"garden-market",type:"foodGarden",name:"Quick Market Hall",focus:"flow",cost:1200,appeal:8,needs:{hunger:9},description:"A clear service spine moves guests through food stalls quickly."},
+  {id:"garden-courtyard",type:"foodGarden",name:"Social Courtyard",focus:"experience",cost:1500,appeal:16,needs:{hunger:5,mood:9},description:"Shared tables and a small stage create an all-day destination."}
+]);
+
 export const STORE_UNLOCKS = Object.freeze({ cafe:0, snack:12000, merch:28000, beach:40000, surf:65000 });
 export const STORE_REQUIREMENTS = Object.freeze({ cafe:1, snack:2, merch:4, beach:6, surf:8 });
 export const DISTRICT_CATALOGUE = Object.freeze([
@@ -138,7 +177,7 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 5, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 6, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, storeSpecializations:{}, specializationHistory:[], districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
 function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[]};}
@@ -206,7 +245,7 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
   }
   for(const facility of run.facilities||[]){
     if(assetIsClosed(run,"facility",facility.id))continue;
-    const q=queueSize(context,"facility",facility.id);let score=8+quality*.08;
+    const specialization=facilitySpecialization(facility),q=queueSize(context,"facility",facility.id);let score=8+quality*.08+(specialization?.appeal||0);
     if(facility.type==="bench")score+=energy*1.08+mood*.18;
     else if(facility.type==="water")score+=thirst*1.35;
     else if(facility.type==="restroom")score+=bladder*1.5;
@@ -215,7 +254,7 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     else if(facility.type==="scenery")score+=mood*.48+calm*18;
     else if(facility.type==="path")continue;
     else score+=12;
-    score-=queuePenalty(q,patience);options.push({kind:"facility",id:facility.id,type:facility.type,label:facility.name,score,queueLength:q,reason:optionReason([q?`${q} already there`:"available now",facility.type==="experience"?"attraction fit":`${quality}% campus quality`])});
+    score-=queuePenalty(q,patience);options.push({kind:"facility",id:facility.id,type:facility.type,label:specialization?.name||facility.name,score,queueLength:q,reason:optionReason([specialization?.name,q?`${q} already there`:"available now",facility.type==="experience"?"attraction fit":`${quality}% campus quality`])});
   }
   for(const store of STORES){
     if((run.venues?.[store.id]??0)<1)continue;
@@ -225,12 +264,12 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     const affordable=products.map(product=>({...product,price:run.prices?.[product.id]??product.reference})).filter(product=>product.price<=budget&&demandFor(product.price,product.reference)>0&&(demandFor(product.price,product.reference)>=10||Math.abs(Math.floor(seed))%10<demandFor(product.price,product.reference)));
     if(!affordable.length)continue;
     const choice=affordable.sort((a,b)=>(a.price/a.reference)-(b.price/b.reference)||a.price-b.price)[0],priceRatio=choice.price/choice.reference,q=queueSize(context,"store",store.id);
-    let score=10+quality*.14+Math.max(-42,30-priceRatio*20)-queuePenalty(q,patience);
+    const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);let score=10+quality*.14+Math.max(-42,30-priceRatio*20)-queuePenalty(q,patience)+(specialization?.appeal||0)+synergy.appeal;
     if(store.id==="cafe")score+=hunger*.68+energy*.82+thirst*.18;
     else if(store.id==="snack")score+=hunger*.92+thirst*.6;
     else score+=mood*.52+12;
     if(store.id==="cafe")score+=food*22+drinks*18;else if(store.id==="snack"||store.id==="beach")score+=food*16+drinks*26;else if(store.id==="merch")score+=shopping*35;else if(store.id==="surf")score+=shopping*18+excitement*28;
-    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,baseDemand:demandFor(choice.price,choice.reference),queueLength:q,reason:optionReason([priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price",q?`${q} in queue`:"no queue",`${quality}% campus quality`])});
+    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,baseDemand:demandFor(choice.price,choice.reference),queueLength:q,reason:optionReason([specialization?.name,synergy.matches?`${synergy.matches} district synergy`:null,priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price"])});
   }
   return options.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
 }
@@ -309,7 +348,7 @@ function ensureOperationsState(run){
   return run;
 }
 
-export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);run.version=5;return run;}
+export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];(run.facilities||[]).forEach(facility=>{if(facility.specializationId&&!FACILITY_SPECIALIZATIONS.some(item=>item.id===facility.specializationId&&item.type===facility.type))delete facility.specializationId;});run.version=6;return run;}
 
 export function staffIsOnShift(worker,minutes){const shift=shiftFor(worker);return minutes>=shift.start&&minutes<shift.end;}
 export function activeStaffCount(run,roleId,districtId="coast",minutes=run.clockMinutes){ensureOperationsState(run);if(run.operations.payrollDue>0)return 0;return run.staffRoster.filter(worker=>worker.roleId===roleId&&worker.districtId===districtId&&staffIsOnShift(worker,minutes)).length;}
@@ -327,12 +366,36 @@ export function setStaffShift(run,staffId,shiftId){
 
 export function settlePayroll(run){const next=structuredClone(run);ensureOperationsState(next);const amount=Math.min(next.cash,next.operations.payrollDue);next.cash-=amount;next.operations.payrollDue-=amount;next.operations.totalWagesPaid+=amount;return next;}
 
-export function venueServiceMultiplier(run,storeId){const level=Math.max(0,run.venues?.[storeId]||0);return level?1+(level-1)*.28:0;}
+export function storeSpecialization(run,storeId){return STORE_SPECIALIZATIONS.find(item=>item.id===run.storeSpecializations?.[storeId]&&item.storeId===storeId)||null;}
+export function facilitySpecialization(facility){return FACILITY_SPECIALIZATIONS.find(item=>item.id===facility?.specializationId&&item.type===facility?.type)||null;}
+export function specializationSynergy(run,storeId){const specialization=storeSpecialization(run,storeId);if(!specialization)return {focus:null,matches:0,service:1,appeal:0};const districtId=districtForStore(storeId),matches=Math.min(3,(run.facilities||[]).filter(facility=>districtForPosition(facility.x)===districtId&&facilitySpecialization(facility)?.focus===specialization.focus).length);return {focus:specialization.focus,matches,service:1+matches*.04,appeal:matches*4};}
+
+export function specializationSnapshot(run){
+  const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0).map(store=>{const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);return {id:store.id,name:store.name,level:run.venues[store.id],specializationId:specialization?.id||null,specializationName:specialization?.name||null,focus:specialization?.focus||null,synergy:synergy.matches,service:venueServiceMultiplier(run,store.id),appeal:(specialization?.appeal||0)+synergy.appeal};});
+  const facilities=(run.facilities||[]).filter(facility=>facilitySpecialization(facility)).map(facility=>{const specialization=facilitySpecialization(facility);return {id:facility.id,name:facility.name,type:facility.type,specializationId:specialization.id,specializationName:specialization.name,focus:specialization.focus,districtId:districtForPosition(facility.x)};});
+  return {stores,facilities,configuredStores:stores.filter(store=>store.specializationId).length,specializedFacilities:facilities.length,totalSynergies:stores.reduce((sum,store)=>sum+store.synergy,0)};
+}
+
+export function setStoreSpecialization(run,storeId,specializationId,now=new Date().toISOString()){
+  const level=run.venues?.[storeId]||0;if(level<2)throw new Error("Upgrade this store to level 2 before choosing a concept.");
+  const specialization=STORE_SPECIALIZATIONS.find(item=>item.id===specializationId&&item.storeId===storeId);if(!specialization)throw new Error("Choose a valid store concept.");
+  if(run.storeSpecializations?.[storeId]===specializationId)throw new Error("This concept is already active.");if(run.cash<specialization.cost)throw new Error(`You need ${formatEuro(specialization.cost)} to fit out this concept.`);
+  const next=structuredClone(run);if(!next.storeSpecializations)next.storeSpecializations={};if(!Array.isArray(next.specializationHistory))next.specializationHistory=[];const previousId=next.storeSpecializations[storeId]||null;next.cash-=specialization.cost;next.storeSpecializations[storeId]=specializationId;next.specializationHistory.push({at:now,day:run.currentDay,kind:"store",targetId:storeId,previousId,specializationId,cost:specialization.cost});return next;
+}
+
+export function setFacilitySpecialization(run,facilityId,specializationId,now=new Date().toISOString()){
+  const facility=(run.facilities||[]).find(item=>item.id===facilityId);if(!facility)throw new Error("That facility no longer exists.");
+  const specialization=FACILITY_SPECIALIZATIONS.find(item=>item.id===specializationId&&item.type===facility.type);if(!specialization)throw new Error("Choose a blueprint designed for this facility.");
+  if(facility.specializationId===specializationId)throw new Error("This blueprint is already active.");if(run.cash<specialization.cost)throw new Error(`You need ${formatEuro(specialization.cost)} to apply this blueprint.`);
+  const next=structuredClone(run);if(!Array.isArray(next.specializationHistory))next.specializationHistory=[];const target=next.facilities.find(item=>item.id===facilityId),previousId=target.specializationId||null;next.cash-=specialization.cost;target.specializationId=specializationId;target.specializedDay=run.currentDay;next.specializationHistory.push({at:now,day:run.currentDay,kind:"facility",targetId:facilityId,previousId,specializationId,cost:specialization.cost});return next;
+}
+
+export function venueServiceMultiplier(run,storeId){const level=Math.max(0,run.venues?.[storeId]||0),specialization=storeSpecialization(run,storeId),synergy=specializationSynergy(run,storeId);return level?(1+(level-1)*.28)*(specialization?.service||1)*synergy.service:0;}
 
 export function storeOperatingCost(run,storeId){
   const level=Math.max(0,run.venues?.[storeId]||0);if(!level)return 0;
   const hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],duration=Math.max(120,(hours?.close||DAY_END)-(hours?.open||DAY_START)),dayShare=duration/(DAY_END-DAY_START);
-  return Math.round((STORE_DAILY_BASE_COSTS[storeId]||150)*(.42+dayShare*.58)*(1+(level-1)*.62));
+  return Math.round((STORE_DAILY_BASE_COSTS[storeId]||150)*(.42+dayShare*.58)*(1+(level-1)*.62)+(storeSpecialization(run,storeId)?.operating||0));
 }
 
 export function dailyOperatingCosts(run){
@@ -358,7 +421,9 @@ export function campusMetrics(run) {
   for(const facility of run.facilities||[]){
     const blueprint=FACILITY_CATALOGUE.find(item=>item.id===facility.type);
     if(blueprint) Object.entries(blueprint.needs||{}).forEach(([key,value])=>needs[key]+=value);
+    const specialization=facilitySpecialization(facility);if(specialization)Object.entries(specialization.needs||{}).forEach(([key,value])=>needs[key]+=value);
   }
+  for(const store of STORES){const specialization=storeSpecialization(run,store.id);if((run.venues?.[store.id]||0)>0&&specialization)Object.entries(specialization.needs||{}).forEach(([key,value])=>needs[key]+=value);}
   const activeRole=role=>run.operations.payrollDue>0?0:run.staffRoster.filter(worker=>worker.roleId===role&&staffIsOnShift(worker,run.clockMinutes)).length,openIssues=run.operations.issues||[];
   needs.cleanliness+=activeRole("caretaker")*5-openIssues.filter(issue=>issue.type==="litter").length*8;
   needs.mood+=activeRole("host")*6+activeRole("entertainer")*7-openIssues.filter(issue=>issue.type==="breakdown").length*3;
@@ -373,7 +438,8 @@ export function campusMetrics(run) {
   const eventNoisePenalty=activeEvent?Math.max(0,(activeEvent.noise||0)-55)*.2:0,eventComfortBonus=activeEvent?((activeEvent.comfort||50)-50)*.08:0;
   const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit-eventNoisePenalty+eventComfortBonus)));
   const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0,momentumFactor=.7+performance.momentum*.006;
-  const baseGuests=10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,venueLevels-openVenues)*1.35+Math.max(0,districts-1)*5+eventBonus;
+  const specializationAppeal=STORES.reduce((sum,store)=>{const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);return sum+(specialization?.appeal||0)+synergy.appeal;},0)+(run.facilities||[]).reduce((sum,facility)=>sum+(facilitySpecialization(facility)?.appeal||0),0);
+  const baseGuests=10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,venueLevels-openVenues)*1.35+Math.max(0,districts-1)*5+eventBonus+specializationAppeal*.08;
   const guests=Math.max(8,Math.round(baseGuests*momentumFactor));
   return { needs, satisfaction, rating, guests, baseGuests:Math.round(baseGuests), momentum:performance.momentum, momentumFactor, attraction };
 }
@@ -624,7 +690,7 @@ function ensureTycoonState(run){
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  run.version=5;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
+  run.version=6;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];
   if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
   if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};

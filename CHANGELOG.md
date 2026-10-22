@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Store and building specialization
+
+- Added three named operating concepts for every store, with distinct service, appeal, need, fit-out, and daily-cost trade-offs.
+- Added purpose-built blueprints for scenery and guest amenities, including visible world treatments and gameplay effects.
+- Added district synergies that reward matching Flow, Wellbeing, or Experience facilities with nearby store concepts.
+- Added save migration and atomic transaction coverage for specialization changes.
+
 ### Management UI and information overlays
 
 - Added four live map lenses for guest flow, campus needs, commercial readiness, and operations coverage.

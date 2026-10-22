@@ -56,11 +56,17 @@ Added smooth lighting, six timetable phases, opening hours, scheduled deliveries
 
 Added four world-space information lenses, a prioritised live briefing, direct navigation into corrective actions, keyboard controls, and deterministic management summaries. Rules are covered by `tests/management-overlays.test.mjs`.
 
+## 10. Store and building specialization
+
+**Checkpoint:** `feature/store-building-specialization`
+
+Added named store concepts, facility blueprints, visual fit-outs, and district-level focus synergies. Rules are covered by `tests/specializations.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 9:
+At the end of milestone 10:
 
-- 55 automated tests pass.
+- 63 automated tests pass.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

@@ -34,6 +34,7 @@ The design has three goals:
 - Review persistent daily ledgers without interrupting the larger campaign.
 - Switch between live guest-flow, needs, commercial, and operations map lenses.
 - Use the live briefing to jump from a visible risk to the management screen that can resolve it.
+- Specialize stores into named Flow, Wellbeing, or Experience concepts and pair them with matching facility blueprints in the same district.
 
 ## Development milestones
 
@@ -53,6 +54,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Staff operations | Shifts, payroll, district coverage, cleaning, failures, and repairs | [`specs/staff-operations.md`](specs/staff-operations.md) · `feature/staff-operations` |
 | Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
 | Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |
+| Store and building specialization | Store concepts, facility blueprints, visible fit-outs, and district synergies | [`specs/store-building-specialization.md`](specs/store-building-specialization.md) · `feature/store-building-specialization` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -76,7 +78,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The 55 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, and continuous day progression. Pull requests run the same checks in GitHub Actions.
+The 63 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, and continuous day progression. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 
@@ -111,6 +113,7 @@ The 55 automated checks cover building placement, progression, guest decisions a
 - Staff only contribute while their assigned shift is active, wages are charged at day close, and breakdowns block affected destinations until repaired.
 - Open stores and acquired districts create daily operating costs. Store levels improve service speed while increasing overhead and wear.
 - Each closing report updates attendance momentum from rating, profit, product availability, unresolved work, and queue walkaways.
+- Store concepts and facility blueprints change service, appeal, needs, and overhead; matching focuses create a capped district synergy.
 - Revenue increases cash; cost of goods sold is reported but never deducted twice.
 - Remaining inventory carries forward and cash or stock cannot become negative.
 - A completed campus day is recorded once, then the campaign continues the following morning.
