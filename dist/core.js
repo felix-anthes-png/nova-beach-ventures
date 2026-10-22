@@ -16,6 +16,9 @@ export const DEFAULT_STORE_HOURS = Object.freeze({
   cafe:{open:450,close:1080}, snack:{open:540,close:1140}, merch:{open:600,close:1050}, beach:{open:660,close:1170}, surf:{open:510,close:1110}
 });
 
+export const STORE_DAILY_BASE_COSTS = Object.freeze({ cafe:120, snack:160, merch:150, beach:220, surf:280 });
+export const DISTRICT_DAILY_COSTS = Object.freeze({ coast:0, east:250, pier:400 });
+
 export const DELIVERY_WINDOWS = Object.freeze([
   {id:"morning",minute:495,label:"Morning van"},
   {id:"midday",minute:735,label:"Midday cargo bike"},
@@ -135,12 +138,21 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 4, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 5, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
-function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,issuesResolved:0,products:{},activities:{},deliveries:[]};}
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[]};}
 
 function createOperationsState(){return {issues:[],history:[],litterLoad:0,breakdownLoad:0,nextIssueSequence:1,payrollDue:0,totalWagesPaid:0,totalIssuesResolved:0};}
+function createPerformanceState(){return {momentum:50,peakRating:0,profitableDays:0,lossDays:0,operatingDue:0,totalOperatingCostsPaid:0,lastDay:null};}
+
+function ensurePerformanceState(run){
+  if(!run.performance)run.performance=createPerformanceState();const performance=run.performance;
+  if(!Number.isFinite(performance.momentum))performance.momentum=50;performance.momentum=Math.max(15,Math.min(100,Math.round(performance.momentum)));
+  if(!Number.isInteger(performance.peakRating))performance.peakRating=0;if(!Number.isInteger(performance.profitableDays))performance.profitableDays=0;if(!Number.isInteger(performance.lossDays))performance.lossDays=0;
+  if(!Number.isInteger(performance.operatingDue)||performance.operatingDue<0)performance.operatingDue=0;if(!Number.isInteger(performance.totalOperatingCostsPaid)||performance.totalOperatingCostsPaid<0)performance.totalOperatingCostsPaid=0;
+  if(performance.lastDay===undefined)performance.lastDay=null;return performance;
+}
 
 function ensureDjOperations(run){if(!run.djOperations)run.djOperations={deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{},lifetimeAttendance:0,lifetimeRevenue:0};if(!run.djOperations.upgrades)run.djOperations.upgrades={};for(const item of DJ_UPGRADES)if(!Number.isInteger(run.djOperations.upgrades[item.id]))run.djOperations.upgrades[item.id]=0;if(!Number.isInteger(run.djOperations.ticketPrice)||run.djOperations.ticketPrice<=0)run.djOperations.ticketPrice=600;if(!DJ_EVENT_SLOTS.some(item=>item.id===run.djOperations.slotId))run.djOperations.slotId="sunset";if(!DJ_STYLES.some(item=>item.id===run.djOperations.styleId))run.djOperations.styleId="sunset";}
 function djDeckExists(run,deckId){return deckId==="pavilion"?Boolean(run.eventVenue&&!assetIsClosed(run,"venue","pavilion")):(run.facilities||[]).some(item=>item.id===deckId&&item.type==="experience"&&(item.modules||[]).includes("music")&&!assetIsClosed(run,"facility",item.id));}
@@ -297,7 +309,7 @@ function ensureOperationsState(run){
   return run;
 }
 
-export function migrateStaffOperations(run){ensureOperationsState(run);run.version=4;return run;}
+export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);run.version=5;return run;}
 
 export function staffIsOnShift(worker,minutes){const shift=shiftFor(worker);return minutes>=shift.start&&minutes<shift.end;}
 export function activeStaffCount(run,roleId,districtId="coast",minutes=run.clockMinutes){ensureOperationsState(run);if(run.operations.payrollDue>0)return 0;return run.staffRoster.filter(worker=>worker.roleId===roleId&&worker.districtId===districtId&&staffIsOnShift(worker,minutes)).length;}
@@ -315,6 +327,22 @@ export function setStaffShift(run,staffId,shiftId){
 
 export function settlePayroll(run){const next=structuredClone(run);ensureOperationsState(next);const amount=Math.min(next.cash,next.operations.payrollDue);next.cash-=amount;next.operations.payrollDue-=amount;next.operations.totalWagesPaid+=amount;return next;}
 
+export function venueServiceMultiplier(run,storeId){const level=Math.max(0,run.venues?.[storeId]||0);return level?1+(level-1)*.28:0;}
+
+export function storeOperatingCost(run,storeId){
+  const level=Math.max(0,run.venues?.[storeId]||0);if(!level)return 0;
+  const hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],duration=Math.max(120,(hours?.close||DAY_END)-(hours?.open||DAY_START)),dayShare=duration/(DAY_END-DAY_START);
+  return Math.round((STORE_DAILY_BASE_COSTS[storeId]||150)*(.42+dayShare*.58)*(1+(level-1)*.62));
+}
+
+export function dailyOperatingCosts(run){
+  const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0).map(store=>({storeId:store.id,label:store.short,level:run.venues[store.id],cost:storeOperatingCost(run,store.id)}));
+  const districts=OPERATIONS_DISTRICTS.filter(district=>district.id!=="coast"&&run.districts?.[district.id]).map(district=>({districtId:district.id,label:district.name,cost:DISTRICT_DAILY_COSTS[district.id]||0}));
+  return {stores,districts,total:[...stores,...districts].reduce((sum,item)=>sum+item.cost,0)};
+}
+
+export function settleOperatingCosts(run){const next=structuredClone(run),performance=ensurePerformanceState(next),amount=Math.min(next.cash,performance.operatingDue);next.cash-=amount;performance.operatingDue-=amount;performance.totalOperatingCostsPaid+=amount;return next;}
+
 export function assetIsClosed(run,targetKind,targetId){ensureOperationsState(run);return run.operations.issues.some(issue=>issue.type==="breakdown"&&issue.targetKind===targetKind&&issue.targetId===targetId);}
 
 export function operationsSnapshot(run){
@@ -324,7 +352,7 @@ export function operationsSnapshot(run){
 }
 
 export function campusMetrics(run) {
-  ensureOperationsState(run);
+  ensureOperationsState(run);const performance=ensurePerformanceState(run);
   const needs={ hunger:42, thirst:39, bladder:44, energy:46, mood:47, cleanliness:52 };
   const activeEvent=EVENT_CATALOGUE.find(item=>item.id===run.activeEvent?.id)||run.activeEvent;
   for(const facility of run.facilities||[]){
@@ -344,9 +372,45 @@ export function campusMetrics(run) {
   const intensityFit=attraction.intensity<=70?10:Math.max(-18,10-(attraction.intensity-70));
   const eventNoisePenalty=activeEvent?Math.max(0,(activeEvent.noise||0)-55)*.2:0,eventComfortBonus=activeEvent?((activeEvent.comfort||50)-50)*.08:0;
   const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit-eventNoisePenalty+eventComfortBonus)));
-  const openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0;
-  const guests=Math.max(12,Math.round(10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,districts-1)*5+eventBonus));
-  return { needs, satisfaction, rating, guests, attraction };
+  const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0,momentumFactor=.7+performance.momentum*.006;
+  const baseGuests=10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,venueLevels-openVenues)*1.35+Math.max(0,districts-1)*5+eventBonus;
+  const guests=Math.max(8,Math.round(baseGuests*momentumFactor));
+  return { needs, satisfaction, rating, guests, baseGuests:Math.round(baseGuests), momentum:performance.momentum, momentumFactor, attraction };
+}
+
+export function tycoonPulse(run){
+  ensureOperationsState(run);const performance=ensurePerformanceState(run),metrics=campusMetrics(run),operations=operationsSnapshot(run),costs=dailyOperatingCosts(run);
+  const products=CATALOGUE.filter(product=>(run.venues?.[product.storeId]||0)>=(product.tier||1)),stocked=products.filter(product=>(run.stock?.[product.id]||0)>0).length,stockCoverage=products.length?Math.round(stocked/products.length*100):0;
+  const priceScore=products.length?Math.round(products.reduce((sum,product)=>{const ratio=(run.prices?.[product.id]||product.reference)/product.reference;return sum+(ratio<=1.05?100:ratio<=1.5?Math.round(100-(ratio-1.05)*75):ratio<=2?Math.round(66-(ratio-1.5)*92):0);},0)/products.length):0;
+  const cleanliness=operations.districts.length?Math.round(operations.districts.reduce((sum,district)=>sum+district.cleanliness,0)/operations.districts.length):100,openAssets=Math.max(0,100-operations.closedAssets*22),coverage=operations.openIssues?Math.min(100,Math.round((operations.onShift/Math.max(1,operations.openIssues))*72)):Math.min(100,55+operations.onShift*12);
+  const operationsScore=Math.max(0,Math.min(100,Math.round(cleanliness*.44+openAssets*.36+coverage*.2-(operations.payrollDue?30:0)-(performance.operatingDue?18:0))));
+  const lastProfit=run.history?.at(-1)?.totals?.operatingProfit??0,profitSignal=run.history?.length?Math.max(0,Math.min(100,50+lastProfit/18)):55,commercialScore=Math.max(0,Math.min(100,Math.round(stockCoverage*.42+priceScore*.34+profitSignal*.24)));
+  const guestScore=Math.max(0,Math.min(100,Math.round(metrics.rating*.55+metrics.satisfaction*.25+performance.momentum*.2))),score=Math.round(guestScore*.38+operationsScore*.32+commercialScore*.3);
+  const alerts=[];
+  if(operations.payrollDue)alerts.push({severity:"critical",title:"Staff payroll overdue",detail:`${formatEuro(operations.payrollDue)} must be settled before the team works again.`,action:"operations"});
+  if(performance.operatingDue)alerts.push({severity:"critical",title:"Campus bills overdue",detail:`${formatEuro(performance.operatingDue)} in venue and district costs is weakening momentum.`,action:"finance"});
+  if(operations.closedAssets)alerts.push({severity:"high",title:`${operations.closedAssets} asset${operations.closedAssets===1?"":"s"} closed`,detail:"Closed destinations reduce choice, rating and earning capacity.",action:"operations"});
+  if(operations.litter)alerts.push({severity:"medium",title:"Cleanliness pressure",detail:`${operations.litter} litter work order${operations.litter===1?" is":"s are"} lowering campus quality.`,action:"operations"});
+  if(stockCoverage<65)alerts.push({severity:"high",title:"Sales are being left on the table",detail:`Only ${stockCoverage}% of unlocked products are stocked.`,action:"stock"});
+  if(priceScore<60)alerts.push({severity:"medium",title:"Price resistance is growing",detail:"Several products are priced high enough to reduce guest conversion.",action:"stores"});
+  if(metrics.rating<60)alerts.push({severity:"medium",title:"Campus quality is limiting attendance",detail:`A ${metrics.rating}% rating suppresses the next visitor waves.`,action:"build"});
+  if(!alerts.length)alerts.push({severity:"good",title:"Campus systems are aligned",detail:"Use the healthy momentum to invest before the next crowd peak.",action:"progress"});
+  const projectedProfit=(run.today?.revenue||0)-(run.today?.cogs||0)+(run.today?.eventRevenue||0)-(run.today?.eventCosts||0)-dailyPayroll(run)-costs.total;
+  return {score,status:score>=82?"Thriving":score>=66?"Healthy":score>=48?"Under pressure":"At risk",guestScore,operationsScore,commercialScore,stockCoverage,priceScore,cleanliness,momentum:performance.momentum,momentumFactor:metrics.momentumFactor,projectedGuests:metrics.guests,projectedProfit,costs,alerts:alerts.slice(0,5)};
+}
+
+function closeDayMomentum(run,operatingProfit,metrics,stockCoverage){
+  const performance=ensurePerformanceState(run),before=performance.momentum,issues=run.operations?.issues?.length||0,walkaways=run.today?.walkaways||0;
+  const drivers=[
+    {label:`${metrics.rating}% campus rating`,impact:Math.round((metrics.rating-62)/9)},
+    {label:operatingProfit>=0?"Profitable operation":"Operating loss",impact:operatingProfit>=0?5:-7},
+    {label:`${stockCoverage}% product availability`,impact:stockCoverage>=80?3:stockCoverage<50?-5:0},
+    {label:issues?`${issues} unresolved work orders`:"Campus clear at close",impact:issues?-Math.min(6,issues*2):2},
+    {label:walkaways?`${walkaways} queue walkaways`:"Queues retained guests",impact:walkaways?-Math.min(5,walkaways):1}
+  ];
+  if(performance.operatingDue)drivers.push({label:"Campus bills overdue",impact:-6});
+  const change=drivers.reduce((sum,driver)=>sum+driver.impact,0);performance.momentum=Math.max(15,Math.min(100,before+change));performance.peakRating=Math.max(performance.peakRating,metrics.rating);if(operatingProfit>=0)performance.profitableDays+=1;else performance.lossDays+=1;
+  performance.lastDay={day:run.currentDay,before,after:performance.momentum,change:performance.momentum-before,drivers};return performance.lastDay;
 }
 
 export function progressionState(run){
@@ -540,15 +604,15 @@ function ensureTycoonState(run){
   if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
   if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};
   if(!Number.isFinite(run.today.eventRevenue))run.today.eventRevenue=0;if(!Number.isFinite(run.today.eventCosts))run.today.eventCosts=0;if(!Number.isInteger(run.today.eventAttendance))run.today.eventAttendance=0;
-  if(!Number.isInteger(run.today.staffWages))run.today.staffWages=0;if(!Number.isInteger(run.today.staffWagesPaid))run.today.staffWagesPaid=0;if(!Number.isInteger(run.today.issuesResolved))run.today.issuesResolved=0;
+  if(!Number.isInteger(run.today.staffWages))run.today.staffWages=0;if(!Number.isInteger(run.today.staffWagesPaid))run.today.staffWagesPaid=0;if(!Number.isInteger(run.today.operatingCosts))run.today.operatingCosts=0;if(!Number.isInteger(run.today.operatingCostsPaid))run.today.operatingCostsPaid=0;if(!Number.isInteger(run.today.issuesResolved))run.today.issuesResolved=0;if(!Number.isInteger(run.today.walkaways))run.today.walkaways=0;
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  run.version=4;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
+  run.version=5;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};
   if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
   if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};
-  if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);ensureOperationsState(run);
+  if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);ensureOperationsState(run);ensurePerformanceState(run);
 }
 
 const LITTER_POINTS=Object.freeze({
@@ -583,8 +647,8 @@ function createIssueInPlace(run,type,districtId){const next=addOperationsIssue(r
 function processOperations(run,minutes){
   ensureOperationsState(run);const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),districts=unlockedDistricts(run);
   run.operations.litterLoad+=metrics.guests*peak.multiplier*minutes/2400;
-  const assetCount=Object.values(run.venues||{}).filter(Boolean).length+(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)).length+(run.eventVenue?1:0);
-  run.operations.breakdownLoad+=assetCount*minutes/900;
+  const venueWear=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0)*.72,0),assetCount=venueWear+(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)).length+(run.eventVenue?1.4:0),technicians=activeStaffCount(run,"technician","coast",run.clockMinutes)+activeStaffCount(run,"technician","east",run.clockMinutes)+activeStaffCount(run,"technician","pier",run.clockMinutes);
+  run.operations.breakdownLoad+=Math.max(.3,assetCount-technicians*.55)*minutes/900;
   while(run.operations.litterLoad>=1&&run.operations.issues.filter(issue=>issue.type==="litter").length<8){run.operations.litterLoad-=1;const district=districts[(run.operations.nextIssueSequence-1)%districts.length];createIssueInPlace(run,"litter",district.id);}
   while(run.operations.breakdownLoad>=1&&run.operations.issues.filter(issue=>issue.type==="breakdown").length<4){run.operations.breakdownLoad-=1;const candidates=districts.filter(district=>breakdownTargets(run,district.id).length);if(!candidates.length)break;const district=candidates[(run.operations.nextIssueSequence-1)%candidates.length];createIssueInPlace(run,"breakdown",district.id);}
   const resolved=[];
@@ -620,10 +684,11 @@ function processSlice(run,minutes){
 }
 
 function closeTycoonDay(run){
-  const metrics=campusMetrics(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
+  const metrics=campusMetrics(run),performance=ensurePerformanceState(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
   const wageDue=run.operations.payrollDue>0?0:dailyPayroll(run),wagesPaid=Math.min(run.cash,wageDue),wageShortfall=wageDue-wagesPaid;run.cash-=wagesPaid;run.operations.payrollDue+=wageShortfall;run.operations.totalWagesPaid+=wagesPaid;run.today.staffWages=wageDue;run.today.staffWagesPaid=wagesPaid;
-  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),grossProfit=run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,staffWages:wageDue,staffWagesPaid:wagesPaid,payrollShortfall:wageShortfall,issuesResolved:run.today.issuesResolved||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit,operatingProfit:grossProfit-wageDue};
-  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,deliveries:structuredClone(run.today.deliveries||[]),storeHours:structuredClone(run.storeHours||{}),campus:{...metrics,guests:run.today.visitors,activities:{...(run.today.activities||{})}}});
+  const operating=dailyOperatingCosts(run),totalOperatingDue=performance.operatingDue+operating.total,operatingPaid=Math.min(run.cash,totalOperatingDue),operatingShortfall=totalOperatingDue-operatingPaid;run.cash-=operatingPaid;performance.operatingDue=operatingShortfall;performance.totalOperatingCostsPaid+=operatingPaid;run.today.operatingCosts=operating.total;run.today.operatingCostsPaid=operatingPaid;
+  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),grossProfit=run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0),operatingProfit=grossProfit-wageDue-operating.total,unlocked=CATALOGUE.filter(product=>(run.venues?.[product.storeId]||0)>=(product.tier||1)),stockCoverage=unlocked.length?Math.round(unlocked.filter(product=>(run.stock?.[product.id]||0)>0).length/unlocked.length*100):0,momentum=closeDayMomentum(run,operatingProfit,metrics,stockCoverage),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,staffWages:wageDue,staffWagesPaid:wagesPaid,payrollShortfall:wageShortfall,operatingCosts:operating.total,operatingCostsPaid:operatingPaid,operatingShortfall,issuesResolved:run.today.issuesResolved||0,walkaways:run.today.walkaways||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit,operatingProfit};
+  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,deliveries:structuredClone(run.today.deliveries||[]),storeHours:structuredClone(run.storeHours||{}),costs:operating,performance:structuredClone(momentum),campus:{...metrics,guests:run.today.visitors,stockCoverage,activities:{...(run.today.activities||{})}}});
   run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.operatingProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
   if(run.history.length>60)run.history=run.history.slice(-60);
 }
@@ -632,7 +697,7 @@ export function inventoryValue(run) {
   return CATALOGUE.reduce((sum, product) => sum + run.stock[product.id] * product.cost, 0);
 }
 
-export function overallResult(run) { ensureOperationsState(run);return run.cash + inventoryValue(run) - run.operations.payrollDue - INITIAL_CASH; }
+export function overallResult(run) { ensureOperationsState(run);const performance=ensurePerformanceState(run);return run.cash + inventoryValue(run) - run.operations.payrollDue - performance.operatingDue - INITIAL_CASH; }
 export function formatEuro(cents) { return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(cents / 100); }
 
 export function upgradeVenue(run, storeId, now = new Date().toISOString()) {

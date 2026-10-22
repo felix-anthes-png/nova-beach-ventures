@@ -27,6 +27,7 @@ The design has three goals:
 - Build paths, scenery, amenities, social spaces, and managed attractions.
 - Recruit individual staff, assign districts and shifts, and cover daily wages.
 - Respond to visible litter and breakdowns before cleanliness falls or assets remain closed.
+- Balance venue and district overhead against faster service, stronger ratings, and attendance momentum.
 - Upgrade stores through three visible levels and acquire two new districts.
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
 - Follow six daily campus phases from morning arrival to the sunset period.
@@ -48,6 +49,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Living campus time | Day phases, lighting, opening hours, deliveries, daily reports | [`specs/time-system.md`](specs/time-system.md) · `codex/living-campus-time` |
 | Guest-driven sales | Visible counter service is the source of shop transactions | [`specs/guest-driven-sales.md`](specs/guest-driven-sales.md) · `feature/guest-driven-sales` |
 | Staff operations | Shifts, payroll, district coverage, cleaning, failures, and repairs | [`specs/staff-operations.md`](specs/staff-operations.md) · `feature/staff-operations` |
+| Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -71,7 +73,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The 42 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, and continuous day progression. Pull requests run the same checks in GitHub Actions.
+The 49 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, and continuous day progression. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 
@@ -104,6 +106,8 @@ The 42 automated checks cover building placement, progression, guest decisions a
 - Guests only consider products that are affordable, in stock, within the demand range, and available at an open store.
 - A shop sale occurs only when a visible guest finishes service; queue staffing therefore controls throughput.
 - Staff only contribute while their assigned shift is active, wages are charged at day close, and breakdowns block affected destinations until repaired.
+- Open stores and acquired districts create daily operating costs. Store levels improve service speed while increasing overhead and wear.
+- Each closing report updates attendance momentum from rating, profit, product availability, unresolved work, and queue walkaways.
 - Revenue increases cash; cost of goods sold is reported but never deducted twice.
 - Remaining inventory carries forward and cash or stock cannot become negative.
 - A completed campus day is recorded once, then the campaign continues the following morning.

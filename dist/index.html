@@ -10,12 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./premium.css?v=24-staff-operations" />
-    <link rel="stylesheet" href="./facilities-v2.css?v=24-staff-operations" />
-    <link rel="stylesheet" href="./guest-decisions.css?v=24-staff-operations" />
-    <link rel="stylesheet" href="./dj-operations.css?v=24-staff-operations" />
-    <link rel="stylesheet" href="./time-system.css?v=24-staff-operations" />
-    <link rel="stylesheet" href="./staff-operations.css?v=24-staff-operations" />
+    <link rel="stylesheet" href="./premium.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./facilities-v2.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./guest-decisions.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./dj-operations.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./time-system.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./staff-operations.css?v=25-tycoon-integration" />
+    <link rel="stylesheet" href="./tycoon-integration.css?v=25-tycoon-integration" />
   </head>
   <body>
     <div id="game" class="game-shell">
@@ -75,7 +76,7 @@
           <div class="mini-world"><i class="mini-building"></i><i class="mini-sea"></i><b class="mini-player"></b><em class="mini-spot one"></em><em class="mini-spot two"></em><em class="mini-spot three"></em></div>
         </div>
 
-        <section class="world-pulse" aria-label="Campus activity">
+        <section class="world-pulse" id="worldPulse" role="button" tabindex="0" aria-label="Open tycoon control room">
           <div class="pulse-head"><span>LIVE</span><strong>CAMPUS PULSE</strong></div>
           <div class="pulse-row"><span>Demand capacity</span><b id="pulseDemand">30 units</b></div>
           <div class="pulse-row"><span>Venue network</span><b id="pulseVenues">3 districts · 3 products</b></div>
@@ -122,6 +123,6 @@
       <div id="toastRegion" class="toast-region" aria-live="polite"></div>
       <aside id="dayReport" class="day-report" aria-live="polite" aria-hidden="true"></aside>
     </div>
-    <script type="module" src="./app.js?v=24-staff-operations"></script>
+    <script type="module" src="./app.js?v=25-tycoon-integration"></script>
   </body>
 </html>

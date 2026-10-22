@@ -55,3 +55,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Model staff as individual scheduled employees assigned to one district, with wages and task-specific responses.
 
 **Reason:** A permanent global bonus does not create management decisions. Shifts, payroll, litter, closures, and repairs make coverage visible, local, and financially accountable.
+
+## D010 — Make expansion create pressure as well as opportunity
+
+**Decision:** Charge readable daily costs for open venues and acquired districts, make venue levels increase both throughput and overhead, and let each closing day update future attendance momentum.
+
+**Reason:** Existing systems should form one feedback loop. Growth is more satisfying when additional guests create both revenue and operational pressure, while the player can see exactly why the next day is stronger or weaker.
