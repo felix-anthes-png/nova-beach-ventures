@@ -32,6 +32,8 @@ The design has three goals:
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
 - Follow six daily campus phases from morning arrival to the sunset period.
 - Review persistent daily ledgers without interrupting the larger campaign.
+- Switch between live guest-flow, needs, commercial, and operations map lenses.
+- Use the live briefing to jump from a visible risk to the management screen that can resolve it.
 
 ## Development milestones
 
@@ -50,6 +52,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Guest-driven sales | Visible counter service is the source of shop transactions | [`specs/guest-driven-sales.md`](specs/guest-driven-sales.md) · `feature/guest-driven-sales` |
 | Staff operations | Shifts, payroll, district coverage, cleaning, failures, and repairs | [`specs/staff-operations.md`](specs/staff-operations.md) · `feature/staff-operations` |
 | Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
+| Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -73,7 +76,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The 49 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, and continuous day progression. Pull requests run the same checks in GitHub Actions.
+The 55 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, and continuous day progression. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 

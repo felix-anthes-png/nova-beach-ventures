@@ -4,6 +4,12 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Management UI and information overlays
+
+- Added four live map lenses for guest flow, campus needs, commercial readiness, and operations coverage.
+- Added a compact management briefing with prioritised alerts and direct links to the relevant controls.
+- Added keyboard navigation, persistent overlay choice, active-panel feedback, and a contextual legend.
+
 ### Tycoon integration and balancing
 
 - Connected campus rating, operating profit, product availability, work orders, and queue walkaways to persistent attendance momentum.
