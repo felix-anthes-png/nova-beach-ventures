@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Visual world redesign
+
+- Unified the campus around an Atlantic-modernist material palette, connected colonnades, planted courtyards, and architectural detailing.
+- Replaced the shared shop box with five purpose-built venue silhouettes whose level upgrades remain visible.
+- Redrew guests and the player with stable foot anchoring, more natural proportions, varied hair, clothing, and contact shadows.
+- Strengthened interior identity with zone-specific floors, circulation bands, planters, lighting, and facade treatments.
+
 ### Store and building specialization
 
 - Added three named operating concepts for every store, with distinct service, appeal, need, fit-out, and daily-cost trade-offs.

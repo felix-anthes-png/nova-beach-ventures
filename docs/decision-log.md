@@ -73,3 +73,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Give stores and facilities one of three shared focuses and reward matching choices only inside the same district.
 
 **Reason:** Upgrades become more meaningful when they define how a venue operates, and construction becomes more strategic when placement can support a nearby business. A capped local bonus keeps the relationship visible without replacing the base pricing, stock, staffing, and queue rules.
+
+## D013 — Use one architectural language with varied building types
+
+**Decision:** Share a small set of campus materials and details across the world, while giving every commercial venue its own silhouette and upgrade expression.
+
+**Reason:** Repeating one generic shop shell makes expansion feel cosmetic, while unrelated landmark assets make the campus feel assembled from separate images. A common material language creates cohesion; different typologies preserve recognition and progression.

@@ -35,6 +35,7 @@ The design has three goals:
 - Switch between live guest-flow, needs, commercial, and operations map lenses.
 - Use the live briefing to jump from a visible risk to the management screen that can resolve it.
 - Specialize stores into named Flow, Wellbeing, or Experience concepts and pair them with matching facility blueprints in the same district.
+- Explore a unified Atlantic-modernist campus with connected courtyards, layered landscaping, distinct store architecture, and redesigned guests.
 
 ## Development milestones
 
@@ -55,6 +56,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
 | Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |
 | Store and building specialization | Store concepts, facility blueprints, visible fit-outs, and district synergies | [`specs/store-building-specialization.md`](specs/store-building-specialization.md) · `feature/store-building-specialization` |
+| Visual world redesign | Cohesive campus materials, unique store silhouettes, improved interiors, and stable character art | [`specs/visual-world-redesign.md`](specs/visual-world-redesign.md) · `feature/visual-world-redesign` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

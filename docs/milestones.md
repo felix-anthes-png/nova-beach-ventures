@@ -62,9 +62,15 @@ Added four world-space information lenses, a prioritised live briefing, direct n
 
 Added named store concepts, facility blueprints, visual fit-outs, and district-level focus synergies. Rules are covered by `tests/specializations.test.mjs`.
 
+## 11. Visual world redesign
+
+**Checkpoint:** `feature/visual-world-redesign`
+
+Reframed the campus as one Atlantic-modernist complex, introduced distinct architecture for all five stores, strengthened room identity, and replaced the rigid crowd figures with a stable, more expressive character system. This batch changes presentation only; simulation rules and saved progression remain compatible.
+
 ## Verification baseline
 
-At the end of milestone 10:
+At the end of milestone 11:
 
 - 63 automated tests pass.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
