@@ -74,11 +74,17 @@ Reframed the campus as one Atlantic-modernist complex, introduced distinct archi
 
 Removed permanent presentation noise, made world information contextual, consolidated the campus palette and paving rhythm, and introduced a quantised four-frame crowd animation. The reset intentionally favours authored readability over additional decorative detail.
 
+## 13. Designed campus spaces
+
+**Checkpoint:** `feature/designed-campus-spaces`
+
+Recomposed the original coast district as eight connected public rooms: the Arrival Plaza, Academic Courtyard, Shaded Café Terrace, Food Court, Student Lawn, Beach Promenade, Event Square, and Service & Delivery Lane. Guest paths now reinforce those spaces, while essential arrival and logistics routes are protected from conflicting construction.
+
 ## Verification baseline
 
-At the end of milestone 12:
+At the end of milestone 13:
 
-- 63 automated tests pass.
+- 69 automated tests pass, including the campus-space composition contract.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

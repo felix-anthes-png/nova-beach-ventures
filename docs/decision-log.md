@@ -85,3 +85,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Keep the permanent interface compact and reveal labels, operational states, and guest intent through proximity or an explicit management lens.
 
 **Reason:** Persistent floating cards made the world read like a debug view and obscured the campus. Contextual information preserves tycoon readability while allowing architecture, crowds, and public spaces to establish the visual identity.
+
+## D015 — Compose the campus as connected public rooms
+
+**Decision:** Organise the coast district around eight named spaces and route guests through that network.
+
+**Reason:** Strong individual buildings still felt unrelated when they sat on one continuous paving field. Different ground materials, edges, furniture, and circulation roles make the campus legible at a glance, while shared materials keep it cohesive. Protecting only essential circulation leaves social areas open to player construction.
