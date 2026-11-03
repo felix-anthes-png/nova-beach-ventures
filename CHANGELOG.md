@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Designed campus spaces
+
+- Replaced the open coast tile field with eight purpose-designed campus places, each with its own material, boundary, furniture, and ground marker.
+- Added an arrival plaza, academic courtyard, café terrace, food court, student lawn, promenade, event square, and service lane.
+- Routed guests through the public-space network so campus crowds now reinforce the map composition.
+- Protected critical entrances and operational circulation while retaining buildable social areas.
+
 ### Tycoon art-direction reset
 
 - Reduced the permanent HUD so the campus remains the visual focus during normal play.

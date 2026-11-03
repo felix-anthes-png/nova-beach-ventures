@@ -37,6 +37,7 @@ The design has three goals:
 - Specialize stores into named Flow, Wellbeing, or Experience concepts and pair them with matching facility blueprints in the same district.
 - Explore a unified Atlantic-modernist campus with connected courtyards, layered landscaping, distinct store architecture, and redesigned guests.
 - Play through a deliberately restrained tycoon interface where world labels and guest signals appear only when they are useful.
+- Move through eight designed campus places, from the arrival plaza and academic courtyard to the food court, student lawn, event square, and beach promenade.
 
 ## Development milestones
 
@@ -59,6 +60,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Store and building specialization | Store concepts, facility blueprints, visible fit-outs, and district synergies | [`specs/store-building-specialization.md`](specs/store-building-specialization.md) · `feature/store-building-specialization` |
 | Visual world redesign | Cohesive campus materials, unique store silhouettes, improved interiors, and stable character art | [`specs/visual-world-redesign.md`](specs/visual-world-redesign.md) · `feature/visual-world-redesign` |
 | Tycoon art-direction reset | Reduced HUD, contextual labels, authored campus kit, and four-frame character movement | [`specs/tycoon-art-direction-reset.md`](specs/tycoon-art-direction-reset.md) · `feature/tycoon-art-direction-reset` |
+| Designed campus spaces | Eight distinct public spaces and destination-aware guest circulation | [`specs/designed-campus-spaces.md`](specs/designed-campus-spaces.md) · `feature/designed-campus-spaces` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
