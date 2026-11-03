@@ -102,7 +102,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
+The automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, world collision and depth, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 

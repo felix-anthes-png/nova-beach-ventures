@@ -1,4 +1,5 @@
 import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, SHOWCASE_BUDGET, createRun, createShowcaseRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, activeVenueProject, venueProjectProgress, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=34-showcase-editor";
+import { rectCollider, circleCollider, pointBlocked, resolveMovement, nearestFreePoint } from "./world-physics.js?v=35-world-collision";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -45,8 +46,10 @@ const OVERLAY_MODES=["flow","needs","trade","operations"];
 let managementOverlay=OVERLAY_MODES.includes(localStorage.getItem(OVERLAY_STORAGE_KEY))?localStorage.getItem(OVERLAY_STORAGE_KEY):"flow";
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
 let cameraSequence=null;
+let movementImpact=null;
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
+const PLAYER_RADIUS = .28;
 const GUEST_SPEED = 1.45;
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:47.5,y:21.2},{x:55.2,y:16.2}];
@@ -98,6 +101,49 @@ const locationAvailable=id=>!(["beach","pavilion","pierGate"].includes(id)&&!run
 const zoneLocations = () => Object.entries(locations).filter(([id,location]) => location.zone === currentZone&&locationAvailable(id));
 const activeZone = () => ZONES[currentZone];
 function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.districts?.east?49.3:41;}
+
+function facilityCollider(facility){
+  if(facility.type==="path")return null;const size=facilityFootprint(facility.type,facility.rotation||0),padding=facility.type==="bench"?.04:.1;
+  return rectCollider(facility.id,facility.x-size.width/2+padding,facility.y-size.height/2+padding,Math.max(.18,size.width-padding*2),Math.max(.18,size.height-padding*2),{label:facility.name||"Campus facility",kind:"facility"});
+}
+
+function campusColliders(){
+  const fixed=[
+    rectCollider("learning-center",2.2,3.25,8.4,5.15,{label:"Learning Center",kind:"building"}),
+    rectCollider("mercado-building",3.15,8.85,8.25,4.45,{label:"Mercado Supply Hall",kind:"building"}),
+    rectCollider("academic-west",12.2,3.1,6.2,5.7,{label:"Academic Wing",kind:"building"}),
+    rectCollider("academic-centre",18.2,3.55,5.8,5.15,{label:"Academic Wing",kind:"building"}),
+    rectCollider("academic-east",23.8,3.05,6.3,5.75,{label:"Academic Wing",kind:"building"}),
+    rectCollider("student-hub",30.05,5.05,9.2,6.15,{label:"Student Hub",kind:"building"}),
+    rectCollider("sunset-forum",18.35,22.08,4.3,2.25,{label:"Sunset Forum",kind:"venue"}),
+    rectCollider("arrival-bench-west",5.05,16.1,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
+    rectCollider("arrival-bench-east",9.45,14.72,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
+    rectCollider("arrival-planter",10.55,15.3,.55,1.2,{label:"Planter",kind:"prop"}),
+    rectCollider("courtyard-bench-west",13.35,11.8,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
+    rectCollider("courtyard-bench-east",24.8,11.75,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
+    rectCollider("terrace-pergola",14.05,14.35,2.25,1.35,{label:"Café pergola",kind:"prop"}),
+    rectCollider("terrace-planter",13.72,15.88,7.75,.42,{label:"Terrace planter",kind:"prop"}),
+    rectCollider("food-pergola-west",24.65,17.75,3.05,1.15,{label:"Food court canopy",kind:"prop"}),
+    rectCollider("food-pergola-east",28.25,17.75,3.25,1.15,{label:"Food court canopy",kind:"prop"}),
+    rectCollider("lawn-planter",38.4,17.55,.48,4.15,{label:"Lawn planter",kind:"prop"})
+  ];
+  [[14.7,14.95],[17.1,14.7],[19.15,15.25],[20.65,14.55],[25.35,19.75],[27.2,20.35],[29.25,19.75],[31,20.45]].forEach(([x,y],index)=>fixed.push(circleCollider(`terrace-table-${index}`,x,y,.36,{label:"Terrace table",kind:"prop"})));
+  campusTrees.forEach(([x,y],index)=>fixed.push(circleCollider(`tree-${index}`,x,y,.27,{label:"Palm tree",kind:"prop"})));
+  const storeFootprints={snack:[1.08,.72],beach:[1.18,.78],surf:[1.08,.7]};
+  for(const [id,[halfW,halfH]] of Object.entries(storeFootprints)){if((run.venues?.[id]||0)>0){const loc=locations[id];fixed.push(rectCollider(`store-${id}`,loc.x-halfW,loc.y-halfH,halfW*2,halfH*2,{label:STORES.find(store=>store.id===id)?.name||"Store",kind:"store"}));}}
+  if(run.eventVenue)fixed.push(rectCollider("coastline-pavilion",46.25,10.95,3.3,1.9,{label:"Coastline Pavilion",kind:"venue"}));
+  return [...fixed,...(run.facilities||[]).map(facilityCollider).filter(Boolean)];
+}
+
+function roomColliders(zoneId){
+  const common=[rectCollider("north-wall",0,0,15,1,{label:"Wall",kind:"wall"}),rectCollider("west-wall",0,0,1,12,{label:"Wall",kind:"wall"})];
+  if(zoneId==="academy")return [...common,rectCollider("cafe-counter",5.65,2.15,4.3,.85,{label:"Atlantic Café counter",kind:"counter"}),rectCollider("academy-table-west",2.1,5.65,3.5,.75,{label:"Communal table",kind:"furniture"}),rectCollider("academy-table-east",9.9,4.2,3,.75,{label:"Communal table",kind:"furniture"}),rectCollider("academy-lounge",2.2,7.25,2.5,1.85,{label:"Study lounge",kind:"furniture"}),circleCollider("academy-plant",11.8,7.2,.38,{label:"Planter",kind:"prop"})];
+  if(zoneId==="mercado")return [...common,rectCollider("shelf-north",2.05,2.45,4,.62,{label:"Market shelving",kind:"furniture"}),rectCollider("shelf-west",2.1,6.55,3.6,.62,{label:"Market shelving",kind:"furniture"}),rectCollider("cold-room",9.7,2.05,3.15,2.25,{label:"Cold store",kind:"room"}),rectCollider("shelf-east",10.1,6.1,2.8,.62,{label:"Market shelving",kind:"furniture"}),circleCollider("mercado-plant",7.6,7.7,.35,{label:"Planter",kind:"prop"})];
+  return [...common,rectCollider("merch-display",2.05,2.15,3.5,.65,{label:"Merch display",kind:"furniture"}),rectCollider("hub-lounge-west",2.15,7,2.5,1.85,{label:"Student lounge",kind:"furniture"}),rectCollider("hub-lounge-east",9.8,6.1,2.5,1.85,{label:"Student lounge",kind:"furniture"}),circleCollider("hub-plant",7.8,6.9,.38,{label:"Planter",kind:"prop"})];
+}
+
+function activeColliders(){return currentZone==="campus"?campusColliders():roomColliders(currentZone);}
+function safePlayerPoint(point,zone=activeZone()){return nearestFreePoint(point,zone,activeColliders(),PLAYER_RADIUS);}
 
 function loadRun() {
   try {
@@ -405,11 +451,11 @@ function drawWorld(t) {
   if(zone.outdoor)drawCoastalMotion(t,environment);
   if(zone.outdoor)drawCampusGroundPlan(t);
   const worldActors=zone.outdoor?[
-    {depth:14.4,draw:()=>drawLibrary()},
-    {depth:21.8,draw:()=>drawMercadoExterior()},
-    {depth:31.2,draw:()=>drawCampus(t)},
-    {depth:46.8,draw:()=>drawStudentHub()},
-    {depth:43,draw:()=>drawBeachStage(t)},
+    {depth:18.1,draw:()=>drawLibrary()},
+    {depth:24.7,draw:()=>drawMercadoExterior()},
+    {depth:38.9,draw:()=>drawCampus(t)},
+    {depth:50.45,draw:()=>drawStudentHub()},
+    {depth:46.98,draw:()=>drawBeachStage(t)},
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170,environment)})),
@@ -1172,6 +1218,7 @@ function drawPlayer(t) {
   const bob=walking?Math.abs(Math.sin(t*.01))*1.5:Math.sin(t*.003)*.4,p=isoPoint(run.player.x,run.player.y,4);
   ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle="rgba(7,29,37,.22)";ctx.beginPath();ctx.ellipse(0,3,18,7,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(0,2,23,9,0,0,Math.PI*2);ctx.stroke();ctx.restore();
   drawPersonFigure(run.player.x,run.player.y,t,0,{color:"#bce65f",phase:0,moving:walking,facing,pose:walking?"walk":"idle",player:true,bob});
+  if(movementImpact&&movementImpact.until>t){const life=Math.max(0,(movementImpact.until-t)/320),edge=isoPoint(run.player.x+movementImpact.direction.x*.3,run.player.y+movementImpact.direction.y*.3,5);ctx.save();ctx.globalAlpha=life;ctx.strokeStyle="#ff8060";ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(edge.x,edge.y,17+(1-life)*9,6+(1-life)*3,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
 }
 
 function loop(t) {
@@ -1188,7 +1235,7 @@ function loop(t) {
   if(!dx&&!dy&&targetPoint){const tx=targetPoint.x-run.player.x,ty=targetPoint.y-run.player.y,dist=Math.hypot(tx,ty);if(dist<.15)targetPoint=null;else{dx=tx/dist;dy=ty/dist;}}
   walking=Boolean(dx||dy);
   const zone=activeZone();
-  if(walking){const l=Math.hypot(dx,dy);dx/=l;dy/=l;facing={x:dx,y:dy};let nx=Math.max(zone.minX,Math.min(zone.maxX,run.player.x+dx*WALK_SPEED*dt));let ny=Math.max(zone.minY,Math.min(zone.maxY,run.player.y+dy*WALK_SPEED*dt));run.player.x=nx;run.player.y=ny;}
+  if(walking){const l=Math.hypot(dx,dy);dx/=l;dy/=l;facing={x:dx,y:dy};const moved=resolveMovement(run.player,{x:dx*WALK_SPEED*dt,y:dy*WALK_SPEED*dt},zone,activeColliders(),PLAYER_RADIUS);run.player.x=moved.x;run.player.y=moved.y;if(moved.blocked){movementImpact={until:t+320,direction:{x:dx,y:dy},label:moved.collider?.label||"Solid object"};if(targetPoint&&Math.hypot(run.player.x-targetPoint.x,run.player.y-targetPoint.y)<.65)targetPoint=null;}}
   if(cameraSequence&&performance.now()>cameraSequence.until)cameraSequence=null;const cameraTarget=cameraSequence&&zone.outdoor?cameraSequence:run.player;
   camera.x+=(cameraTarget.x-camera.x)*Math.min(1,dt*(cameraSequence?2.2:4.8));camera.y+=(cameraTarget.y-camera.y)*Math.min(1,dt*(cameraSequence?2.2:4.8));
   const desiredZoom=cameraSequence&&zone.outdoor?1.13:zone.outdoor?Math.max(.72,Math.min(1.08,canvas.clientWidth/1080)):Math.max(.94,Math.min(1.24,canvas.clientWidth/850));camera.zoom+=(desiredZoom-camera.zoom)*Math.min(1,dt*3.5);
@@ -1219,8 +1266,8 @@ function updateProximity() {
 
 function nearestLocation() { return zoneLocations().find(([,loc]) => Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65); }
 function interactWith(id){const loc=locations[id];if(loc.kind==="door")changeZone(loc.targetZone,loc.spawn);else openLocation(id);}
-function moveTo(id) { const loc=locations[id];if(loc.zone!==currentZone)return;const zone=activeZone();run.player={x:Math.max(zone.minX,Math.min(zone.maxX,loc.x)),y:Math.max(zone.minY,Math.min(zone.maxY,loc.y+1.3)),zone:currentZone};camera.x=run.player.x;camera.y=run.player.y;save(run);interactWith(id); }
-function changeZone(zoneId,spawn){const zone=ZONES[zoneId];if(!zone)return;closeDrawer();currentZone=zoneId;const point=spawn||zone.spawn;run.player={x:point.x,y:point.y,zone:zoneId};camera.x=point.x;camera.y=point.y;targetPoint=null;localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();const game=$("#game");game.classList.add("zone-transition");setTimeout(()=>game.classList.remove("zone-transition"),420);toast(zone.outdoor?"Back on the Nova coast":"Entered "+zone.name);beep(zone.outdoor?520:620);}
+function moveTo(id) { const loc=locations[id];if(loc.zone!==currentZone)return;const zone=activeZone(),point=safePlayerPoint({x:loc.x,y:loc.y+1.3},zone);run.player={...point,zone:currentZone};camera.x=run.player.x;camera.y=run.player.y;save(run);interactWith(id); }
+function changeZone(zoneId,spawn){const zone=ZONES[zoneId];if(!zone)return;closeDrawer();currentZone=zoneId;const requested=spawn||zone.spawn,point=safePlayerPoint(requested,zone);run.player={x:point.x,y:point.y,zone:zoneId};camera.x=point.x;camera.y=point.y;targetPoint=null;localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();const game=$("#game");game.classList.add("zone-transition");setTimeout(()=>game.classList.remove("zone-transition"),420);toast(zone.outdoor?"Back on the Nova coast":"Entered "+zone.name);beep(zone.outdoor?520:620);}
 function openLocation(id) { activeLocation=id; locations[id].panel(); drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); }
 function markManagementPanel(action){document.querySelectorAll(".quick-nav button").forEach(button=>button.classList.toggle("active-panel",button.dataset.action===action));}
 function closeDrawer() { activeLocation=null; drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); markManagementPanel(null); }
@@ -1626,7 +1673,7 @@ window.addEventListener("keydown",event=>{const key=event.key.toLowerCase(),typi
 window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(activeStorageKey(),JSON.stringify(run));});
 canvas.addEventListener("mousemove",event=>{if(pendingBuild){const point=canvasWorldPoint(event);updateBuildCursor(point.x,point.y);}});
 canvas.addEventListener("mouseleave",()=>{if(pendingBuild){buildCursor=null;refreshBuildNotice();}});
-canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}if(currentZone==="campus"){const guest=[...guestAgents].sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(guest&&Math.hypot(guest.x-x,guest.y-y)<.62){openGuestProfile(guest);return;}const djDeck=(run.facilities||[]).find(item=>item.type==="experience"&&(item.modules||[]).includes("music")&&Math.hypot(item.x-x,item.y-y)<1.8);if(djDeck){openDjOperations(djDeck.id);return;}const facility=(run.facilities||[]).filter(item=>FACILITY_SPECIALIZATIONS.some(choice=>choice.type===item.type)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(facility&&Math.hypot(facility.x-x,facility.y-y)<1.25){openFacilitySpecialization(facility.id);return;}}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
+canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}if(currentZone==="campus"){const guest=[...guestAgents].sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(guest&&Math.hypot(guest.x-x,guest.y-y)<.62){openGuestProfile(guest);return;}const djDeck=(run.facilities||[]).find(item=>item.type==="experience"&&(item.modules||[]).includes("music")&&Math.hypot(item.x-x,item.y-y)<1.8);if(djDeck){openDjOperations(djDeck.id);return;}const facility=(run.facilities||[]).filter(item=>FACILITY_SPECIALIZATIONS.some(choice=>choice.type===item.type)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(facility&&Math.hypot(facility.x-x,facility.y-y)<1.25){openFacilitySpecialization(facility.id);return;}}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone(),requested={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};targetPoint=pointBlocked(requested,activeColliders(),PLAYER_RADIUS)?nearestFreePoint(requested,zone,activeColliders(),PLAYER_RADIUS):requested;}});
 $("#closeDrawer").addEventListener("click",closeDrawer);
 $("#rotateBuild").addEventListener("click",rotatePendingBuild);
 $("#cancelBuild").addEventListener("click",cancelBuildMode);
@@ -1655,4 +1702,5 @@ document.querySelectorAll("[data-overlay]").forEach(button=>button.addEventListe
 document.querySelectorAll("[data-speed]").forEach(button=>button.addEventListener("click",()=>setGameSpeed(button.dataset.speed)));
 modal.addEventListener("click",event=>{if(event.target===modal)hideModal();});
 
+{const safe=safePlayerPoint(run.player);run.player={...safe,zone:currentZone};camera.x=safe.x;camera.y=safe.y;}
 resize(); updateHUD(); requestAnimationFrame(loop);

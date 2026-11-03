@@ -1,5 +1,11 @@
 # Changelog
 
+## World collision and depth — 2026-11
+
+- Added solid footprints for campus architecture, stores, props, facilities, and interior furniture.
+- Added collision sliding, safe click targets, and recovery for saved or transitioned positions.
+- Corrected landmark depth ordering and added subtle blocked-movement feedback.
+
 ## Showcase editor
 
 - Added a level-ten presentation sandbox with a €250,000 build budget and the complete catalogue available.
