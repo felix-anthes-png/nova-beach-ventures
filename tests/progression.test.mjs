@@ -24,7 +24,7 @@ test("a new company begins at level one with only Atlantic Café", () => {
   const run = createRun();
   assert.equal(progressionState(run).level, 1);
   assert.deepEqual(run.venues, { cafe: 1, snack: 0, merch: 0, beach: 0, surf: 0 });
-  assert.deepEqual(run.districts, { coast: 1, east: 0, pier: 0 });
+  assert.deepEqual(run.districts, { coast: 1, village:0, east: 0, innovation:0, sports:0, transit:0, pier: 0 });
 });
 
 test("venue and staff unlocks enforce the company roadmap", () => {
@@ -43,7 +43,7 @@ test("venue and staff unlocks enforce the company roadmap", () => {
 test("land acquisition gates the Beach Bar and expands in sequence", () => {
   let run = establishedRun(48);
   assert.equal(progressionState(run).level, 6);
-  assert.throws(() => unlockVenue(run, "beach"), /East Promenade/);
+  assert.throws(() => unlockVenue(run, "beach"), /Beachfront/);
 
   run = unlockDistrict(run, "east");
   assert.equal(run.districts.east, 1);
@@ -51,7 +51,7 @@ test("land acquisition gates the Beach Bar and expands in sequence", () => {
   run = unlockVenue(run, "beach");
   assert.equal(run.venues.beach, 1);
   assert.equal(run.cash, 415000);
-  assert.throws(() => unlockDistrict(run, "pier"), /level 8/);
+  assert.throws(() => unlockDistrict(run, "sports"), /level 8/);
 });
 
 test("the event venue launches a timed crowd event that ends once", () => {

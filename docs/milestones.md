@@ -126,11 +126,19 @@ Added a recurring seven-day programme and eight visible visitor groups. Calendar
 
 The batch is covered by `tests/campus-calendar-guests.test.mjs`.
 
+## 21. Larger district progression
+
+**Checkpoint:** `feature/larger-district-progression`
+
+Expanded the original campus into six operating environments. Land purchases now visibly extend the traversable map and expose a district development pipeline rather than a single prebuilt venue. The Student Village, Beachfront, Innovation District, Sports Campus, and Transit & Arrival District each create a different traffic rhythm and management problem.
+
+The portfolio contains 25 separately purchasable businesses. They create daily income and upkeep, add visitor appeal, can break down, become physical guest destinations, and unlock residents, founders, athletes, and commuters. Beachfront performance also responds to deterministic coastal weather. Coverage lives in `tests/district-progression.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 20:
+At the end of milestone 21:
 
-- 97 automated tests pass, including campus calendar and guest groups, world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 106 automated tests pass, including district progression, campus calendar and guest groups, world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

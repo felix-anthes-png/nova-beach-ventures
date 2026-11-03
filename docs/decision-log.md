@@ -133,3 +133,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Use a deterministic seven-day campus programme and compose each live crowd from visitor groups with their own schedules and economic behaviour.
 
 **Reason:** More stores alone do not create strategic variety if every day produces the same customer. Forecastable day types let the player prepare stock, hours, prices, staffing, facilities, and events while keeping the simulation understandable and reproducible.
+
+## D023 — Make land change the operating model
+
+**Decision:** Treat districts as separate economies with their own traffic rhythm, visitor group, business catalogue, income profile, upkeep, and maintenance exposure.
+
+**Reason:** A larger map is not meaningful progression when every parcel behaves like more space for the same shop. The district portfolio makes expansion a strategic choice: residential trade peaks late, the Beachfront depends on weather, Innovation rewards premium weekday demand, Sports produces capacity spikes, and Transit increases high-volume arrival pressure. Deterministic modifiers keep those differences forecastable and auditable.

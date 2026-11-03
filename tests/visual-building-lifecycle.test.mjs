@@ -42,7 +42,7 @@ test("construction progress completes exactly once as campaign time advances",()
 test("older saves migrate with an empty construction ledger",()=>{
   const run=createRun();delete run.venueProjects;run.version=6;
   const migrated=migrateStaffOperations(run);
-  assert.equal(migrated.version,8);
+  assert.equal(migrated.version,9);
   assert.deepEqual(migrated.venueProjects,[]);
 });
 

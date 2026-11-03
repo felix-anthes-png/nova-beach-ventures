@@ -34,7 +34,7 @@ test("guest group selection is deterministic and uses known cohorts",()=>{
   const run=createRun(),first=selectGuestGroup(run,42,720),again=selectGuestGroup(run,42,720);
   assert.equal(first.id,again.id);
   assert.ok(GUEST_GROUPS.some(group=>group.id===first.id));
-  assert.equal(GUEST_GROUPS.length,8);
+  assert.equal(GUEST_GROUPS.length,12);
 });
 
 test("group price tolerance changes the appeal of an identical offer",()=>{
@@ -57,7 +57,7 @@ test("closing a day records its calendar and guest-group result once",()=>{
 test("older campaigns migrate without losing progress",()=>{
   const legacy=createRun();legacy.version=7;delete legacy.calendar;delete legacy.today.guestGroups;legacy.cash=54321;
   const migrated=migrateStaffOperations(legacy);
-  assert.equal(migrated.version,8);
+  assert.equal(migrated.version,9);
   assert.equal(migrated.cash,54321);
   assert.equal(migrated.calendar.cycle,"nova-week-v1");
   assert.deepEqual(migrated.today.guestGroups,{});
