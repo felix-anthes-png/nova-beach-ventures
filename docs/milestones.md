@@ -110,11 +110,19 @@ Connected the outdoor world to one time-aware Atlantic motion profile. Layered o
 
 Added a presentation sandbox with a separate save, level-ten progression, a large build budget, and accelerated construction. The presenter can use the real purchase flows for every store, district, facility, staff role, specialization, and event, then return to the untouched campaign or reset only the showcase.
 
+## 19. World collision and depth
+
+**Checkpoint:** `feature/world-collision-depth`
+
+Made the campus physically navigable rather than purely visual. Buildings, stores, constructed assets, trees, counters, shelving, and furniture now block the player; diagonal movement slides along edges, click targets resolve to safe ground, and landmark depth uses each structure's front edge.
+
+The batch adds deterministic physics coverage in `tests/world-physics.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 18:
+At the end of milestone 19:
 
-- 84 automated tests pass, including showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 89 automated tests pass, including world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

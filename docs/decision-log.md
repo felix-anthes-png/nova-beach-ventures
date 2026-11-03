@@ -121,3 +121,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Give presentation mode its own save, budget, and progression state while retaining normal purchase rules.
 
 **Reason:** Unlocking everything inside the campaign would invalidate its progression and financial history. A separate showcase lets a presenter demonstrate the full product honestly, including costs and construction, and return to the unchanged player company afterward.
+
+## D021 — Give rendered objects physical footprints
+
+**Decision:** Derive player collision from the same building and facility dimensions used by the world, with deterministic sliding and safe-position recovery.
+
+**Reason:** Visual detail does not create depth when characters can pass through every asset. A small physics layer makes construction placement, interiors, paths, entrances, and architectural depth meaningful without replacing the existing canvas renderer or business simulation.
