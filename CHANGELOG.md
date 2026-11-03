@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Tycoon art-direction reset
+
+- Reduced the permanent HUD so the campus remains the visual focus during normal play.
+- Made building, door, store-status, and guest-activity labels contextual instead of permanently floating above the map.
+- Replaced the fluid procedural walk with a deliberately quantised four-frame tycoon animation.
+- Simplified terrain patterning, wayfinding, shadows, and controls into a stricter authored palette.
+
 ### Visual world redesign
 
 - Unified the campus around an Atlantic-modernist material palette, connected colonnades, planted courtyards, and architectural detailing.

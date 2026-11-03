@@ -79,3 +79,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Share a small set of campus materials and details across the world, while giving every commercial venue its own silhouette and upgrade expression.
 
 **Reason:** Repeating one generic shop shell makes expansion feel cosmetic, while unrelated landmark assets make the campus feel assembled from separate images. A common material language creates cohesion; different typologies preserve recognition and progression.
+
+## D014 — Let the world carry the presentation
+
+**Decision:** Keep the permanent interface compact and reveal labels, operational states, and guest intent through proximity or an explicit management lens.
+
+**Reason:** Persistent floating cards made the world read like a debug view and obscured the campus. Contextual information preserves tycoon readability while allowing architecture, crowds, and public spaces to establish the visual identity.
