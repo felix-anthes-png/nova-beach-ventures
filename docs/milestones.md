@@ -118,11 +118,19 @@ Made the campus physically navigable rather than purely visual. Buildings, store
 
 The batch adds deterministic physics coverage in `tests/world-physics.test.mjs`.
 
+## 20. Campus calendar and guest groups
+
+**Checkpoint:** `feature/campus-calendar-guests`
+
+Added a recurring seven-day programme and eight visible visitor groups. Calendar days now change attendance and phase pressure, while group schedules, budgets, patience, preferences, and price tolerance shape individual decisions. Forecasts appear before trading and group results persist in the daily ledger.
+
+The batch is covered by `tests/campus-calendar-guests.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 19:
+At the end of milestone 20:
 
-- 89 automated tests pass, including world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 97 automated tests pass, including campus calendar and guest groups, world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

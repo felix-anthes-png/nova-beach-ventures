@@ -31,6 +31,8 @@ The design has three goals:
 - Upgrade stores through three visible levels and acquire two new districts.
 - Watch paid venue projects become fenced construction sites with workers, partial structures, completion cameras, shutters, and visible delivery carts.
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
+- Prepare for a recurring campus calendar with lecture days, exams, fairs, open days, surf tournaments, festivals, and weekends.
+- Serve eight visitor groups with different schedules, budgets, patience, price tolerance, and preferences.
 - Follow six daily campus phases from morning arrival to the sunset period.
 - Review persistent daily ledgers without interrupting the larger campaign.
 - Switch between live guest-flow, needs, commercial, and operations map lenses.
@@ -102,7 +104,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, world collision and depth, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
+The automated checks cover building placement, progression, campus calendar forecasts, guest groups, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, world collision and depth, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 

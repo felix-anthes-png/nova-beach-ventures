@@ -127,3 +127,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Derive player collision from the same building and facility dimensions used by the world, with deterministic sliding and safe-position recovery.
 
 **Reason:** Visual detail does not create depth when characters can pass through every asset. A small physics layer makes construction placement, interiors, paths, entrances, and architectural depth meaningful without replacing the existing canvas renderer or business simulation.
+
+## D022 — Make the calendar change the business problem
+
+**Decision:** Use a deterministic seven-day campus programme and compose each live crowd from visitor groups with their own schedules and economic behaviour.
+
+**Reason:** More stores alone do not create strategic variety if every day produces the same customer. Forecastable day types let the player prepare stock, hours, prices, staffing, facilities, and events while keeping the simulation understandable and reproducible.

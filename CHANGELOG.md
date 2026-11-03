@@ -1,5 +1,12 @@
 # Changelog
 
+## Campus calendar and guest groups — 2026-11
+
+- Added seven recurring campus day types with attendance, phase, crowd, and preparation forecasts.
+- Added eight visitor groups with distinct schedules, budgets, patience, preferences, price tolerance, colours, and accessories.
+- Added live crowd composition plus group purchases and spending to guest intelligence.
+- Added calendar and guest-group performance to the closing report and persistent ledger.
+
 ## World collision and depth — 2026-11
 
 - Added solid footprints for campus architecture, stores, props, facilities, and interior furniture.
