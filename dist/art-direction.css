@@ -1,0 +1,31 @@
+:root{
+  --tycoon-ink:#102f39;
+  --tycoon-panel:#f3eedf;
+  --tycoon-line:#173b45;
+  --tycoon-lime:#b9dc5b;
+  --tycoon-coral:#e86f55;
+  --tycoon-water:#4b9cad;
+}
+
+/* The world is the interface. Permanent UI is deliberately compact. */
+.topbar{height:56px;padding:0 14px;background:#102f39;border-bottom:3px solid #0a222b;box-shadow:0 4px 0 rgba(5,24,30,.22)}
+.world-wrap{inset:56px 0 0}.brand-mark{width:34px;height:34px;border-radius:5px;background:var(--tycoon-lime);box-shadow:inset 1px 1px rgba(255,255,255,.55),inset -2px -2px rgba(48,73,30,.35)}
+.brand strong{font-size:12px}.brand small{font-size:6px}.run-stats{border-radius:5px;background:#09262f}.run-stats .stat{min-width:76px;padding:5px 10px}.run-stats .stat strong{font-size:13px}.time-controls button{width:24px;height:24px;border-radius:3px}
+.top-actions .outline-button{padding:7px 9px;border-radius:3px}
+
+.location-banner{top:8px;min-width:0;padding:5px 9px;border:1px solid rgba(255,255,255,.16);border-radius:4px;background:rgba(9,39,48,.88);box-shadow:2px 2px rgba(3,20,26,.18);backdrop-filter:none}.location-banner small{display:none}.location-banner strong{font:700 7px "DM Mono"}
+.zone-directory{top:40px;padding:2px;border-radius:4px;background:rgba(9,39,48,.88);backdrop-filter:none}.zone-directory span{padding:4px 6px;border-radius:2px}.zone-directory span.active{background:var(--tycoon-lime)}
+
+.mission-card{top:10px;left:10px;width:224px;padding:8px 10px;border:1px solid rgba(255,255,255,.16);border-radius:4px;background:rgba(9,39,48,.9);box-shadow:3px 3px rgba(3,20,26,.2);backdrop-filter:none}.mission-kicker{font-size:5.5px}.mission-card h1{margin:4px 0 2px;font-size:12px}.mission-card p{display:none}.mission-event{margin:5px 0 0;padding:4px;border-radius:3px}.mission-event>span{width:20px;height:20px}.mission-event small,.mission-event em{font-size:5.5px}.mission-event strong{font-size:7px}.mission-progress{height:3px;margin-top:5px}
+.weather-chip{top:10px;right:10px;padding:5px 7px;border-radius:4px;background:rgba(9,39,48,.88);backdrop-filter:none}.weather-chip strong{font-size:10px}.weather-chip small{display:none}
+
+.minimap,.world-pulse,.movement-hud{display:none}
+.map-intelligence{top:auto;left:10px;bottom:68px;width:auto;padding:4px;border-radius:5px;background:rgba(9,39,48,.9);box-shadow:3px 3px rgba(3,20,26,.18);backdrop-filter:none}.map-intelligence-title,.overlay-legend{display:none}.overlay-switcher{display:flex;gap:2px}.overlay-switcher button{width:38px;padding:5px 3px;border-radius:3px}.overlay-switcher button span{font-size:10px}.overlay-switcher button b{font-size:5.5px}.overlay-switcher kbd{display:none}
+.decision-feed{top:10px;right:76px;width:190px;gap:3px}.decision-feed-head{display:none}.decision-alert{grid-template-columns:19px 1fr auto;padding:5px 6px;border-radius:4px;background:rgba(9,39,48,.9);box-shadow:2px 2px rgba(3,20,26,.18);backdrop-filter:none}.decision-alert:nth-of-type(n+2){display:none}.decision-alert>span{width:19px;height:19px;border-radius:2px}.decision-alert strong{font-size:7px}.decision-alert small{display:none}.decision-alert em{font-size:5px}
+
+.quick-nav{bottom:10px;width:auto;min-height:0;padding:4px;gap:2px;border-radius:5px;background:#102f39;box-shadow:3px 3px rgba(3,20,26,.25);backdrop-filter:none}.quick-nav button{min-width:65px;padding:4px 6px;border-radius:3px;grid-template-columns:24px 1fr}.quick-nav button>span{width:23px;height:23px;border-radius:3px;background:var(--tycoon-lime)}.quick-nav button strong{font:700 7px "DM Mono";text-transform:uppercase}.quick-nav button small{display:none}.quick-nav button.active-panel{box-shadow:inset 0 -2px var(--tycoon-coral)}
+.delivery-chip{bottom:66px;right:10px;border-radius:4px}.interaction-hint{bottom:66px;border-radius:4px}.keycap{border-radius:3px}
+.drawer{top:68px;bottom:68px;border-radius:6px}.world-vignette{background:linear-gradient(180deg,rgba(14,48,55,.04),transparent 25%,transparent 78%,rgba(5,29,36,.14));box-shadow:inset 0 0 50px rgba(3,22,28,.14)}
+
+@media(max-width:980px){.decision-feed{display:none}.quick-nav button{min-width:40px}.quick-nav button strong{display:none}.run-stats .stat.rating,.run-stats .stat.guests{display:none}}
+@media(max-width:760px){.topbar{height:54px}.world-wrap{top:54px}.mission-card{width:190px}.mission-event{display:none}.map-intelligence{bottom:59px}.quick-nav{bottom:7px}.quick-nav button{width:34px;min-width:34px;padding:3px}.quick-nav button>span{width:26px;height:26px}.delivery-chip{bottom:56px}.drawer{top:62px;bottom:56px}}

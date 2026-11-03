@@ -68,9 +68,15 @@ Added named store concepts, facility blueprints, visual fit-outs, and district-l
 
 Reframed the campus as one Atlantic-modernist complex, introduced distinct architecture for all five stores, strengthened room identity, and replaced the rigid crowd figures with a stable, more expressive character system. This batch changes presentation only; simulation rules and saved progression remain compatible.
 
+## 12. Tycoon art-direction reset
+
+**Checkpoint:** `feature/tycoon-art-direction-reset`
+
+Removed permanent presentation noise, made world information contextual, consolidated the campus palette and paving rhythm, and introduced a quantised four-frame crowd animation. The reset intentionally favours authored readability over additional decorative detail.
+
 ## Verification baseline
 
-At the end of milestone 11:
+At the end of milestone 12:
 
 - 63 automated tests pass.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.

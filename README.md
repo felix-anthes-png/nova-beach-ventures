@@ -36,6 +36,7 @@ The design has three goals:
 - Use the live briefing to jump from a visible risk to the management screen that can resolve it.
 - Specialize stores into named Flow, Wellbeing, or Experience concepts and pair them with matching facility blueprints in the same district.
 - Explore a unified Atlantic-modernist campus with connected courtyards, layered landscaping, distinct store architecture, and redesigned guests.
+- Play through a deliberately restrained tycoon interface where world labels and guest signals appear only when they are useful.
 
 ## Development milestones
 
@@ -57,6 +58,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |
 | Store and building specialization | Store concepts, facility blueprints, visible fit-outs, and district synergies | [`specs/store-building-specialization.md`](specs/store-building-specialization.md) · `feature/store-building-specialization` |
 | Visual world redesign | Cohesive campus materials, unique store silhouettes, improved interiors, and stable character art | [`specs/visual-world-redesign.md`](specs/visual-world-redesign.md) · `feature/visual-world-redesign` |
+| Tycoon art-direction reset | Reduced HUD, contextual labels, authored campus kit, and four-frame character movement | [`specs/tycoon-art-direction-reset.md`](specs/tycoon-art-direction-reset.md) · `feature/tycoon-art-direction-reset` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -80,7 +82,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The 63 automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, and continuous day progression. Pull requests run the same checks in GitHub Actions.
+The automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 
