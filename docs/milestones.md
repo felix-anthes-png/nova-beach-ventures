@@ -80,11 +80,17 @@ Removed permanent presentation noise, made world information contextual, consoli
 
 Recomposed the original coast district as eight connected public rooms: the Arrival Plaza, Academic Courtyard, Shaded Café Terrace, Food Court, Student Lawn, Beach Promenade, Event Square, and Service & Delivery Lane. Guest paths now reinforce those spaces, while essential arrival and logistics routes are protected from conflicting construction.
 
+## 14. Character and crowd animation overhaul
+
+**Checkpoint:** `feature/character-crowd-overhaul`
+
+Replaced the repeated side-facing figure with a directional six-frame population system. Guests now arrive in cohorts, form stable venue-specific queues, and visibly eat, drink, browse, sit, talk, or dance. Staff carry role-specific equipment and event crowds face the stage, making existing simulation state readable through animation.
+
 ## Verification baseline
 
-At the end of milestone 13:
+At the end of milestone 14:
 
-- 69 automated tests pass, including the campus-space composition contract.
+- 73 automated tests pass, including the character and crowd presentation contract.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

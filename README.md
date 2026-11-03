@@ -38,6 +38,7 @@ The design has three goals:
 - Explore a unified Atlantic-modernist campus with connected courtyards, layered landscaping, distinct store architecture, and redesigned guests.
 - Play through a deliberately restrained tycoon interface where world labels and guest signals appear only when they are useful.
 - Move through eight designed campus places, from the arrival plaza and academic courtyard to the food court, student lawn, event square, and beach promenade.
+- Watch directional, varied crowds queue, eat, study, browse, work, and dance instead of using one repeated walking figure.
 
 ## Development milestones
 
@@ -61,6 +62,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Visual world redesign | Cohesive campus materials, unique store silhouettes, improved interiors, and stable character art | [`specs/visual-world-redesign.md`](specs/visual-world-redesign.md) · `feature/visual-world-redesign` |
 | Tycoon art-direction reset | Reduced HUD, contextual labels, authored campus kit, and four-frame character movement | [`specs/tycoon-art-direction-reset.md`](specs/tycoon-art-direction-reset.md) · `feature/tycoon-art-direction-reset` |
 | Designed campus spaces | Eight distinct public spaces and destination-aware guest circulation | [`specs/designed-campus-spaces.md`](specs/designed-campus-spaces.md) · `feature/designed-campus-spaces` |
+| Character and crowd overhaul | Directional movement, activity poses, stable queues, cohorts, and role-specific staff | [`specs/character-crowd-overhaul.md`](specs/character-crowd-overhaul.md) · `feature/character-crowd-overhaul` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
