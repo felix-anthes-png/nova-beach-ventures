@@ -115,3 +115,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Derive outdoor motion from one deterministic Atlantic environment profile tied to campaign day and time.
 
 **Reason:** Independent looping props make the campus feel synthetic and visually noisy. Shared wind and sea intensity let clouds, surf, palms, flags, umbrellas, and fountains behave like parts of the same place while leaving the business simulation deterministic.
+
+## D020 — Demonstrate through a separate sandbox
+
+**Decision:** Give presentation mode its own save, budget, and progression state while retaining normal purchase rules.
+
+**Reason:** Unlocking everything inside the campaign would invalidate its progression and financial history. A separate showcase lets a presenter demonstrate the full product honestly, including costs and construction, and return to the unchanged player company afterward.

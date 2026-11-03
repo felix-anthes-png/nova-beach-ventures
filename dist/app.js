@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, activeVenueProject, venueProjectProgress, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=33-environmental-motion";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, SHOWCASE_BUDGET, createRun, createShowcaseRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, activeVenueProject, venueProjectProgress, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=34-showcase-editor";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -14,6 +14,9 @@ const ZONES = {
   academy: { id:"academy", name:"Academic Wing", sub:"COURTYARD INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d7dad3", accent:"#ff7b5b" },
   hub: { id:"hub", name:"Student Hub", sub:"VENTURE INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#cddbd5", accent:"#64cbc8" }
 };
+const SHOWCASE_STORAGE_KEY="nova-beach-ventures-showcase-v1",MODE_STORAGE_KEY="nova-beach-ventures-mode";
+let showcaseMode=localStorage.getItem(MODE_STORAGE_KEY)==="showcase";
+const activeStorageKey=()=>showcaseMode?SHOWCASE_STORAGE_KEY:STORAGE_KEY;
 let run = loadRun();
 syncCampusBounds();
 let currentZone = run.player.zone || "campus";
@@ -98,7 +101,7 @@ function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.distr
 
 function loadRun() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const parsed = JSON.parse(localStorage.getItem(activeStorageKey()));
     if (parsed && [1,2,3,4,5,6,7].includes(parsed.version) && Array.isArray(parsed.history)) {
       if (!parsed.player) parsed.player = { x:21, y:18, zone:"campus" };
       if (!parsed.player.zone || !ZONES[parsed.player.zone]) parsed.player = { x:Math.min(41,Math.max(1,parsed.player.x||21)), y:Math.min(25.7,Math.max(7.5,parsed.player.y||18)), zone:"campus" };
@@ -136,14 +139,14 @@ function loadRun() {
       return migrateStaffOperations(parsed);
     }
   } catch (_) {}
-  const fresh = createRun();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+  const fresh = showcaseMode?createShowcaseRun():createRun();
+  localStorage.setItem(activeStorageKey(), JSON.stringify(fresh));
   fresh.player = { x:21, y:18, zone:"campus" };
   return fresh;
 }
 
 function save(next) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  localStorage.setItem(activeStorageKey(), JSON.stringify(next));
   run = next;
   syncCampusBounds();
   updateHUD();
@@ -207,6 +210,8 @@ function updateHUD() {
   document.querySelectorAll("[data-speed]").forEach(button=>button.classList.toggle("active",Number(button.dataset.speed)===run.speed));
   $("#clockIcon").textContent=run.speed===0?"▶":"Ⅱ";$("#clockLabel").textContent=run.speed===0?"Resume":"Pause";
   $("#game").classList.toggle("build-mode",Boolean(pendingBuild));
+  $("#game").classList.toggle("showcase-mode",showcaseMode);$("#showcaseButton").textContent=showcaseMode?"Editor active":"Showcase";$("#showcaseButton").setAttribute("aria-pressed",String(showcaseMode));
+  if(showcaseMode){$("#missionTitle").textContent="Showcase editor active";$("#missionText").textContent="Every progression gate is open in this separate presentation save.";$("#missionProgress").style.width="100%";}
   refreshBuildNotice();
   refreshTimePanelLive();
   refreshStoreHoursPanelLive();
@@ -784,8 +789,8 @@ function beginGuestActivity(guest){
 function completeGuestActivity(guest){
   const type=guest.target.type||guest.target.id;let isPurchase=false;
   if(guest.target.kind==="store"){
-    try{const price=run.prices[guest.target.productId];run=completeGuestSale(run,guest.target.productId,guest.budget,guest.id);guest.budget-=price;guest.spent+=price;isPurchase=true;guest.thought=`I bought ${guest.target.productName} for ${formatEuro(price)}.`;showSaleFeed(CATALOGUE.find(item=>item.id===guest.target.productId),1);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=performance.now();}
-    catch(error){run.guestEconomy.walkaways+=1;run.today.walkaways=(run.today.walkaways||0)+1;guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+14);guest.thought=error.message.includes("stock")?"It sold out while I was waiting — I’ll try somewhere else.":"I changed my mind at the counter.";localStorage.setItem(STORAGE_KEY,JSON.stringify(run));sendGuestToNextActivity(guest);return;}
+    try{const price=run.prices[guest.target.productId];run=completeGuestSale(run,guest.target.productId,guest.budget,guest.id);guest.budget-=price;guest.spent+=price;isPurchase=true;guest.thought=`I bought ${guest.target.productName} for ${formatEuro(price)}.`;showSaleFeed(CATALOGUE.find(item=>item.id===guest.target.productId),1);localStorage.setItem(activeStorageKey(),JSON.stringify(run));lastPersistAt=performance.now();}
+    catch(error){run.guestEconomy.walkaways+=1;run.today.walkaways=(run.today.walkaways||0)+1;guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+14);guest.thought=error.message.includes("stock")?"It sold out while I was waiting — I’ll try somewhere else.":"I changed my mind at the counter.";localStorage.setItem(activeStorageKey(),JSON.stringify(run));sendGuestToNextActivity(guest);return;}
   }else{
     run=recordGuestActivity(run,guest.target);
     if(guest.target.kind==="event"&&Number.isFinite(guest.target.price)&&guest.target.price<=guest.budget){guest.budget-=guest.target.price;guest.spent+=guest.target.price;isPurchase=true;guest.thought=`That ${formatEuro(guest.target.price)} ticket was worth it.`;}
@@ -1200,7 +1205,7 @@ function tickTycoon(realSeconds){
   if((run.operations?.issues?.length||0)>beforeIssues){const latest=run.operations.issues.at(-1);toast(latest.type==="breakdown"?`${latest.label} closed · technician needed`:`Litter reported in ${OPERATIONS_DISTRICTS.find(item=>item.id===latest.districtId)?.name}` ,latest.type==="breakdown");beep(latest.type==="breakdown"?170:390);}
   if((run.operations?.totalIssuesResolved||0)>beforeResolved){toast("Work order completed · campus service restored");beep(680);}
   if(run.currentDay!==beforeDay){const closed=run.history.at(-1);showDayReport(closed);beep(640);}
-  const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(STORAGE_KEY,JSON.stringify(run));lastPersistAt=now;}
+  const now=performance.now();if(now-lastPersistAt>1800||run.currentDay!==beforeDay){localStorage.setItem(activeStorageKey(),JSON.stringify(run));lastPersistAt=now;}
   updateHUD();
 }
 
@@ -1215,7 +1220,7 @@ function updateProximity() {
 function nearestLocation() { return zoneLocations().find(([,loc]) => Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65); }
 function interactWith(id){const loc=locations[id];if(loc.kind==="door")changeZone(loc.targetZone,loc.spawn);else openLocation(id);}
 function moveTo(id) { const loc=locations[id];if(loc.zone!==currentZone)return;const zone=activeZone();run.player={x:Math.max(zone.minX,Math.min(zone.maxX,loc.x)),y:Math.max(zone.minY,Math.min(zone.maxY,loc.y+1.3)),zone:currentZone};camera.x=run.player.x;camera.y=run.player.y;save(run);interactWith(id); }
-function changeZone(zoneId,spawn){const zone=ZONES[zoneId];if(!zone)return;closeDrawer();currentZone=zoneId;const point=spawn||zone.spawn;run.player={x:point.x,y:point.y,zone:zoneId};camera.x=point.x;camera.y=point.y;targetPoint=null;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();const game=$("#game");game.classList.add("zone-transition");setTimeout(()=>game.classList.remove("zone-transition"),420);toast(zone.outdoor?"Back on the Nova coast":"Entered "+zone.name);beep(zone.outdoor?520:620);}
+function changeZone(zoneId,spawn){const zone=ZONES[zoneId];if(!zone)return;closeDrawer();currentZone=zoneId;const point=spawn||zone.spawn;run.player={x:point.x,y:point.y,zone:zoneId};camera.x=point.x;camera.y=point.y;targetPoint=null;localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();const game=$("#game");game.classList.add("zone-transition");setTimeout(()=>game.classList.remove("zone-transition"),420);toast(zone.outdoor?"Back on the Nova coast":"Entered "+zone.name);beep(zone.outdoor?520:620);}
 function openLocation(id) { activeLocation=id; locations[id].panel(); drawer.classList.add("open"); drawer.setAttribute("aria-hidden","false"); }
 function markManagementPanel(action){document.querySelectorAll(".quick-nav button").forEach(button=>button.classList.toggle("active-panel",button.dataset.action===action));}
 function closeDrawer() { activeLocation=null; drawer.classList.remove("open"); drawer.setAttribute("aria-hidden","true"); markManagementPanel(null); }
@@ -1321,7 +1326,7 @@ function openDistrictPanel(districtId){
 
 function openDjOperations(deckId,preserveScroll=false){
   const previousScroll=drawer.scrollTop;
-  if(run.djOperations?.deckId!==deckId){run=configureDjOperations(run,{deckId});localStorage.setItem(STORAGE_KEY,JSON.stringify(run));}
+  if(run.djOperations?.deckId!==deckId){run=configureDjOperations(run,{deckId});localStorage.setItem(activeStorageKey(),JSON.stringify(run));}
   const ops=run.djOperations,projection=djEventProjection(run),dj=DJ_ROSTER.find(item=>item.id===ops.djId),active=run.activeEvent?.source==="dj"&&run.activeEvent.deckId===deckId,scheduled=run.scheduledEvent?.source==="dj"&&run.scheduledEvent.deckId===deckId,busy=Boolean(active||scheduled),history=(run.eventHistory||[]).filter(item=>item.eventId==="dj-event").slice(-3).reverse();
   const status=active?`<div class="dj-live-banner"><span>LIVE</span><div><small>${run.activeEvent.djName} · ${DJ_STYLES.find(item=>item.id===run.activeEvent.styleId)?.name}</small><strong>${run.activeEvent.attendance||0} / ${run.activeEvent.capacity} guests</strong><em>${Math.ceil(run.activeEvent.remainingMinutes)} min left · ${formatEuro(run.activeEvent.revenue||0)} ticket revenue</em></div><i style="--progress:${Math.round((run.activeEvent.attendance||0)/run.activeEvent.capacity*100)}%"></i></div>`:scheduled?`<div class="dj-scheduled-banner"><span>◷</span><div><small>NEXT EVENT</small><strong>${run.scheduledEvent.name}</strong><em>Day ${run.scheduledEvent.day} · ${formatClock(run.scheduledEvent.startMinute)} · ${run.scheduledEvent.djName}</em></div></div>`:`<div class="dj-ready-banner"><span>♫</span><div><small>DECK AVAILABLE</small><strong>Build the next campus moment</strong><em>Configure the set, review the forecast, then put it on the calendar.</em></div></div>`;
   drawerContent.innerHTML=`<p class="eyebrow">Attraction operations · managed DJ deck</p><div class="dj-ops-title"><div><small>${deckId==="pavilion"?"COASTLINE PAVILION":"CUSTOM BEACH EXPERIENCE"}</small><h2>Atlantic Sessions</h2><p>Program events as a real business: price tickets, control the sound, protect comfort and grow capacity.</p></div><span>${ops.lifetimeAttendance||0}<small>LIFETIME GUESTS</small></span></div>${status}
@@ -1354,12 +1359,12 @@ function openProgressPanel(){
 function beginBuildMode(build){
   if(buildResumeSpeed===null)buildResumeSpeed=run.speed;run.speed=0;pendingBuild={mode:"place",rotation:0,...build};closeDrawer();
   if(currentZone!=="campus")changeZone("campus",{x:21,y:18});
-  const start=snappedBuildPoint(run.player.x,Math.min(21.5,run.player.y+2));updateBuildCursor(start.x,start.y);localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(`${pendingBuild.mode==="move"?"Move":"Build"} mode · position ${pendingBuild.name}`);beep(560);
+  const start=snappedBuildPoint(run.player.x,Math.min(21.5,run.player.y+2));updateBuildCursor(start.x,start.y);localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();toast(`${pendingBuild.mode==="move"?"Move":"Build"} mode · position ${pendingBuild.name}`);beep(560);
 }
 function startBuild(type,name,modules=[]){beginBuildMode({type,name,modules,mode:"place",rotation:0});}
 function startMoveFacility(facility){beginBuildMode({type:facility.type,name:`Move ${facility.name}`,modules:facility.modules||[],mode:"move",sourceId:facility.id,rotation:facility.rotation||0});}
 function rotatePendingBuild(){if(!pendingBuild)return;pendingBuild.rotation=((pendingBuild.rotation||0)+1)%4;if(buildCursor)updateBuildCursor(buildCursor.x,buildCursor.y);refreshBuildNotice();toast(`Rotated to ${pendingBuild.rotation*90}°`);beep(480);}
-function cancelBuildMode(){if(!pendingBuild)return;pendingBuild=null;buildCursor=null;if(buildResumeSpeed!==null)run.speed=buildResumeSpeed;buildResumeSpeed=null;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast("Build mode cancelled");}
+function cancelBuildMode(){if(!pendingBuild)return;pendingBuild=null;buildCursor=null;if(buildResumeSpeed!==null)run.speed=buildResumeSpeed;buildResumeSpeed=null;localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();toast("Build mode cancelled");}
 function finishBuildMode(next){if(buildResumeSpeed!==null)next.speed=buildResumeSpeed;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;save(next);}
 function confirmDemolish(facility){
   const refund=Math.floor((facility.cost||0)*.4);modalCard.className="modal-card";modalCard.innerHTML=`<p class="eyebrow">Campus works · demolition</p><h2 id="modalTitle">Remove ${facility.name}?</h2><p>This permanently removes the facility and returns <strong>${formatEuro(refund)}</strong> in salvage value. Campus needs and rating update immediately.</p><div class="modal-actions"><button class="action-button secondary" data-close>Keep facility</button><button class="action-button orange" id="confirmDemolish">Remove &amp; refund</button></div>`;showModal();modalCard.querySelector("[data-close]").addEventListener("click",hideModal);$("#confirmDemolish").addEventListener("click",()=>{const next=demolishFacility(run,facility.id);save(next);hideModal();openBuildPanel();toast(`${facility.name} removed · ${formatEuro(refund)} returned`);beep(260);});
@@ -1597,15 +1602,28 @@ function confirmNewRun() {
   showModal(); modalCard.querySelector("[data-close]").addEventListener("click",hideModal); $("#replaceRun").addEventListener("click",()=>{const fresh=createRun();currentZone="campus";camera.x=fresh.player.x;camera.y=fresh.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;guestAgents=[];guestSpawnAccumulator=0;closeDrawer();hideDayReport();save(fresh);hideModal();toast("Fresh venture started on the Nova coast");beep(610);});
 }
 
+function switchCampaignMode(nextMode,reset=false){
+  showcaseMode=nextMode==="showcase";localStorage.setItem(MODE_STORAGE_KEY,showcaseMode?"showcase":"campaign");if(reset&&showcaseMode)localStorage.removeItem(SHOWCASE_STORAGE_KEY);
+  run=loadRun();syncCampusBounds();currentZone=run.player.zone||"campus";camera.x=run.player.x;camera.y=run.player.y;targetPoint=null;pendingBuild=null;buildCursor=null;buildResumeSpeed=null;guestAgents=[];guestSpawnAccumulator=0;activeLocation=null;closeDrawer();hideDayReport();hideModal();updateHUD();toast(showcaseMode?"Showcase editor ready · campaign save protected":"Returned to your campaign");beep(showcaseMode?760:520);
+}
+
+function openShowcaseIntro(){
+  modalCard.className="modal-card";modalCard.innerHTML=`<p class="eyebrow">Presentation tools · separate save</p><h2 id="modalTitle">Open the Showcase Editor</h2><p>Explore the complete game without changing your campaign. The editor starts at <strong>company level 10</strong> with <strong>${formatEuro(SHOWCASE_BUDGET)}</strong>, while stores, land, upgrades and facilities still use their real purchase flows.</p><div class="showcase-intro"><div><span>⌂</span><strong>Every venue</strong><small>Buy and upgrade all five store concepts.</small></div><div><span>▦</span><strong>Every asset</strong><small>Place the complete construction catalogue.</small></div><div><span>★</span><strong>Every district</strong><small>Acquire land, events and specialist operations.</small></div></div><div class="modal-actions"><button class="action-button secondary" data-close>Keep playing</button><button class="action-button orange" id="enterShowcase">Open editor</button></div>`;showModal();modalCard.querySelector("[data-close]").addEventListener("click",hideModal);$("#enterShowcase").addEventListener("click",()=>switchCampaignMode("showcase"));
+}
+
+function confirmShowcaseReset(){
+  modalCard.className="modal-card";modalCard.innerHTML=`<p class="eyebrow">Showcase editor · reset</p><h2 id="modalTitle">Clear this presentation?</h2><p>This resets only the separate showcase save to its original level-ten budget. Your campaign remains untouched.</p><div class="modal-actions"><button class="action-button secondary" data-close>Keep presentation</button><button class="action-button orange" id="confirmShowcaseReset">Reset showcase</button></div>`;showModal();modalCard.querySelector("[data-close]").addEventListener("click",hideModal);$("#confirmShowcaseReset").addEventListener("click",()=>switchCampaignMode("showcase",true));
+}
+
 function showModal(){modal.classList.remove("hidden");}
 function hideModal(){modal.classList.add("hidden");}
 function toast(message,error=false){const el=document.createElement("div");el.className=`toast ${error?"error":""}`;el.textContent=message;$("#toastRegion").append(el);setTimeout(()=>el.remove(),2800);}
 function beep(frequency){if(!soundOn)return;try{const audio=new AudioContext();const osc=audio.createOscillator(),gain=audio.createGain();osc.frequency.value=frequency;gain.gain.setValueAtTime(.05,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.12);osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+.12);}catch(_){} }
-function setGameSpeed(speed){const requested=Number(speed);if(pendingBuild&&requested>0){toast("Finish or cancel construction before resuming the clock",true);return;}run.speed=requested;localStorage.setItem(STORAGE_KEY,JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
+function setGameSpeed(speed){const requested=Number(speed);if(pendingBuild&&requested>0){toast("Finish or cancel construction before resuming the clock",true);return;}run.speed=requested;localStorage.setItem(activeStorageKey(),JSON.stringify(run));updateHUD();toast(run.speed===0?"Simulation paused":`Simulation running at ${run.speed}×`);}
 
 window.addEventListener("resize",resize);
 window.addEventListener("keydown",event=>{const key=event.key.toLowerCase(),typing=["INPUT","SELECT","TEXTAREA"].includes(event.target?.tagName);if(!typing&&!event.metaKey&&!event.ctrlKey&&!event.altKey&&OVERLAY_MODES.includes(({"1":"flow","2":"needs","3":"trade","4":"operations"})[key])){setManagementOverlay(({"1":"flow","2":"needs","3":"trade","4":"operations"})[key]);event.preventDefault();return;}if(!typing&&key==="m"&&!pendingBuild){setManagementOverlay(OVERLAY_MODES[(OVERLAY_MODES.indexOf(managementOverlay)+1)%OVERLAY_MODES.length]);event.preventDefault();return;}if(key==="r"&&pendingBuild){rotatePendingBuild();event.preventDefault();return;}if(!typing&&["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright"].includes(key)){keys.add(key);targetPoint=null;event.preventDefault();}if(!typing&&key==="e"&&modal.classList.contains("hidden")&&!pendingBuild){const near=nearestLocation();if(near)interactWith(near[0]);}if(event.key==="Escape"){if(pendingBuild)cancelBuildMode();hideModal();closeDrawer();}});
-window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(STORAGE_KEY,JSON.stringify(run));});
+window.addEventListener("keyup",event=>{keys.delete(event.key.toLowerCase());localStorage.setItem(activeStorageKey(),JSON.stringify(run));});
 canvas.addEventListener("mousemove",event=>{if(pendingBuild){const point=canvasWorldPoint(event);updateBuildCursor(point.x,point.y);}});
 canvas.addEventListener("mouseleave",()=>{if(pendingBuild){buildCursor=null;refreshBuildNotice();}});
 canvas.addEventListener("click",event=>{const point=canvasWorldPoint(event),x=point.x,y=point.y;if(pendingBuild){updateBuildCursor(x,y);if(!buildCursor.valid){toast(buildCursor.reason,true);beep(180);return;}try{const build=pendingBuild,placedX=buildCursor.x,placedY=buildCursor.y,next=build.mode==="move"?moveFacility(run,build.sourceId,placedX,placedY,build.rotation||0):placeFacility(run,build.type,placedX,placedY,build.modules,build.rotation||0),message=build.mode==="move"?`${build.name.replace(/^Move /,"")} repositioned`:`${build.name} opened · campus rating ${campusMetrics(next).rating}%`;finishBuildMode(next);toast(message);beep(700);}catch(error){toast(error.message,true);beep(180);}return;}if(currentZone==="campus"){const guest=[...guestAgents].sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(guest&&Math.hypot(guest.x-x,guest.y-y)<.62){openGuestProfile(guest);return;}const djDeck=(run.facilities||[]).find(item=>item.type==="experience"&&(item.modules||[]).includes("music")&&Math.hypot(item.x-x,item.y-y)<1.8);if(djDeck){openDjOperations(djDeck.id);return;}const facility=(run.facilities||[]).filter(item=>FACILITY_SPECIALIZATIONS.some(choice=>choice.type===item.type)).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];if(facility&&Math.hypot(facility.x-x,facility.y-y)<1.25){openFacilitySpecialization(facility.id);return;}}const hit=zoneLocations().find(([,loc])=>Math.hypot(x-loc.x,y-loc.y)<1.35);if(hit)moveTo(hit[0]);else{const zone=activeZone();targetPoint={x:Math.max(zone.minX,Math.min(zone.maxX,x)),y:Math.max(zone.minY,Math.min(zone.maxY,y))};}});
@@ -1613,6 +1631,9 @@ $("#closeDrawer").addEventListener("click",closeDrawer);
 $("#rotateBuild").addEventListener("click",rotatePendingBuild);
 $("#cancelBuild").addEventListener("click",cancelBuildMode);
 $("#newRunButton").addEventListener("click",confirmNewRun);
+$("#showcaseButton").addEventListener("click",()=>showcaseMode?switchCampaignMode("campaign"):openShowcaseIntro());
+$("#exitShowcase").addEventListener("click",()=>switchCampaignMode("campaign"));
+$("#resetShowcase").addEventListener("click",confirmShowcaseReset);
 $("#soundButton").addEventListener("click",()=>{soundOn=!soundOn;$("#soundButton").classList.toggle("muted",!soundOn);$("#soundButton").textContent=soundOn?"♪":"×";});
 $("#timeCenter").addEventListener("click",openTimePanel);
 $("#deliveryChip").addEventListener("click",openTimePanel);

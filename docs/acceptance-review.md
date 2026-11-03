@@ -4,7 +4,7 @@ Status: passed for the current campaign baseline.
 
 ## Automated evidence
 
-The repository contains 81 passing Node tests across sixteen suites.
+The repository contains 84 passing Node tests across seventeen suites.
 
 | Area | Evidence |
 | --- | --- |
@@ -15,6 +15,7 @@ The repository contains 81 passing Node tests across sixteen suites.
 | Time and logistics | Phase boundaries, shop hours, delivery arrival, next-day rollover, continuous day close |
 | Building lifecycle | Construction timing, venue closure, completion idempotency, migration, and presentation contract |
 | Environmental motion | Shared climate profile, animated world layers, and reduced-motion coverage |
+| Showcase editor | Maximum progression, separate persistence, reset controls, and campaign isolation |
 
 Verification command:
 

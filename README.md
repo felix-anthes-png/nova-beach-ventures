@@ -41,6 +41,7 @@ The design has three goals:
 - Move through eight designed campus places, from the arrival plaza and academic courtyard to the food court, student lawn, event square, and beach promenade.
 - Watch directional, varied crowds queue, eat, study, browse, work, and dance instead of using one repeated walking figure.
 - See one Atlantic environment move across the whole campus through layered surf, drifting clouds, birds, fountains, wind-responsive palms, flags, and terrace canopies.
+- Open a separate level-ten Showcase Editor to demonstrate every store, district, facility, staff role, and event without altering the real campaign.
 
 ## Development milestones
 
@@ -68,6 +69,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Editable development URL | One-command Terminal launcher with automatic browser reload | [`docs/development-workflow.md`](docs/development-workflow.md) · `chore/local-development-url` |
 | Visual building lifecycle | Timed construction, operational shutters, visible logistics, and completion moments | [`specs/visual-building-lifecycle.md`](specs/visual-building-lifecycle.md) · `feature/visual-building-lifecycle` |
 | Environmental motion | Time-aware ocean, sky, vegetation, flags, fountains, and atmospheric haze | [`specs/environmental-motion.md`](specs/environmental-motion.md) · `feature/environmental-motion` |
+| Showcase editor | Separate level-ten presentation sandbox with the complete purchasable catalogue | [`specs/showcase-editor.md`](specs/showcase-editor.md) · `feature/showcase-editor` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

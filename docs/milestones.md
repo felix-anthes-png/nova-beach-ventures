@@ -104,11 +104,17 @@ Turned venue purchases and upgrades into saved construction projects. Stores rem
 
 Connected the outdoor world to one time-aware Atlantic motion profile. Layered ocean swells and shoreline foam now move beside drifting cloud bands and birds, while palms, flags, promenade pennants, terrace canopies, and courtyard water respond coherently to the breeze. Reduced-motion preferences retain the environmental composition without continuous movement.
 
+## 18. Showcase editor
+
+**Checkpoint:** `feature/showcase-editor`
+
+Added a presentation sandbox with a separate save, level-ten progression, a large build budget, and accelerated construction. The presenter can use the real purchase flows for every store, district, facility, staff role, specialization, and event, then return to the untouched campaign or reset only the showcase.
+
 ## Verification baseline
 
-At the end of milestone 17:
+At the end of milestone 18:
 
-- 81 automated tests pass, including construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 84 automated tests pass, including showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
