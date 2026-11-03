@@ -63,22 +63,32 @@ Every major system was developed as an isolated feature batch. The specification
 | Tycoon art-direction reset | Reduced HUD, contextual labels, authored campus kit, and four-frame character movement | [`specs/tycoon-art-direction-reset.md`](specs/tycoon-art-direction-reset.md) · `feature/tycoon-art-direction-reset` |
 | Designed campus spaces | Eight distinct public spaces and destination-aware guest circulation | [`specs/designed-campus-spaces.md`](specs/designed-campus-spaces.md) · `feature/designed-campus-spaces` |
 | Character and crowd overhaul | Directional movement, activity poses, stable queues, cohorts, and role-specific staff | [`specs/character-crowd-overhaul.md`](specs/character-crowd-overhaul.md) · `feature/character-crowd-overhaul` |
+| Editable development URL | One-command Terminal launcher with automatic browser reload | [`docs/development-workflow.md`](docs/development-workflow.md) · `chore/local-development-url` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
 ## Run locally
 
-The project is a dependency-free static application. Use Python, Node, or any other static server:
+The project includes a dependency-free development server. From the repository directory, run:
 
 ```bash
-python3 -m http.server 4173 --directory dist
+./start-dev
 ```
 
-Then open `http://localhost:4173`. Progress is stored in browser `localStorage` under `nova-beach-ventures-v1`.
+The command opens the game and prints two development URLs:
+
+```text
+Local:   http://localhost:4173
+Project: http://nova-beach-ventures.localhost:4173
+```
+
+Changes inside `dist/` reload the browser automatically, so the project remains fully editable. If port `4173` is occupied, the server selects the next available port and prints the resulting URL. Progress is stored in browser `localStorage` under `nova-beach-ventures-v1`.
+
+To test from another device on the same network, run `./start-dev --host 0.0.0.0` and use the printed network URL. This development address is separate from the stable deployed release. If Node and npm are installed, `npm run dev` and `npm run dev:network` provide equivalent aliases.
 
 ## Verify the product rules
 
-Node.js 20 or newer is sufficient. No package installation is required.
+No package installation is required. Python 3 runs the development server; Node.js 20 or newer runs the automated verification suite.
 
 ```bash
 node --check dist/core.js

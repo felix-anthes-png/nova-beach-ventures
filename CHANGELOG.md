@@ -70,6 +70,7 @@ This file records meaningful product increments. Individual implementation check
 - Added continuous verification for syntax and all simulation tests.
 - Added product, architecture, decision, milestone, and acceptance documentation.
 - Added issue and pull-request templates for future feature batches.
+- Added a dependency-free Terminal launcher that creates an editable local URL and reloads after source changes.
 
 ## Campaign systems — 2026-10
 

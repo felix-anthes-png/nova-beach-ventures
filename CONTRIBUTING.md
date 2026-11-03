@@ -24,6 +24,8 @@ git diff --check
 
 For visual or interaction work, also verify the affected workflow in a local static server at desktop and narrow viewport widths.
 
+Use `./start-dev` for that browser check. It prints the active URL, opens the browser, and reloads whenever a file in `dist/` changes.
+
 ## Design principles
 
 - Prefer connected systems over isolated features.
