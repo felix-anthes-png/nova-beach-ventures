@@ -1,5 +1,12 @@
 # Changelog
 
+## Showcase editor
+
+- Added a level-ten presentation sandbox with a €250,000 build budget and the complete catalogue available.
+- Kept showcase purchases, builds, land, staff, and events in a separate persistent save.
+- Added clear enter, exit, and showcase-only reset controls.
+- Preserved real prices, construction phases, and operating interactions for credible demonstrations.
+
 ## Environmental motion
 
 - Added a shared Atlantic environment profile that varies with campaign day and time.

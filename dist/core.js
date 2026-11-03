@@ -1,4 +1,5 @@
 export const INITIAL_CASH = 10000;
+export const SHOWCASE_BUDGET = 25000000;
 export const VENUE_PROJECT_DURATIONS = Object.freeze({ open: 90, upgrade2: 120, upgrade3: 180, refit: 75 });
 export const STORAGE_KEY = "nova-beach-ventures-v1";
 export const DAY_START = 450;
@@ -179,6 +180,10 @@ export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
   return { version: 7, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, venueProjects:[], storeSpecializations:{}, specializationHistory:[], districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+}
+
+export function createShowcaseRun(){
+  const run=createRun();run.campaignType="showcase";run.cash=SHOWCASE_BUDGET;run.totalSales=150;run.totalVisitors=250;run.totalCampusInteractions=120;run.reputation=50;run.speed=4;return run;
 }
 
 function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[]};}
