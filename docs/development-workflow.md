@@ -26,6 +26,14 @@ Existing `codex/*` branches are preserved as historical feature checkpoints. New
 
 Keep deterministic rules in the core and add focused tests. Run the complete suite because guest, time, progression, and financial systems interact.
 
+Start the editable browser build from the repository root:
+
+```bash
+./start-dev
+```
+
+The terminal prints the active local URL and opens it automatically. The server watches `dist/` and reloads connected browsers after source changes. It has no package dependencies and uses Python 3, which is already available in the standard project environment. Use `./start-dev --host 0.0.0.0` only when testing from another device on the same local network, and stop the server with `Ctrl+C`. The npm commands remain optional aliases.
+
 ### 4. Perform manual checks
 
 Use the browser for controls, layout, animation, and persistence. Reload after state-changing actions. For time features, verify at normal and accelerated speed.

@@ -86,11 +86,17 @@ Recomposed the original coast district as eight connected public rooms: the Arri
 
 Replaced the repeated side-facing figure with a directional six-frame population system. Guests now arrive in cohorts, form stable venue-specific queues, and visibly eat, drink, browse, sit, talk, or dance. Staff carry role-specific equipment and event crowds face the stage, making existing simulation state readable through animation.
 
+## 15. Editable local development URL
+
+**Checkpoint:** `chore/local-development-url`
+
+Added a dependency-free Terminal launcher that selects an available localhost port, opens the game, and reloads the browser when editable files in `dist/` change. A network mode supports testing from another device without changing the stable hosted release.
+
 ## Verification baseline
 
-At the end of milestone 14:
+At the end of milestone 15:
 
-- 73 automated tests pass, including the character and crowd presentation contract.
+- 74 automated tests pass, including an end-to-end check of the Terminal-created development URL.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
