@@ -4,6 +4,13 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Character and crowd animation overhaul
+
+- Replaced the four-frame crowd figure with a directional six-frame character system shared by guests, staff, the player, interiors, and events.
+- Added varied proportions, skin tones, hairstyles, clothing, shoes, and bags within one consistent campus art style.
+- Added visible eating, drinking, sitting, browsing, phone, conversation, cleaning, repair, service, and dance poses.
+- Added cohort arrivals, venue-specific queue geometry, counter-facing behavior, and denser peak-period crowds.
+
 ### Designed campus spaces
 
 - Replaced the open coast tile field with eight purpose-designed campus places, each with its own material, boundary, furniture, and ground marker.

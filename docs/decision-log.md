@@ -91,3 +91,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Organise the coast district around eight named spaces and route guests through that network.
 
 **Reason:** Strong individual buildings still felt unrelated when they sat on one continuous paving field. Different ground materials, edges, furniture, and circulation roles make the campus legible at a glance, while shared materials keep it cohesive. Protecting only essential circulation leaves social areas open to player construction.
+
+## D016 — Animate intent, not generic movement
+
+**Decision:** Use one directional character system with state-specific poses for every person in the world.
+
+**Reason:** Additional character detail is only useful when it explains what people are doing. A guest facing a counter, a caretaker holding a broom, and an event crowd dancing make queues, operations, and attractions readable without more interface labels. Shared proportions and rendering rules keep the larger variety coherent.
