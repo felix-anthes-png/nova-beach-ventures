@@ -4,7 +4,7 @@ Status: passed for the current campaign baseline.
 
 ## Automated evidence
 
-The repository contains 28 passing Node tests across five suites.
+The repository contains 81 passing Node tests across sixteen suites.
 
 | Area | Evidence |
 | --- | --- |
@@ -13,6 +13,8 @@ The repository contains 28 passing Node tests across five suites.
 | Guest behaviour | Needs, affordability, price response, patience, preferences, quality, need relief, activity history |
 | DJ operations | Prerequisites, forecasts, upgrades, scheduling, revenue, attendance, ticket affordability |
 | Time and logistics | Phase boundaries, shop hours, delivery arrival, next-day rollover, continuous day close |
+| Building lifecycle | Construction timing, venue closure, completion idempotency, migration, and presentation contract |
+| Environmental motion | Shared climate profile, animated world layers, and reduced-motion coverage |
 
 Verification command:
 

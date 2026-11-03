@@ -29,6 +29,7 @@ The design has three goals:
 - Respond to visible litter and breakdowns before cleanliness falls or assets remain closed.
 - Balance venue and district overhead against faster service, stronger ratings, and attendance momentum.
 - Upgrade stores through three visible levels and acquire two new districts.
+- Watch paid venue projects become fenced construction sites with workers, partial structures, completion cameras, shutters, and visible delivery carts.
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
 - Follow six daily campus phases from morning arrival to the sunset period.
 - Review persistent daily ledgers without interrupting the larger campaign.
@@ -39,6 +40,7 @@ The design has three goals:
 - Play through a deliberately restrained tycoon interface where world labels and guest signals appear only when they are useful.
 - Move through eight designed campus places, from the arrival plaza and academic courtyard to the food court, student lawn, event square, and beach promenade.
 - Watch directional, varied crowds queue, eat, study, browse, work, and dance instead of using one repeated walking figure.
+- See one Atlantic environment move across the whole campus through layered surf, drifting clouds, birds, fountains, wind-responsive palms, flags, and terrace canopies.
 
 ## Development milestones
 
@@ -64,6 +66,8 @@ Every major system was developed as an isolated feature batch. The specification
 | Designed campus spaces | Eight distinct public spaces and destination-aware guest circulation | [`specs/designed-campus-spaces.md`](specs/designed-campus-spaces.md) · `feature/designed-campus-spaces` |
 | Character and crowd overhaul | Directional movement, activity poses, stable queues, cohorts, and role-specific staff | [`specs/character-crowd-overhaul.md`](specs/character-crowd-overhaul.md) · `feature/character-crowd-overhaul` |
 | Editable development URL | One-command Terminal launcher with automatic browser reload | [`docs/development-workflow.md`](docs/development-workflow.md) · `chore/local-development-url` |
+| Visual building lifecycle | Timed construction, operational shutters, visible logistics, and completion moments | [`specs/visual-building-lifecycle.md`](specs/visual-building-lifecycle.md) · `feature/visual-building-lifecycle` |
+| Environmental motion | Time-aware ocean, sky, vegetation, flags, fountains, and atmospheric haze | [`specs/environmental-motion.md`](specs/environmental-motion.md) · `feature/environmental-motion` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

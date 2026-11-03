@@ -92,11 +92,23 @@ Replaced the repeated side-facing figure with a directional six-frame population
 
 Added a dependency-free Terminal launcher that selects an available localhost port, opens the game, and reloads the browser when editable files in `dist/` change. A network mode supports testing from another device without changing the stable hosted release.
 
+## 16. Visual building lifecycle
+
+**Checkpoint:** `feature/visual-building-lifecycle`
+
+Turned venue purchases and upgrades into saved construction projects. Stores remain closed while fencing, scaffolding, partial walls, workers, and progress signage occupy the plot. Completed projects trigger a short camera focus, while scheduled closures use physical shutters and stock deliveries travel visibly from the service lane toward their destination.
+
+## 17. Environmental motion
+
+**Checkpoint:** `feature/environmental-motion`
+
+Connected the outdoor world to one time-aware Atlantic motion profile. Layered ocean swells and shoreline foam now move beside drifting cloud bands and birds, while palms, flags, promenade pennants, terrace canopies, and courtyard water respond coherently to the breeze. Reduced-motion preferences retain the environmental composition without continuous movement.
+
 ## Verification baseline
 
-At the end of milestone 15:
+At the end of milestone 17:
 
-- 74 automated tests pass, including an end-to-end check of the Terminal-created development URL.
+- 81 automated tests pass, including construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

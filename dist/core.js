@@ -1,4 +1,5 @@
 export const INITIAL_CASH = 10000;
+export const VENUE_PROJECT_DURATIONS = Object.freeze({ open: 90, upgrade2: 120, upgrade3: 180, refit: 75 });
 export const STORAGE_KEY = "nova-beach-ventures-v1";
 export const DAY_START = 450;
 export const DAY_END = 1170;
@@ -177,7 +178,7 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 6, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, storeSpecializations:{}, specializationHistory:[], districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 7, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, venueProjects:[], storeSpecializations:{}, specializationHistory:[], districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
 function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[]};}
@@ -348,7 +349,15 @@ function ensureOperationsState(run){
   return run;
 }
 
-export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];(run.facilities||[]).forEach(facility=>{if(facility.specializationId&&!FACILITY_SPECIALIZATIONS.some(item=>item.id===facility.specializationId&&item.type===facility.type))delete facility.specializationId;});run.version=6;return run;}
+export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];(run.facilities||[]).forEach(facility=>{if(facility.specializationId&&!FACILITY_SPECIALIZATIONS.some(item=>item.id===facility.specializationId&&item.type===facility.type))delete facility.specializationId;});run.version=7;return run;}
+
+export function activeVenueProject(run,storeId){return (run.venueProjects||[]).find(project=>project.storeId===storeId&&project.status==="building")||null;}
+export function venueProjectProgress(project){if(!project)return 1;const duration=Math.max(1,project.durationMinutes||1),remaining=Math.max(0,project.remainingMinutes||0);return Math.max(0,Math.min(1,1-remaining/duration));}
+function startVenueProject(run,storeId,kind,fromLevel,toLevel,durationMinutes,now){
+  if(!Array.isArray(run.venueProjects))run.venueProjects=[];
+  const project={id:`venue-project-${storeId}-${run.currentDay}-${run.venueProjects.length+1}`,storeId,kind,fromLevel,toLevel,status:"building",startedAt:now,startDay:run.currentDay,startMinute:run.clockMinutes,durationMinutes,remainingMinutes:durationMinutes};
+  run.venueProjects.push(project);return project;
+}
 
 export function staffIsOnShift(worker,minutes){const shift=shiftFor(worker);return minutes>=shift.start&&minutes<shift.end;}
 export function activeStaffCount(run,roleId,districtId="coast",minutes=run.clockMinutes){ensureOperationsState(run);if(run.operations.payrollDue>0)return 0;return run.staffRoster.filter(worker=>worker.roleId===roleId&&worker.districtId===districtId&&staffIsOnShift(worker,minutes)).length;}
@@ -623,7 +632,7 @@ export function campusPhase(minutes){
 
 export function storeIsOpen(run,storeId,minutes=run.clockMinutes){
   const hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId];
-  return Boolean(hours&&minutes>=hours.open&&minutes<hours.close&&!assetIsClosed(run,"store",storeId));
+  return Boolean(hours&&minutes>=hours.open&&minutes<hours.close&&!assetIsClosed(run,"store",storeId)&&!activeVenueProject(run,storeId));
 }
 
 export function setStoreHours(run,storeId,open,close){
@@ -662,7 +671,8 @@ export function unlockVenue(run,storeId,now=new Date().toISOString()){
   if(storeId==="beach"&&!run.districts?.east)throw new Error("Acquire the East Promenade before opening the Beach Bar.");
   if(storeId==="surf"&&!run.districts?.pier)throw new Error("Acquire the Ocean Pier before opening the Surf Shack.");
   const cost=STORE_UNLOCKS[storeId];if(run.cash<cost)throw new Error(`You need ${formatEuro(cost)} to open this venue.`);
-  const next=structuredClone(run);next.cash-=cost;next.venues[storeId]=1;
+  if(activeVenueProject(run,storeId))throw new Error("This venue already has an active construction project.");
+  const next=structuredClone(run);next.cash-=cost;next.venues[storeId]=1;startVenueProject(next,storeId,"open",0,1,VENUE_PROJECT_DURATIONS.open,now);
   if(!Array.isArray(next.venuePurchases))next.venuePurchases=[];next.venuePurchases.push({at:now,day:run.currentDay,storeId,cost});
   return next;
 }
@@ -690,7 +700,7 @@ function ensureTycoonState(run){
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  run.version=6;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];
+  run.version=7;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];
   if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
   if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};
@@ -748,6 +758,17 @@ function processDeliveries(run,minutes){
   }
 }
 
+function processVenueProjects(run,minutes){
+  if(!Array.isArray(run.venueProjects))run.venueProjects=[];
+  for(const project of run.venueProjects){
+    if(project.status!=="building")continue;
+    project.remainingMinutes=Math.max(0,(project.remainingMinutes||0)-minutes);
+    if(project.remainingMinutes>0)continue;
+    project.status="complete";project.completedDay=run.currentDay;project.completedMinute=run.clockMinutes+minutes;project.completedAt=new Date().toISOString();run.reputation=(run.reputation||0)+(project.kind==="open"?4:5);
+  }
+  if(run.venueProjects.length>40)run.venueProjects=run.venueProjects.slice(-40);
+}
+
 function processDjEvent(run,minutes){
   const scheduled=run.scheduledEvent;if(scheduled&&scheduled.day===run.currentDay&&scheduled.startMinute>=run.clockMinutes&&scheduled.startMinute<run.clockMinutes+minutes){run.activeEvent={...scheduled,styleName:DJ_STYLES.find(item=>item.id===scheduled.styleId)?.name||"Live set",remainingMinutes:scheduled.duration,attendance:0,revenue:0,attendanceProgress:0,startedAt:new Date().toISOString()};run.today.eventCosts+=scheduled.operatingCost||0;run.scheduledEvent=null;}
   if(!run.activeEvent)return;
@@ -757,6 +778,7 @@ function processDjEvent(run,minutes){
 }
 
 function processSlice(run,minutes){
+  processVenueProjects(run,minutes);
   processDeliveries(run,minutes);
   processDjEvent(run,minutes);
   processOperations(run,minutes);
@@ -787,14 +809,15 @@ export function upgradeVenue(run, storeId, now = new Date().toISOString()) {
   const level = run.venues?.[storeId] ?? 0;
   if(level===0)throw new Error("Open this venue before upgrading it.");
   if (level >= 3) throw new Error("This venue is already at the maximum level.");
+  if(activeVenueProject(run,storeId))throw new Error("Finish the active construction project before upgrading again.");
   const cost = level === 1 ? 1500 : 2500;
   if (run.cash < cost) throw new Error(`You need ${formatEuro(cost)} to upgrade this venue.`);
   const next = structuredClone(run);
   if (!next.venues) next.venues = { cafe: 1, snack: 1, merch: 1 };
   next.cash -= cost;
   next.venues[storeId] = level + 1;
+  startVenueProject(next,storeId,`upgrade${level+1}`,level,level+1,level===1?VENUE_PROJECT_DURATIONS.upgrade2:VENUE_PROJECT_DURATIONS.upgrade3,now);
   if (!Array.isArray(next.upgrades)) next.upgrades = [];
   next.upgrades.push({ at: now, day: run.currentDay, storeId, fromLevel: level, toLevel: level + 1, cost });
-  next.reputation = (next.reputation || 0) + 5;
   return next;
 }

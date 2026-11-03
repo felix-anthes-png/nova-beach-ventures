@@ -1,8 +1,23 @@
 # Changelog
 
+## Environmental motion
+
+- Added a shared Atlantic environment profile that varies with campaign day and time.
+- Animated layered ocean swells, shoreline foam, drifting clouds, distant birds, palms, flags, terrace canopies, and courtyard water.
+- Connected the weather chip and sunset haze to the rendered outdoor conditions.
+- Added a reduced-motion fallback that preserves the composition without continuous ambient movement.
+
 This file records meaningful product increments. Individual implementation checkpoints remain available through the linked feature branches and commit history.
 
 ## Unreleased
+
+### Visual building lifecycle
+
+- Added persistent timed construction projects for new venues and level upgrades.
+- Added fencing, scaffolding, partial structures, site workers, progress boards, and completion camera moments.
+- Added physical shutters for scheduled closures and breakdowns.
+- Added visible delivery carts that follow the saved logistics schedule from the service lane to destination stores.
+- Added construction status to venue management and portfolio views, with duplicate upgrades prevented until completion.
 
 ### Character and crowd animation overhaul
 

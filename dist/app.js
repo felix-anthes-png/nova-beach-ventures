@@ -1,4 +1,4 @@
-import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=27-store-building-specialization";
+import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, createRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, activeVenueProject, venueProjectProgress, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=33-environmental-motion";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -41,9 +41,11 @@ const OVERLAY_STORAGE_KEY="nova-beach-ventures-overlay";
 const OVERLAY_MODES=["flow","needs","trade","operations"];
 let managementOverlay=OVERLAY_MODES.includes(localStorage.getItem(OVERLAY_STORAGE_KEY))?localStorage.getItem(OVERLAY_STORAGE_KEY):"flow";
 const camera = { x: run.player.x, y: run.player.y, zoom: 1 };
+let cameraSequence=null;
 const TILE_W = 76, TILE_H = 38;
 const WALK_SPEED = 3.5;
 const GUEST_SPEED = 1.45;
+const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
 const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:47.5,y:21.2},{x:55.2,y:16.2}];
 const GUEST_NAMES = ["Inês","Tomás","Maya","Luca","Beatriz","Rafael","Sofia","Noah","Leonor","Mateo","Clara","Tiago","Amélia","Hugo","Nina","Martim"];
 const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",beach:"☀",surf:"≈",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",pavilion:"♫",exit:"↗"};
@@ -97,7 +99,7 @@ function syncCampusBounds(){ZONES.campus.maxX=run.districts?.pier?56.5:run.distr
 function loadRun() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (parsed && [1,2,3,4,5,6].includes(parsed.version) && Array.isArray(parsed.history)) {
+    if (parsed && [1,2,3,4,5,6,7].includes(parsed.version) && Array.isArray(parsed.history)) {
       if (!parsed.player) parsed.player = { x:21, y:18, zone:"campus" };
       if (!parsed.player.zone || !ZONES[parsed.player.zone]) parsed.player = { x:Math.min(41,Math.max(1,parsed.player.x||21)), y:Math.min(25.7,Math.max(7.5,parsed.player.y||18)), zone:"campus" };
       CATALOGUE.forEach(product => {
@@ -118,7 +120,7 @@ function loadRun() {
       parsed.facilities.forEach(facility=>{if(!Number.isInteger(facility.rotation))facility.rotation=0;});
       if (!parsed.staff) parsed.staff = { service:0, caretaker:0, technician:0, host:0, entertainer:0 };
       STAFF_CATALOGUE.forEach(role=>{if(!Number.isInteger(parsed.staff[role.id]))parsed.staff[role.id]=0;});
-      parsed.version=6;parsed.completed=false;parsed.salesMode="guests";if(!Array.isArray(parsed.guestSales))parsed.guestSales=[];if(!parsed.storeSpecializations)parsed.storeSpecializations={};if(!Array.isArray(parsed.specializationHistory))parsed.specializationHistory=[];
+      parsed.version=7;parsed.completed=false;parsed.salesMode="guests";if(!Array.isArray(parsed.guestSales))parsed.guestSales=[];if(!parsed.storeSpecializations)parsed.storeSpecializations={};if(!Array.isArray(parsed.specializationHistory))parsed.specializationHistory=[];if(!Array.isArray(parsed.venueProjects))parsed.venueProjects=[];
       if(!Number.isFinite(parsed.clockMinutes))parsed.clockMinutes=DAY_START;
       if(!Number.isFinite(parsed.speed))parsed.speed=1;
       if(!parsed.today)parsed.today={revenue:0,cogs:0,unitsSold:0,visitors:0,products:{},activities:{}};
@@ -151,16 +153,16 @@ function save(next) {
 function updateHUD() {
   const zone=activeZone();
   const campus=campusMetrics(run),progression=progressionState(run),operations=operationsSnapshot(run),pulse=tycoonPulse(run);
-  const phase=campusPhase(run.clockMinutes),light=lightingProfile(run.clockMinutes);
+  const phase=campusPhase(run.clockMinutes),light=lightingProfile(run.clockMinutes),environment=environmentalProfile();
   $("#game").dataset.light=light.stage;
   $("#zoneName").textContent=zone.name;
   $("#zoneSub").textContent=zone.sub;
   $("#miniMapTitle").textContent=zone.outdoor?"CAMPUS MAP":"ROOM PLAN";
   $("#game").classList.toggle("indoors",!zone.outdoor);
-  $("#weatherIcon").textContent=zone.outdoor?(light.stage==="dusk"?"◒":light.stage==="sunset"?"◐":"☀"):"⌂";
-  $("#weatherTemp").textContent=zone.outdoor?(light.stage==="dusk"?"20°":light.stage==="sunset"?"22°":"24°"):"IN";
+  $("#weatherIcon").textContent=zone.outdoor?(environment.wind>.7?"≋":light.stage==="dusk"?"◒":light.stage==="sunset"?"◐":"☀"):"⌂";
+  $("#weatherTemp").textContent=zone.outdoor?`${environment.temperature}°`:"IN";
   const peak=crowdPeak(run.clockMinutes);
-  $("#weatherNote").textContent=zone.outdoor?`${formatClock(run.clockMinutes)} · ${phase.name.toUpperCase()}`:zone.sub;
+  $("#weatherNote").textContent=zone.outdoor?`${environment.label} · ${phase.name.toUpperCase()}`:zone.sub;
   document.querySelectorAll("[data-zone-indicator]").forEach(item=>item.classList.toggle("active",item.dataset.zoneIndicator===zone.id));
   $("#dayStat").textContent = `${run.currentDay}`;
   $("#timeStat").textContent = formatClock(run.clockMinutes);
@@ -247,6 +249,44 @@ function lightingProfile(minutes){
   ];
   const value=Math.max(DAY_START,Math.min(DAY_END,minutes)),right=stops.find(stop=>stop.minute>=value)||stops.at(-1),left=stops[Math.max(0,stops.indexOf(right)-1)]||right,span=Math.max(1,right.minute-left.minute),mix=Math.max(0,Math.min(1,(value-left.minute)/span));
   return {top:mixColor(left.top,right.top,mix),bottom:mixColor(left.bottom,right.bottom,mix),overlay:mixColor(left.overlay,right.overlay,mix),alpha:left.alpha+(right.alpha-left.alpha)*mix,stage:mix>.55?right.stage:left.stage,progress:(value-DAY_START)/(DAY_END-DAY_START)};
+}
+
+function environmentalProfile(minutes=run.clockMinutes,day=run.currentDay,t=lastTime){
+  const daySeed=((day*37)%17)/17,afternoon=Math.max(0,Math.sin(((minutes-DAY_START)/(DAY_END-DAY_START))*Math.PI));
+  const baseWind=.38+daySeed*.24+afternoon*.22,gust=reducedMotion?0:Math.sin(t*.00073+day*.91)*.1+Math.sin(t*.00191+day)*.045;
+  const wind=Math.max(.18,Math.min(.92,baseWind+gust)),sea=.42+wind*.52,cloud=.12+((day*11)%9)/30;
+  const temperature=Math.round(20+afternoon*4-daySeed*1.4),label=wind>.72?"COASTAL WIND":wind>.48?"ATLANTIC BREEZE":"CALM SURF";
+  return {wind,sea,cloud,temperature,label,direction:1,phase:reducedMotion?0:t*.001};
+}
+
+function drawSkyMotion(t,environment,w,h){
+  ctx.save();ctx.globalAlpha=.14+environment.cloud*.2;
+  for(let i=0;i<4;i++){
+    const drift=reducedMotion?i*w/4:(t*.006*(.35+environment.wind)+i*211)%(w+280),x=drift-150,y=55+i*47+(i%2)*18,scale=.7+i*.12;
+    ctx.fillStyle=i%2?"#f4eee1":"#edf4ed";ctx.beginPath();ctx.ellipse(x,y,58*scale,12*scale,0,0,Math.PI*2);ctx.ellipse(x+38*scale,y-7*scale,42*scale,15*scale,0,0,Math.PI*2);ctx.ellipse(x-35*scale,y+2*scale,35*scale,10*scale,0,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=.34;ctx.strokeStyle="#173743";ctx.lineWidth=1.2;
+  for(let i=0;i<3;i++){const x=reducedMotion?w*(.3+i*.2):((t*.018*(.55+environment.wind)+i*260)%(w+120))-60,y=86+i*31;ctx.beginPath();ctx.arc(x,y,6,Math.PI*1.08,Math.PI*1.82);ctx.arc(x+12,y,6,Math.PI*1.18,Math.PI*1.92);ctx.stroke();}
+  ctx.restore();
+}
+
+function drawCoastalMotion(t,environment){
+  ctx.save();ctx.lineCap="round";
+  for(let band=0;band<5;band++){
+    const y=25.55+band*.78,amplitude=2.2+band*.7+environment.sea*2,alpha=.18+band*.07;ctx.strokeStyle=`rgba(229,251,247,${alpha})`;ctx.lineWidth=1.2+band*.3;ctx.beginPath();
+    for(let x=-1;x<=58;x+=.35){const phase=x*.55-(reducedMotion?0:t*.0011*(.65+environment.sea))+band*.9,p=isoPoint(x,y+Math.sin(phase)*.075*environment.sea,5+Math.sin(phase)*amplitude);if(x===-1)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
+  }
+  for(let ribbon=0;ribbon<3;ribbon++){
+    ctx.strokeStyle=`rgba(255,255,245,${.34-ribbon*.07})`;ctx.lineWidth=2.4-ribbon*.35;ctx.beginPath();
+    for(let x=0;x<=58;x+=.3){const phase=x*.48-(reducedMotion?0:t*.0015*(.8+environment.sea))+ribbon*1.7,p=isoPoint(x,25.1+ribbon*.16+Math.sin(phase)*.09,7);if(x===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
+  }
+  for(let i=0;i<11;i++){const progress=reducedMotion?i/11:((t*.000035*(.8+environment.wind)+i/11)%1),p=isoPoint(2+i*5.1,25.25+progress*3.9,8);ctx.fillStyle=`rgba(240,255,250,${.3*(1-progress)})`;ctx.beginPath();ctx.ellipse(p.x,p.y,7+progress*5,1.4,0,0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+
+function drawWindFlag(x,y,z,color,t,environment,scale=1){
+  const pole=isoPoint(x,y,z);ctx.save();ctx.strokeStyle="#173743";ctx.lineWidth=2.5*scale;ctx.beginPath();ctx.moveTo(pole.x,pole.y+23*scale);ctx.lineTo(pole.x,pole.y-25*scale);ctx.stroke();
+  const flutter=(reducedMotion?0:Math.sin(t*.008+x*1.7+y))*3.2*environment.wind;ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(pole.x,pole.y-24*scale);ctx.quadraticCurveTo(pole.x+12*scale,pole.y-22*scale+flutter,pole.x+25*scale,pole.y-16*scale);ctx.quadraticCurveTo(pole.x+12*scale,pole.y-10*scale-flutter*.45,pole.x,pole.y-9*scale);ctx.closePath();ctx.fill();ctx.restore();
 }
 
 function drawAmbientLighting(light,w,h){
@@ -348,14 +388,16 @@ function drawManagementOverlay(t){
 function drawWorld(t) {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
-  const zone=activeZone(),light=lightingProfile(run.clockMinutes),sky=ctx.createLinearGradient(0,0,0,h);
+  const zone=activeZone(),light=lightingProfile(run.clockMinutes),environment=environmentalProfile(run.clockMinutes,run.currentDay,t),sky=ctx.createLinearGradient(0,0,0,h);
   if(zone.outdoor){sky.addColorStop(0,light.top);sky.addColorStop(1,light.bottom);}else{sky.addColorStop(0,"#122d36");sky.addColorStop(1,"#34505a");}
   ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+  if(zone.outdoor)drawSkyMotion(t,environment,w,h);
   const cp=isoPoint(camera.x,camera.y);
   ctx.save();
   ctx.translate(w/2-cp.x*camera.zoom,h/2-cp.y*camera.zoom);
   ctx.scale(camera.zoom, camera.zoom);
   drawTerrain(t);
+  if(zone.outdoor)drawCoastalMotion(t,environment);
   if(zone.outdoor)drawCampusGroundPlan(t);
   const worldActors=zone.outdoor?[
     {depth:14.4,draw:()=>drawLibrary()},
@@ -365,7 +407,8 @@ function drawWorld(t) {
     {depth:43,draw:()=>drawBeachStage(t)},
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
-    ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170)})),
+    ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170,environment)})),
+    ...deliveryWorldActors(t),
     ...operationsWorldActors(t),
     ...liveCrowd(t)
   ]:drawRoomActors(t);
@@ -454,7 +497,7 @@ function drawCampusBench(x,y,rotation=0,color="#b98b59"){
 
 function drawTerraceTable(x,y,accent="#ed7458"){
   const p=isoPoint(x,y,17);ctx.fillStyle="#ede8da";ctx.beginPath();ctx.ellipse(p.x,p.y,10,5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#31545b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y+2);ctx.lineTo(p.x,p.y+15);ctx.stroke();
-  const canopy=isoPoint(x,y,36);ctx.fillStyle=accent;ctx.beginPath();ctx.moveTo(canopy.x-13,canopy.y);ctx.lineTo(canopy.x,canopy.y-7);ctx.lineTo(canopy.x+13,canopy.y);ctx.closePath();ctx.fill();ctx.strokeStyle="#31545b";ctx.beginPath();ctx.moveTo(canopy.x,canopy.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+  const environment=environmentalProfile(),canopy=isoPoint(x,y,36),sway=reducedMotion?0:Math.sin(lastTime*.0016+x)*environment.wind*2.2;ctx.fillStyle=accent;ctx.beginPath();ctx.moveTo(canopy.x-13+sway,canopy.y);ctx.lineTo(canopy.x+sway*.55,canopy.y-7);ctx.lineTo(canopy.x+13+sway,canopy.y);ctx.closePath();ctx.fill();ctx.strokeStyle="#31545b";ctx.beginPath();ctx.moveTo(canopy.x+sway*.35,canopy.y);ctx.lineTo(p.x,p.y);ctx.stroke();
 }
 
 function drawPergola(x,y,w,h,accent="#f5c95e"){
@@ -470,7 +513,7 @@ function drawArrivalPlaza(){
 
 function drawAcademicCourtyard(t){
   drawPavingInlay(12.65,9.25,15.15,5.15,"#f0ece3",1.35);drawGroundSlab(14.7,10.45,6.8,1.15,"#72bdc4",4);
-  const water=isoPoint(18.1,11,6);ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle="#f4ffff";ctx.lineWidth=1.2;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(water.x+i*6-9,water.y+i*3-4,32,7,0,0,Math.PI*2);ctx.stroke();}ctx.restore();
+  const water=isoPoint(18.1,11,6);ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle="#f4ffff";ctx.lineWidth=1.2;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(water.x+i*6-9,water.y+i*3-4,32+Math.sin(t*.002+i)*2,7,0,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=.68;for(let jet=0;jet<3;jet++){const lift=10+Math.abs(Math.sin(t*.003+jet*1.2))*8;ctx.beginPath();ctx.moveTo(water.x-18+jet*18,water.y);ctx.quadraticCurveTo(water.x-15+jet*18,water.y-lift,water.x-7+jet*18,water.y+1);ctx.stroke();}ctx.restore();
   for(let i=0;i<4;i++)drawLinearPlanter(12.95+i*4.65,12.94,1.45,.68,14);
   drawCampusBench(13.35,11.8);drawCampusBench(24.8,11.75);drawSpaceCaption(13.05,9.75,"Academic Courtyard","#31545b");
   const pulse=2+Math.sin(t*.002)*.7,p=isoPoint(20.1,12.72,9);ctx.fillStyle=`rgba(100,203,200,${.12+pulse*.015})`;ctx.beginPath();ctx.ellipse(p.x,p.y,28,10,0,0,Math.PI*2);ctx.fill();
@@ -503,6 +546,7 @@ function drawStudentLawn(){
 function drawBeachPromenade(t){
   drawGroundSlab(2.1,21.62,37.2,1.38,"#c2b39a",5);for(let x=2.4;x<39;x+=1.1){const a=isoPoint(x,21.72,7),b=isoPoint(x,22.88,7);ctx.strokeStyle="rgba(91,72,53,.18)";ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
   for(let x=5;x<39;x+=5.4){const base=isoPoint(x,22.15,7),top=isoPoint(x,22.15,35);ctx.strokeStyle="#31545b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(top.x,top.y);ctx.stroke();ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.arc(top.x,top.y,3+Math.sin(t*.002+x)*.3,0,Math.PI*2);ctx.fill();}
+  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);for(let x=7.7,index=0;x<38;x+=7.6,index++)drawWindFlag(x,21.9,48,index%2?"#64cbc8":"#ed7458",t+index*190,environment,.58);
   drawSpaceCaption(31.5,22.8,"Beach Promenade","#6d5944");
 }
 
@@ -578,6 +622,7 @@ function drawCampus(t) {
   drawCanopy(12,8.25,18.3,1.15,31);drawColumnLine(12.3,9.36,17.7,11,30,"x");
   drawLinearPlanter(13.1,8.95,4.2,.62,13);drawLinearPlanter(24.6,8.95,4.35,.62,13);
   const bridgeA=isoPoint(17.8,5.6,60),bridgeB=isoPoint(24.25,5.6,60);ctx.strokeStyle="#e8e8e2";ctx.lineWidth=14;ctx.beginPath();ctx.moveTo(bridgeA.x,bridgeA.y);ctx.lineTo(bridgeB.x,bridgeB.y);ctx.stroke();ctx.strokeStyle="#315c65";ctx.lineWidth=8;ctx.stroke();
+  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(13.25,3.6,112,"#ed7458",t,environment,.86);drawWindFlag(24.8,3.5,133,"#f5c95e",t+180,environment,.86);drawWindFlag(29.1,4.15,119,"#64cbc8",t+340,environment,.86);
   drawWorldLabel(21.2,8.55,127,"NOVA COAST CAMPUS","#f5c95e");
 }
 
@@ -796,7 +841,7 @@ function djEventCrowd(t){
 function drawQueueLabel(x,y,label,count,using=false){const p=isoPoint(x,y,62);roundedRect(p.x-49,p.y-10,98,20,4,"rgba(10,37,46,.92)");ctx.fillStyle=using?"#64cbc8":"#bce65f";ctx.textAlign="center";ctx.font="700 6.5px DM Mono";ctx.fillText(using?`${label}`:`${label.toUpperCase()} · ${count} IN LINE`,p.x,p.y+3);}
 function drawActivityPulse(pulse,t){const p=isoPoint(pulse.x,pulse.y,86),alpha=Math.max(0,Math.min(1,(pulse.until-t)/600));ctx.save();ctx.globalAlpha=alpha;roundedRect(p.x-62,p.y-10,124,20,10,"rgba(7,29,37,.92)");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="700 6px DM Mono";ctx.fillText(pulse.text.toUpperCase(),p.x,p.y+2);ctx.restore();}
 
-function drawTree(x,y,scale,t){const p=isoPoint(x,y,4),sway=Math.sin(t*.001)*2;ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.fillStyle="rgba(10,45,38,.16)";ctx.beginPath();ctx.ellipse(7,4,27,8,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#76563b";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-2,-30,sway,-64);ctx.stroke();ctx.strokeStyle="rgba(255,210,145,.34)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-2,-3);ctx.quadraticCurveTo(-4,-31,sway-2,-61);ctx.stroke();ctx.translate(sway,-65);for(let a=0;a<7;a++){ctx.save();ctx.rotate(a*Math.PI*2/7+Math.sin(t*.0007+a)*.035);ctx.fillStyle=a%2?"#2f8358":"#3d9668";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(18,-7,37,0);ctx.quadraticCurveTo(19,8,0,3);ctx.closePath();ctx.fill();ctx.restore();}ctx.fillStyle="#87633f";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();}
+function drawTree(x,y,scale,t,environment=environmentalProfile()){const gust=reducedMotion?0:(Math.sin(t*.0012+x*.37)+Math.sin(t*.0031+y)*.35),sway=gust*(1.4+environment.wind*3.4),p=isoPoint(x,y,4);ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.fillStyle="rgba(10,45,38,.16)";ctx.beginPath();ctx.ellipse(7,4,27,8,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#76563b";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-2,-30,sway,-64);ctx.stroke();ctx.strokeStyle="rgba(255,210,145,.34)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-2,-3);ctx.quadraticCurveTo(-4,-31,sway-2,-61);ctx.stroke();ctx.translate(sway,-65);for(let a=0;a<7;a++){ctx.save();ctx.rotate(a*Math.PI*2/7+gust*.025+Math.sin(t*.0017+a)*.035*environment.wind);ctx.scale(1+environment.wind*.06,1);ctx.fillStyle=a%2?"#2f8358":"#3d9668";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(18,-7,37,0);ctx.quadraticCurveTo(19,8,0,3);ctx.closePath();ctx.fill();ctx.restore();}ctx.fillStyle="#87633f";ctx.beginPath();ctx.arc(0,0,5,0,Math.PI*2);ctx.fill();ctx.restore();}
 
 function drawAtlanticBench(x,y){
   drawRaisedSlab(x-.82,y-.28,1.64,.56,19,7,"#c99e64","#755b3e","#92704a");
@@ -981,6 +1026,22 @@ function drawGuestAgent(guest,t,index){
   if((guest.state==="queueing"||guest.state==="using")&&Math.hypot(run.player.x-guest.x,run.player.y-guest.y)<5.5){const p=isoPoint(guest.x,guest.y,58),icon=GUEST_ICONS[guest.target.type||guest.target.id]||"·";ctx.save();ctx.fillStyle="rgba(255,255,255,.96)";ctx.beginPath();ctx.arc(p.x,p.y,7.5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=guest.state==="queueing"?"#bce65f":"#64cbc8";ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font=icon==="WC"?"800 4px DM Mono":"800 6.5px Manrope";ctx.fillText(icon,p.x,p.y+2.2);ctx.restore();}
 }
 
+function drawConstructionSite(id,loc,project,t){
+  const progress=venueProjectProgress(project),store=STORES.find(item=>item.id===id),targetHeight=project.toLevel===3?72:project.toLevel===2?58:46,wallHeight=Math.max(8,targetHeight*Math.max(0,(progress-.18)/.72));
+  drawSoftShadow(loc.x,loc.y,48,15,.2);drawGroundSlab(loc.x-1.35,loc.y-.86,2.7,1.72,"#c8c2b4",5);
+  if(progress>.18)drawBlock(loc.x-.9,loc.y-.54,1.8,1.08,wallHeight,"#e8e4da","#9ba5a1","#bec4bf");
+  const fenceColor="#e8e3d7",postColor="#31545b";ctx.save();ctx.strokeStyle=fenceColor;ctx.lineWidth=3;ctx.setLineDash([7,4]);
+  for(const [ax,ay,bx,by] of [[-1.42,-.9,1.42,-.9],[-1.42,.9,1.42,.9],[-1.42,-.9,-1.42,.9],[1.42,-.9,1.42,.9]]){const a=isoPoint(loc.x+ax,loc.y+ay,17),b=isoPoint(loc.x+bx,loc.y+by,17);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  ctx.setLineDash([]);ctx.strokeStyle=postColor;ctx.lineWidth=2;for(const [dx,dy] of [[-1.42,-.9],[1.42,-.9],[-1.42,.9],[1.42,.9]]){const a=isoPoint(loc.x+dx,loc.y+dy,3),b=isoPoint(loc.x+dx,loc.y+dy,28);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.restore();
+  const scaffoldHeight=Math.max(30,wallHeight+12);for(const side of [-1,1]){const x=loc.x+side*1.02;ctx.strokeStyle="#d89a3d";ctx.lineWidth=2;for(const dy of [-.5,.2]){const a=isoPoint(x,loc.y+dy,3),b=isoPoint(x,loc.y+dy,scaffoldHeight);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}for(let z=17;z<scaffoldHeight;z+=16){const a=isoPoint(x,loc.y-.52,z),b=isoPoint(x,loc.y+.24,z);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
+  drawPersonFigure(loc.x-.82,loc.y+.72,t,91,{color:"#f5c95e",phase:.3,moving:false,facing:{x:1,y:-1},pose:"repair",role:"technician"});drawPersonFigure(loc.x+.62,loc.y+.62,t,96,{color:"#ff8060",phase:1.4,moving:false,facing:{x:-1,y:-1},pose:"repair",role:"technician"});
+  const sign=isoPoint(loc.x,loc.y+1.2,38);roundedRect(sign.x-43,sign.y-17,86,31,4,"#173743");ctx.fillStyle=store?.color||"#bce65f";ctx.fillRect(sign.x-43,sign.y-17,5,31);ctx.fillStyle="#fff";ctx.textAlign="left";ctx.font="800 6px DM Mono";ctx.fillText(project.kind==="open"?"NEW VENUE":"VENUE UPGRADE",sign.x-31,sign.y-5);ctx.fillStyle="#b9c9c7";ctx.font="700 5px DM Mono";ctx.fillText(`${Math.round(progress*100)}% · ${Math.ceil(project.remainingMinutes)} MIN`,sign.x-31,sign.y+6);ctx.fillStyle="#bce65f";ctx.fillRect(sign.x-31,sign.y+10,58*progress,3);ctx.strokeStyle="#547078";ctx.strokeRect(sign.x-31,sign.y+10,58,3);
+}
+
+function drawStoreFrontageState(id,loc,level,open,broken){
+  if(open&&!broken)return;const z=22+level*4,p=isoPoint(loc.x,loc.y+.66,z);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-31,-16,62,27,2,broken?"#5f514c":"#667674");ctx.strokeStyle=broken?"#ff8060":"#aeb8b4";ctx.lineWidth=1.5;for(let y=-12;y<9;y+=5){ctx.beginPath();ctx.moveTo(-28,y);ctx.lineTo(28,y);ctx.stroke();}ctx.fillStyle=broken?"#ff8060":"#e8e3d7";ctx.font="900 5px DM Mono";ctx.textAlign="center";ctx.fillText(broken?"TEMPORARILY CLOSED":"CLOSED",0,20);ctx.restore();
+}
+
 function drawCafeVenue(loc,level,accent){
   const x=loc.x-1.05,y=loc.y-.67,w=2.1,h=1.34,z=42+level*8;drawSoftShadow(loc.x,loc.y,39,12,.22);
   drawBlock(x,y,w,h,z,WORLD_MATERIALS.chalk,"#98aaa6","#c3cac5");drawFacadeBandY(x+.08,y+h+.01,w-.16,7,z-7,WORLD_MATERIALS.glass,5);
@@ -1021,12 +1082,29 @@ function drawSurfVenue(loc,level,accent){
 
 function drawStorePod(id,loc,level,locked){
   if(locked){drawVenuePlot(id,loc);return;}
+  const project=activeVenueProject(run,id);if(project){drawConstructionSite(id,loc,project,lastTime);return;}
   const broken=assetIsClosed(run,"store",id),open=storeIsOpen(run,id),accent=open?loc.color:broken?"#ff8060":"#7f908e",size=1.72+level*.18,z=40+level*9;
   ({cafe:drawCafeVenue,snack:drawFuelVenue,merch:drawMerchVenue,beach:drawBeachVenue,surf:drawSurfVenue}[id]||drawCafeVenue)(loc,level,accent);
   const sign=isoPoint(loc.x,loc.y+1.02,22);roundedRect(sign.x-24,sign.y-6,48,12,3,"#12343e");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="900 5px DM Mono";ctx.fillText(id==="cafe"?"CAFÉ":id==="snack"?"FUEL":id==="merch"?"MERCH":id==="beach"?"MARÉ":"SURF",sign.x,sign.y+2);
   if(broken||!open||Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<3){const status=isoPoint(loc.x,loc.y+size*.46,15);roundedRect(status.x-20,status.y-5,40,10,3,open?"#bce65f":broken?"#ff8060":"#80908d");ctx.fillStyle="#173743";ctx.font="900 4.5px DM Mono";ctx.fillText(open?"OPEN":broken?"REPAIR":"CLOSED",status.x,status.y+1.5);}
   if(level>=2){const badge=isoPoint(loc.x-.72,loc.y-.48,z+26);ctx.fillStyle=accent;ctx.beginPath();ctx.arc(badge.x,badge.y,8,0,Math.PI*2);ctx.fill();ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 6px DM Mono";ctx.fillText(`L${level}`,badge.x,badge.y+2);}
+  drawStoreFrontageState(id,loc,level,open,broken);
   drawStoreSpecializationFeature(id,loc,z,size);
+}
+
+function drawDeliveryCart(x,y,t,label){
+  drawSoftShadow(x,y,30,9,.15);drawBlock(x-.7,y-.38,1.4,.76,22,"#d7c097","#806f57","#a28d70");const canopy=[isoPoint(x-.82,y-.48,35),isoPoint(x+.82,y-.48,35),isoPoint(x+.66,y+.46,35),isoPoint(x-.66,y+.46,35)];drawPlane(canopy,"#f5c95e","#31545b",1.2);
+  for(const side of [-1,1]){const wheel=isoPoint(x+side*.62,y+.42,8);ctx.fillStyle="#173743";ctx.beginPath();ctx.arc(wheel.x,wheel.y,6,0,Math.PI*2);ctx.fill();ctx.fillStyle="#cfd8d4";ctx.beginPath();ctx.arc(wheel.x,wheel.y,2.4,0,Math.PI*2);ctx.fill();}
+  const p=isoPoint(x,y+.5,30);roundedRect(p.x-23,p.y-7,46,12,3,"#173743");ctx.fillStyle="#bce65f";ctx.textAlign="center";ctx.font="800 4.5px DM Mono";ctx.fillText(label.toUpperCase().slice(0,14),p.x,p.y+1);drawPersonFigure(x-.9,y+.25,t,123,{color:"#f5c95e",phase:.8,moving:true,facing:{x:1,y:0},pose:"walk",role:"service"});
+}
+
+function deliveryWorldActors(t){
+  const actors=[],pending=(run.deliveries||[]).filter(item=>item.status==="scheduled"&&item.arrivalDay===run.currentDay&&item.arrivalMinute-run.clockMinutes<=35&&item.arrivalMinute>=run.clockMinutes-2).sort((a,b)=>a.arrivalMinute-b.arrivalMinute)[0];
+  if(pending){const progress=Math.max(0,Math.min(1,1-(pending.arrivalMinute-run.clockMinutes)/35)),x=3+progress*12,y=17.25+Math.sin(progress*Math.PI)*.15,product=CATALOGUE.find(item=>item.id===pending.productId);actors.push({depth:x+y+.08,draw:()=>drawDeliveryCart(x,y,t,product?.short||"Delivery")});}
+  for(const [index,item] of (run.today?.deliveries||[]).entries()){
+    const age=run.clockMinutes-item.minute;if(age<0||age>32)continue;const product=CATALOGUE.find(entry=>entry.id===item.productId),destination=storeOverlayPoint(product?.storeId||"cafe"),progress=Math.min(1,age/24),start={x:16.5,y:17.25},x=start.x+(destination.x-start.x)*progress,y=start.y+(destination.y-start.y)*progress;actors.push({depth:x+y+.1+index*.001,draw:()=>drawDeliveryCart(x,y,t,product?.short||"Stock")});
+  }
+  return actors;
 }
 
 function drawStoreSpecializationFeature(id,loc,z,size){
@@ -1080,9 +1158,9 @@ function drawLocation(id) {
     drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+Math.max(1,level)*8,"#f4ead4","#b7ad99","#cbc2ad");
     drawBlock(loc.x-size*.62,loc.y-size*.5,size*1.24,.32,64+Math.max(1,level)*9,venueColor,"#a64f43","#bf6152");
   }
-  if(level>1){const flag=isoPoint(loc.x+.5,loc.y-.45,86+level*8);ctx.strokeStyle="#173743";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(flag.x,flag.y+24);ctx.lineTo(flag.x,flag.y-24);ctx.stroke();ctx.fillStyle=loc.color;ctx.beginPath();ctx.moveTo(flag.x,flag.y-23);ctx.lineTo(flag.x+22,flag.y-16);ctx.lineTo(flag.x,flag.y-8);ctx.closePath();ctx.fill();}
+  if(level>1)drawWindFlag(loc.x+.5,loc.y-.45,86+level*8,loc.color,lastTime,environmentalProfile());
   if(near){const q=isoPoint(loc.x,loc.y,3);ctx.strokeStyle="#ffd454";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,55+Math.sin(lastTime*.004)*2,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
-  if(near){const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96),storeState=isStore&&!locked&&!storeIsOpen(run,id)?" · CLOSED":"";roundedRect(tag.x-50,tag.y-11,100,22,4,"rgba(10,37,46,.92)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level+storeState:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);}
+  if(near){const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96),project=isStore?activeVenueProject(run,id):null,storeState=project?" · BUILDING":isStore&&!locked&&!storeIsOpen(run,id)?" · CLOSED":"";roundedRect(tag.x-50,tag.y-11,100,22,4,"rgba(10,37,46,.92)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level+storeState:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);}
 }
 
 function drawPlayer(t) {
@@ -1106,16 +1184,18 @@ function loop(t) {
   walking=Boolean(dx||dy);
   const zone=activeZone();
   if(walking){const l=Math.hypot(dx,dy);dx/=l;dy/=l;facing={x:dx,y:dy};let nx=Math.max(zone.minX,Math.min(zone.maxX,run.player.x+dx*WALK_SPEED*dt));let ny=Math.max(zone.minY,Math.min(zone.maxY,run.player.y+dy*WALK_SPEED*dt));run.player.x=nx;run.player.y=ny;}
-  camera.x+=(run.player.x-camera.x)*Math.min(1,dt*4.8);camera.y+=(run.player.y-camera.y)*Math.min(1,dt*4.8);
-  const desiredZoom=zone.outdoor?Math.max(.72,Math.min(1.08,canvas.clientWidth/1080)):Math.max(.94,Math.min(1.24,canvas.clientWidth/850));camera.zoom+=(desiredZoom-camera.zoom)*Math.min(1,dt*3.5);
+  if(cameraSequence&&performance.now()>cameraSequence.until)cameraSequence=null;const cameraTarget=cameraSequence&&zone.outdoor?cameraSequence:run.player;
+  camera.x+=(cameraTarget.x-camera.x)*Math.min(1,dt*(cameraSequence?2.2:4.8));camera.y+=(cameraTarget.y-camera.y)*Math.min(1,dt*(cameraSequence?2.2:4.8));
+  const desiredZoom=cameraSequence&&zone.outdoor?1.13:zone.outdoor?Math.max(.72,Math.min(1.08,canvas.clientWidth/1080)):Math.max(.94,Math.min(1.24,canvas.clientWidth/850));camera.zoom+=(desiredZoom-camera.zoom)*Math.min(1,dt*3.5);
   const mini=$(".mini-player");if(mini){mini.style.left=`${run.player.x/zone.width*100}%`;mini.style.top=`${run.player.y/zone.height*100}%`;}
   updateProximity(); drawWorld(t); requestAnimationFrame(loop);
 }
 
 function tickTycoon(realSeconds){
   if(!run.speed)return;
-  const beforeDay=run.currentDay,beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length,beforeIssues=run.operations?.issues?.length||0,beforeResolved=run.operations?.totalIssuesResolved||0;
+  const beforeDay=run.currentDay,beforeDelivered=(run.deliveries||[]).filter(item=>item.status==="delivered").length,beforeIssues=run.operations?.issues?.length||0,beforeResolved=run.operations?.totalIssuesResolved||0,beforeProjects=new Set((run.venueProjects||[]).filter(item=>item.status==="complete").map(item=>item.id));
   run=advanceTycoon(run,realSeconds*8*run.speed);
+  const completedProject=(run.venueProjects||[]).find(item=>item.status==="complete"&&!beforeProjects.has(item.id));if(completedProject){const loc=locations[completedProject.storeId],store=STORES.find(item=>item.id===completedProject.storeId),focus=loc?.zone==="campus"?loc:storeOverlayPoint(completedProject.storeId);if(focus&&currentZone==="campus")cameraSequence={x:focus.x,y:focus.y,until:performance.now()+4300};toast(`${store?.name||"Venue"} ${completedProject.kind==="open"?"is ready to open":"upgrade complete"}`);beep(810);if(activeLocation===completedProject.storeId)openStore(completedProject.storeId);}
   const delivered=(run.deliveries||[]).filter(item=>item.status==="delivered");if(delivered.length>beforeDelivered){const latest=delivered.at(-1),product=CATALOGUE.find(item=>item.id===latest.productId);toast(`Delivery arrived · ${latest.quantity}× ${product?.short||"stock"}`);beep(740);}
   if((run.operations?.issues?.length||0)>beforeIssues){const latest=run.operations.issues.at(-1);toast(latest.type==="breakdown"?`${latest.label} closed · technician needed`:`Litter reported in ${OPERATIONS_DISTRICTS.find(item=>item.id===latest.districtId)?.name}` ,latest.type==="breakdown");beep(latest.type==="breakdown"?170:390);}
   if((run.operations?.totalIssuesResolved||0)>beforeResolved){toast("Work order completed · campus service restored");beep(680);}
@@ -1191,21 +1271,22 @@ function storeSpecializationMarkup(storeId,level){
 
 function openStore(storeId="cafe") {
   const store=STORES.find(item=>item.id===storeId), products=CATALOGUE.filter(product=>product.storeId===storeId);
-  const level=run.venues?.[storeId] ?? 0, upgradeCost=level===1?1500:2500,progress=progressionState(run),requiredLevel=STORE_REQUIREMENTS[storeId]||1,districtMissing=storeId==="beach"&&!run.districts?.east?"East Promenade":storeId==="surf"&&!run.districts?.pier?"Ocean Pier":null,hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],isOpen=storeIsOpen(run,storeId),overhead=storeOperatingCost(run,storeId),serviceMultiplier=venueServiceMultiplier(run,storeId);
+  const level=run.venues?.[storeId] ?? 0, project=activeVenueProject(run,storeId), upgradeCost=level===1?1500:2500,progress=progressionState(run),requiredLevel=STORE_REQUIREMENTS[storeId]||1,districtMissing=storeId==="beach"&&!run.districts?.east?"East Promenade":storeId==="surf"&&!run.districts?.pier?"Ocean Pier":null,hours=run.storeHours?.[storeId]||DEFAULT_STORE_HOURS[storeId],isOpen=storeIsOpen(run,storeId),overhead=storeOperatingCost(run,storeId),serviceMultiplier=venueServiceMultiplier(run,storeId);
   if(level===0){
     const cost=STORE_UNLOCKS[storeId],ready=progress.level>=requiredLevel&&!districtMissing;drawerContent.innerHTML=`<p class="eyebrow">Expansion opportunity · ${store.short}</p><div class="locked-venue-hero" style="--venue:${store.color}"><span>${store.icon}</span><small>LEVEL ${requiredLevel} VENUE</small><h2>${store.name}</h2><p>${store.pitch} The building appears only after you earn the level, secure its district and purchase the operating license.</p><div class="unlock-requirements"><em class="${progress.level>=requiredLevel?"done":""}">COMPANY LEVEL ${requiredLevel}</em><em class="${!districtMissing?"done":""}">${districtMissing?`ACQUIRE ${districtMissing.toUpperCase()}`:"DISTRICT READY"}</em></div><div><em>OPENING COST</em><strong>${formatEuro(cost)}</strong></div><button class="action-button orange" id="unlockVenue" ${run.cash<cost||!ready?"disabled":""}>${!ready?`Requires level ${requiredLevel}${districtMissing?" + land":""}`:`Open ${store.short}`}</button></div>${storeTabs(storeId,"store")}`;
     drawerContent.querySelectorAll(".store-tab").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
-    $("#unlockVenue").addEventListener("click",()=>{try{save(unlockVenue(run,storeId));toast(`${store.name} is now open`);beep(760);openStore(storeId);}catch(error){toast(error.message,true);}});return;
+    $("#unlockVenue").addEventListener("click",()=>{try{save(unlockVenue(run,storeId));toast(`${store.name} construction started`);beep(760);openStore(storeId);}catch(error){toast(error.message,true);}});return;
   }
   const units=products.reduce((sum,p)=>sum+run.stock[p.id],0);
   const campus=campusMetrics(run),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],Math.round(demandFor(run.prices[p.id],p.reference)*Math.max(.45,campus.guests/24)))*run.prices[p.id],0);
   drawerContent.innerHTML = `
     <p class="eyebrow">Venue management · ${store.short}</p><div class="venue-title"><div><h2>${store.name}</h2><p>${store.pitch}</p></div><div class="level-badge"><small>VENUE LEVEL</small><strong>${level} / 3</strong></div></div>
     <div class="venue-evolution level-${level}" style="--venue:${store.color}"><span class="evo-building"><i></i><b>${store.icon}</b></span><div><small>VISUAL STAGE ${level}</small><strong>${level===1?"Compact campus kiosk":level===2?"Expanded service terrace":"Two-storey flagship"}</strong><p>${level===1?"One counter and a small awning.":level===2?"Faster frontage, terrace seating and stronger identity.":"Premium façade, rooftop fit-out and maximum product range."}</p></div></div>
+    ${project?`<div class="venue-project-card" style="--venue:${store.color}"><div class="project-hardhat">⌂</div><div><small>${project.kind==="open"?"NEW VENUE CONSTRUCTION":`UPGRADE TO LEVEL ${project.toLevel}`}</small><strong>${Math.round(venueProjectProgress(project)*100)}% complete</strong><p>The venue is fenced off and cannot serve guests for another ${Math.ceil(project.remainingMinutes)} game minutes.</p><i><em style="width:${venueProjectProgress(project)*100}%"></em></i></div></div>`:""}
     ${storeSpecializationMarkup(storeId,level)}
     <div class="store-hours-card ${isOpen?"open":"closed"}" id="currentStoreHours" data-store-id="${storeId}"><div><span id="currentStoreState">${isOpen?"OPEN NOW":"CLOSED"}</span><small>${formatClock(hours.open)} — ${formatClock(hours.close)}</small><strong id="currentStoreCountdown">${isOpen?`${formatDuration(hours.close-run.clockMinutes)} remaining`:run.clockMinutes<hours.open?`Opens in ${formatDuration(hours.open-run.clockMinutes)}`:"Closed for today"}</strong></div><label>OPEN<input id="storeOpenTime" type="time" min="07:30" max="17:30" value="${formatClock(hours.open)}"></label><label>CLOSE<input id="storeCloseTime" type="time" min="09:30" max="19:30" value="${formatClock(hours.close)}"></label><button id="saveStoreHours">Apply hours</button></div>
     <div class="upgrade-track"><span style="width:${level/3*100}%"></span></div>
-    ${level<3?`<button class="upgrade-button" id="upgradeVenue">Upgrade to level ${level+1}<small>Unlock ${products.find(p=>p.tier===level+1)?.name} · faster service · higher upkeep · ${formatEuro(upgradeCost)}</small></button>`:`<div class="max-level">★ Flagship venue · all products unlocked · maximum service speed</div>`}
+    ${level<3?`<button class="upgrade-button" id="upgradeVenue" ${project?"disabled":""}>${project?"Construction in progress":`Upgrade to level ${level+1}`}<small>${project?`${Math.ceil(project.remainingMinutes)} game minutes remaining`:`Unlock ${products.find(p=>p.tier===level+1)?.name} · faster service · higher upkeep · ${formatEuro(upgradeCost)}`}</small></button>`:`<div class="max-level">★ Flagship venue · all products unlocked · maximum service speed</div>`}
     ${storeTabs(storeId,"store")}
     <div class="venue-kpis"><div><small>ON HAND</small><strong>${units}</strong><span>units</span></div><div><small>DAILY OVERHEAD</small><strong>${formatEuro(overhead)}</strong><span>based on level + hours</span></div><div><small>SERVICE SPEED</small><strong>${serviceMultiplier.toFixed(2)}×</strong><span>${run.staff?.service||0} queue leads available</span></div></div>
     <div class="rule-box"><strong>Live demand</strong><div class="rule-grid"><div><b>${campus.guests} guests</b><small>campus footfall</small></div><div><b>${campus.rating}% rating</b><small>raises conversion</small></div><div><b>${crowdPeak(run.clockMinutes).multiplier.toFixed(1)}× flow</b><small>${crowdPeak(run.clockMinutes).label}</small></div></div></div>
@@ -1217,7 +1298,7 @@ function openStore(storeId="cafe") {
     input.addEventListener("change", () => commitPrice(input.dataset.id));
   });
   drawerContent.querySelectorAll(".set-price").forEach(button => button.addEventListener("click",()=>commitPrice(button.dataset.id)));
-  if($("#upgradeVenue")) $("#upgradeVenue").addEventListener("click",()=>{try{save(upgradeVenue(run,storeId));toast(`${store.name} upgraded to level ${level+1}`);beep(720);}catch(error){toast(error.message,true);beep(180);}});
+  if($("#upgradeVenue")&&!project) $("#upgradeVenue").addEventListener("click",()=>{try{save(upgradeVenue(run,storeId));toast(`${store.name} level ${level+1} construction started`);beep(720);openStore(storeId);}catch(error){toast(error.message,true);beep(180);}});
   drawerContent.querySelectorAll("[data-store-specialization]").forEach(button=>button.addEventListener("click",()=>{try{const specialization=STORE_SPECIALIZATIONS.find(item=>item.id===button.dataset.storeSpecialization);save(setStoreSpecialization(run,storeId,specialization.id));toast(`${specialization.name} is now the active concept`);beep(760);openStore(storeId);}catch(error){toast(error.message,true);beep(180);}}));
   $("#visitSupplier").addEventListener("click",()=>{currentSupplierStore=storeId;openLocation("supplier");});
   $("#saveStoreHours").addEventListener("click",()=>{try{save(setStoreHours(run,storeId,timeInputToMinutes($("#storeOpenTime").value),timeInputToMinutes($("#storeCloseTime").value)));toast(`${store.short} hours updated`);beep(560);openStore(storeId);}catch(error){toast(error.message,true);beep(180);}});
@@ -1227,7 +1308,7 @@ function openStore(storeId="cafe") {
 function openPortfolio() {
   const progress=progressionState(run);drawerContent.innerHTML=`<p class="eyebrow">Company level ${progress.level} · ${progress.title}</p><h2>Your business network</h2><p class="drawer-intro">Start with Atlantic Café, reinvest its live profits, acquire land and turn construction plots into a five-store coastal portfolio.</p><div class="progress-ribbon"><span style="width:${progress.progress}%"></span><strong>${progress.next?`${progress.xp} / ${progress.next.xp} XP · NEXT: ${progress.next.unlock}`:"MAXIMUM LEVEL REACHED"}</strong></div><div class="venue-grid">${STORES.map(store=>{
     const products=CATALOGUE.filter(p=>p.storeId===store.id),units=products.reduce((sum,p)=>sum+run.stock[p.id],0),potential=products.reduce((sum,p)=>sum+Math.min(run.stock[p.id],demandFor(run.prices[p.id],p.reference))*run.prices[p.id],0);
-    const level=run.venues?.[store.id]??0,required=STORE_REQUIREMENTS[store.id]||1;return `<button class="venue-card ${level===0?"locked-venue":""}" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${level===0?"⌁":store.icon}</span><div><small>${store.short.toUpperCase()} · ${level===0?`LEVEL ${required}`:`LEVEL ${level}`}</small><strong>${store.name}</strong><p>${store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${level===0?formatEuro(STORE_UNLOCKS[store.id]):formatEuro(potential)}</b> ${level===0?"to open":"potential"}</span><span><b>${level}/3</b> stage</span></div><em>${level===0?"Inspect construction plot →":"Manage venue →"}</em></button>`}).join("")}</div>`;
+    const level=run.venues?.[store.id]??0,required=STORE_REQUIREMENTS[store.id]||1,project=activeVenueProject(run,store.id);return `<button class="venue-card ${level===0?"locked-venue":""} ${project?"is-building":""}" data-store="${store.id}" style="--venue:${store.color}"><span class="venue-icon">${level===0?"⌁":project?"⌂":store.icon}</span><div><small>${store.short.toUpperCase()} · ${project?`${Math.round(venueProjectProgress(project)*100)}% BUILDING`:level===0?`LEVEL ${required}`:`LEVEL ${level}`}</small><strong>${store.name}</strong><p>${project?`${Math.ceil(project.remainingMinutes)} game minutes until the site reopens.`:store.pitch}</p></div><div class="venue-metrics"><span><b>${units}</b> stock</span><span><b>${level===0?formatEuro(STORE_UNLOCKS[store.id]):formatEuro(potential)}</b> ${level===0?"to open":"potential"}</span><span><b>${level}/3</b> stage</span></div><em>${level===0?"Inspect construction plot →":project?"Inspect construction →":"Manage venue →"}</em></button>`}).join("")}</div>`;
   drawerContent.querySelectorAll(".venue-card").forEach(button=>button.addEventListener("click",()=>openLocation(button.dataset.store)));
 }
 
