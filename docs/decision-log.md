@@ -109,3 +109,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Store openings and upgrades create timed construction projects that close the venue until completion.
 
 **Reason:** Immediate model replacement made major spending feel like a menu transaction. A saved construction phase connects investment to the world, creates a readable temporary trade-off, and makes the finished venue feel earned. Modular level structures and specialisation fit-outs preserve variety without requiring a separate building asset for every combination.
+
+## D019 — Animate one environment, not individual props
+
+**Decision:** Derive outdoor motion from one deterministic Atlantic environment profile tied to campaign day and time.
+
+**Reason:** Independent looping props make the campus feel synthetic and visually noisy. Shared wind and sea intensity let clouds, surf, palms, flags, umbrellas, and fountains behave like parts of the same place while leaving the business simulation deterministic.

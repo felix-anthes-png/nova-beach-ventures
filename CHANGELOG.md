@@ -1,5 +1,12 @@
 # Changelog
 
+## Environmental motion
+
+- Added a shared Atlantic environment profile that varies with campaign day and time.
+- Animated layered ocean swells, shoreline foam, drifting clouds, distant birds, palms, flags, terrace canopies, and courtyard water.
+- Connected the weather chip and sunset haze to the rendered outdoor conditions.
+- Added a reduced-motion fallback that preserves the composition without continuous ambient movement.
+
 This file records meaningful product increments. Individual implementation checkpoints remain available through the linked feature branches and commit history.
 
 ## Unreleased
