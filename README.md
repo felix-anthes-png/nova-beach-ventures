@@ -114,6 +114,7 @@ The automated checks cover building placement, progression, guest decisions and 
 
 ## Project documents
 
+- [`docs/group-project-overview.md`](docs/group-project-overview.md) — group-facing product plan, scope, workflow, responsibilities, and next milestones
 - [`docs/product-brief.md`](docs/product-brief.md) — product direction and scope evolution
 - [`docs/architecture.md`](docs/architecture.md) — simulation, UI, persistence, and deployment boundaries
 - [`docs/decision-log.md`](docs/decision-log.md) — the important trade-offs behind the current design
