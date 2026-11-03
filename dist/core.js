@@ -14,12 +14,50 @@ export const CAMPUS_DAY_PHASES = Object.freeze([
   {id:"sunset",name:"Sunset social",short:"SUNSET",start:1050,end:1170,multiplier:1.3,color:"#ec765f",description:"The campus moves toward the beach, bars and live events."}
 ]);
 
+export const GUEST_GROUPS = Object.freeze([
+  {id:"student",name:"Students",short:"Student",icon:"S",color:"#bce65f",budget:[700,2600],patience:[32,88],priceTolerance:.92,preferences:{food:.72,drinks:.76,shopping:.48,social:.8,excitement:.62,calm:.48,intensity:52},schedule:{arrival:1.5,"lecture-am":.34,lunch:1.55,"lecture-pm":.38,break:1.48,sunset:1.08}},
+  {id:"professor",name:"Professors",short:"Professor",icon:"P",color:"#7e9ec5",budget:[1500,4200],patience:[48,90],priceTolerance:1.12,preferences:{food:.66,drinks:.82,shopping:.28,social:.42,excitement:.24,calm:.88,intensity:30},schedule:{arrival:.92,"lecture-am":.46,lunch:1.1,"lecture-pm":.5,break:.78,sunset:.32}},
+  {id:"staff",name:"Campus staff",short:"Staff",icon:"N",color:"#64cbc8",budget:[1100,3300],patience:[58,94],priceTolerance:1.02,preferences:{food:.74,drinks:.7,shopping:.24,social:.4,excitement:.24,calm:.62,intensity:34},schedule:{arrival:1.1,"lecture-am":.9,lunch:1.25,"lecture-pm":.92,break:.85,sunset:.48}},
+  {id:"tourist",name:"Tourists",short:"Tourist",icon:"T",color:"#ff9b61",budget:[2200,6200],patience:[36,78],priceTolerance:1.32,preferences:{food:.72,drinks:.76,shopping:.82,social:.64,excitement:.72,calm:.34,intensity:58},schedule:{arrival:.28,"lecture-am":.62,lunch:1.02,"lecture-pm":1.08,break:1.2,sunset:1.55}},
+  {id:"surfer",name:"Surfers",short:"Surfer",icon:"≈",color:"#479fb5",budget:[1200,4400],patience:[24,72],priceTolerance:1.08,preferences:{food:.62,drinks:.8,shopping:.66,social:.72,excitement:.94,calm:.22,intensity:76},schedule:{arrival:1.18,"lecture-am":.72,lunch:1.02,"lecture-pm":.9,break:1.24,sunset:1.5}},
+  {id:"corporate",name:"Corporate guests",short:"Corporate",icon:"C",color:"#9a7bc1",budget:[3500,9000],patience:[62,96],priceTolerance:1.55,preferences:{food:.7,drinks:.72,shopping:.56,social:.68,excitement:.38,calm:.72,intensity:38},schedule:{arrival:1.05,"lecture-am":1.16,lunch:1.35,"lecture-pm":1.12,break:.78,sunset:.52}},
+  {id:"local",name:"Local residents",short:"Local",icon:"L",color:"#f5c95e",budget:[1600,4800],patience:[40,86],priceTolerance:1.18,preferences:{food:.78,drinks:.74,shopping:.42,social:.76,excitement:.58,calm:.48,intensity:48},schedule:{arrival:.3,"lecture-am":.46,lunch:.9,"lecture-pm":.78,break:1.2,sunset:1.62}},
+  {id:"family",name:"Families",short:"Family",icon:"F",color:"#ed7458",budget:[2600,7600],patience:[46,84],priceTolerance:1.2,preferences:{food:.82,drinks:.58,shopping:.54,social:.82,excitement:.44,calm:.72,intensity:28},schedule:{arrival:.38,"lecture-am":.72,lunch:1.2,"lecture-pm":1.08,break:1.28,sunset:.72}},
+  {id:"resident",name:"Village residents",short:"Resident",icon:"V",color:"#d58b68",budget:[1200,4300],patience:[44,88],priceTolerance:1.08,preferences:{food:.78,drinks:.62,shopping:.48,social:.82,excitement:.34,calm:.68,intensity:34},schedule:{arrival:.35,"lecture-am":.55,lunch:.92,"lecture-pm":.68,break:1.1,sunset:1.72}},
+  {id:"founder",name:"Founders",short:"Founder",icon:"I",color:"#a58bd0",budget:[3600,9800],patience:[58,94],priceTolerance:1.62,preferences:{food:.68,drinks:.86,shopping:.72,social:.74,excitement:.42,calm:.76,intensity:42},schedule:{arrival:1.1,"lecture-am":1.24,lunch:1.28,"lecture-pm":1.2,break:.9,sunset:.66}},
+  {id:"athlete",name:"Club athletes",short:"Athlete",icon:"R",color:"#70b979",budget:[1800,5600],patience:[34,78],priceTolerance:1.16,preferences:{food:.72,drinks:.9,shopping:.68,social:.66,excitement:.82,calm:.24,intensity:78},schedule:{arrival:1.2,"lecture-am":.72,lunch:1.05,"lecture-pm":.82,break:1.4,sunset:1.18}},
+  {id:"commuter",name:"Commuters",short:"Commuter",icon:"↗",color:"#779eb8",budget:[1300,4700],patience:[18,58],priceTolerance:1.12,preferences:{food:.64,drinks:.78,shopping:.38,social:.24,excitement:.18,calm:.34,intensity:38},schedule:{arrival:1.9,"lecture-am":.45,lunch:1.12,"lecture-pm":.5,break:1.18,sunset:1.5}}
+]);
+
+export const CAMPUS_CALENDAR = Object.freeze([
+  {id:"lecture",name:"Lecture Day",short:"LECTURES",icon:"A",color:"#64cbc8",attendance:1,description:"Predictable student traffic with strong arrival, lunch and break peaks.",focus:"Coffee, fast food and queue coverage",groups:{student:52,professor:12,staff:14,tourist:6,surfer:5,corporate:2,local:7,family:2},phaseMultipliers:{}},
+  {id:"exam",name:"Exam Day",short:"EXAMS",icon:"✎",color:"#7e9ec5",attendance:.92,description:"Quieter paths but urgent demand for caffeine, calm spaces and reliable service.",focus:"Coffee, calm facilities and long opening hours",groups:{student:61,professor:15,staff:13,tourist:2,surfer:2,corporate:1,local:5,family:1},phaseMultipliers:{arrival:1.12,"lecture-am":.72,lunch:.86,"lecture-pm":.72,break:1.2,sunset:.58}},
+  {id:"career",name:"Career Fair",short:"CAREER FAIR",icon:"◇",color:"#9a7bc1",attendance:1.2,description:"Corporate visitors join students and spend more on premium food and merchandise.",focus:"Premium pricing, merchandise and staffed queues",groups:{student:36,professor:7,staff:12,tourist:3,surfer:1,corporate:32,local:7,family:2},phaseMultipliers:{arrival:1.08,"lecture-am":1.22,lunch:1.25,"lecture-pm":1.18,break:1.08,sunset:.82}},
+  {id:"open",name:"Campus Open Day",short:"OPEN DAY",icon:"◎",color:"#f5c95e",attendance:1.28,description:"Families and visitors stay longer and put pressure on food, seating and restrooms.",focus:"Food, seating, water and restroom capacity",groups:{student:20,professor:8,staff:13,tourist:18,surfer:3,corporate:4,local:8,family:26},phaseMultipliers:{arrival:.88,"lecture-am":1.12,lunch:1.3,"lecture-pm":1.22,break:1.18,sunset:.94}},
+  {id:"surf",name:"Surf Tournament",short:"SURF CUP",icon:"≈",color:"#479fb5",attendance:1.34,description:"Surfers, tourists and locals pull the crowd toward the promenade and ocean pier.",focus:"Beach drinks, surf retail and late staffing",groups:{student:16,professor:2,staff:8,tourist:24,surfer:35,corporate:1,local:12,family:2},phaseMultipliers:{arrival:1.08,"lecture-am":1.04,lunch:1.16,"lecture-pm":1.2,break:1.34,sunset:1.5}},
+  {id:"festival",name:"Festival Evening",short:"FESTIVAL",icon:"♫",color:"#ff8060",attendance:1.42,description:"A moderate daytime builds into the busiest sunset crowd of the week.",focus:"Events, food, drinks and evening operations",groups:{student:34,professor:3,staff:8,tourist:14,surfer:8,corporate:2,local:25,family:6},phaseMultipliers:{arrival:.7,"lecture-am":.72,lunch:1.02,"lecture-pm":1.05,break:1.42,sunset:2.05}},
+  {id:"weekend",name:"Coastal Weekend",short:"WEEKEND",icon:"☀",color:"#f2b94b",attendance:1.08,description:"Academic traffic falls while tourists, surfers, locals and families take over.",focus:"Leisure venues and afternoon opening hours",groups:{student:8,professor:2,staff:7,tourist:24,surfer:23,corporate:1,local:22,family:13},phaseMultipliers:{arrival:.42,"lecture-am":.78,lunch:1.15,"lecture-pm":1.2,break:1.35,sunset:1.48}}
+]);
+
+export function calendarDay(run,offset=0){const day=Math.max(1,Math.floor((run?.currentDay||1)+offset)),index=(day-1)%CAMPUS_CALENDAR.length,week=Math.floor((day-1)/CAMPUS_CALENDAR.length)+1;return {...CAMPUS_CALENDAR[index],day,index,week};}
+
+const DISTRICT_GUEST_WEIGHTS=Object.freeze({village:{resident:22,student:8,local:4},east:{surfer:18,tourist:10,local:5},innovation:{founder:22,corporate:13,student:4},sports:{athlete:24,student:5,local:4},transit:{commuter:28,tourist:5,staff:4}});
+export function guestGroupMix(run,minutes=run?.clockMinutes??DAY_START,offset=0){
+  const day=calendarDay(run,offset),phase=campusPhase(minutes),districtWeights={};for(const [districtId,weights] of Object.entries(DISTRICT_GUEST_WEIGHTS))if(run?.districts?.[districtId])for(const [groupId,value] of Object.entries(weights))districtWeights[groupId]=(districtWeights[groupId]||0)+value;
+  const rows=GUEST_GROUPS.map(group=>({groupId:group.id,name:group.name,short:group.short,icon:group.icon,color:group.color,weight:((day.groups[group.id]||0)+(districtWeights[group.id]||0))*(group.schedule[phase.id]||1)})),total=rows.reduce((sum,row)=>sum+row.weight,0)||1;
+  return rows.map(row=>({...row,share:row.weight/total,count:Math.round(row.weight/total*100)})).sort((a,b)=>b.share-a.share);
+}
+
+export function selectGuestGroup(run,seed=0,minutes=run?.clockMinutes??DAY_START){const mix=guestGroupMix(run,minutes),roll=((Math.sin((seed+1)*73.17)*43758.5453)%1+1)%1;let cursor=0;for(const row of mix){cursor+=row.share;if(roll<=cursor)return GUEST_GROUPS.find(group=>group.id===row.groupId);}return GUEST_GROUPS[0];}
+
+export function calendarForecast(run,offset=0){const projected={...run,currentDay:Math.max(1,(run?.currentDay||1)+offset)},day=calendarDay(projected),metrics=campusMetrics(projected),groups=guestGroupMix(projected,720).map(row=>({...row,expected:Math.round(metrics.guests*row.share)}));return {day,expectedGuests:metrics.guests,rating:metrics.rating,groups};}
+
 export const DEFAULT_STORE_HOURS = Object.freeze({
   cafe:{open:450,close:1080}, snack:{open:540,close:1140}, merch:{open:600,close:1050}, beach:{open:660,close:1170}, surf:{open:510,close:1110}
 });
 
 export const STORE_DAILY_BASE_COSTS = Object.freeze({ cafe:120, snack:160, merch:150, beach:220, surf:280 });
-export const DISTRICT_DAILY_COSTS = Object.freeze({ coast:0, east:250, pier:400 });
+export const DISTRICT_DAILY_COSTS = Object.freeze({ coast:0, village:180, east:320, innovation:520, sports:430, transit:610, pier:0 });
 
 export const DELIVERY_WINDOWS = Object.freeze([
   {id:"morning",minute:495,label:"Morning van"},
@@ -58,9 +96,13 @@ export const STAFF_SHIFTS = Object.freeze([
 ]);
 
 export const OPERATIONS_DISTRICTS = Object.freeze([
-  {id:"coast",name:"Core Campus",color:"#64cbc8"},
-  {id:"east",name:"East Promenade",color:"#f2b94b"},
-  {id:"pier",name:"Ocean Pier",color:"#479fb5"}
+  {id:"coast",name:"Academic Core",color:"#64cbc8"},
+  {id:"village",name:"Student Village",color:"#d58b68"},
+  {id:"east",name:"Beachfront",color:"#f2b94b"},
+  {id:"innovation",name:"Innovation District",color:"#a58bd0"},
+  {id:"sports",name:"Sports Campus",color:"#70b979"},
+  {id:"transit",name:"Transit & Arrival",color:"#779eb8"},
+  {id:"pier",name:"Ocean Pier",color:"#479fb5",legacy:true}
 ]);
 
 export const EXPERIENCE_MODULES = Object.freeze([
@@ -121,8 +163,39 @@ export const FACILITY_SPECIALIZATIONS = Object.freeze([
 export const STORE_UNLOCKS = Object.freeze({ cafe:0, snack:12000, merch:28000, beach:40000, surf:65000 });
 export const STORE_REQUIREMENTS = Object.freeze({ cafe:1, snack:2, merch:4, beach:6, surf:8 });
 export const DISTRICT_CATALOGUE = Object.freeze([
-  {id:"east",name:"East Promenade",level:5,cost:45000,color:"#f2b94b",description:"Acquire the land to the right of campus and unlock the Beach Bar plus event lawn."},
-  {id:"pier",name:"Ocean Pier",level:8,cost:85000,color:"#479fb5",description:"Extend beyond the promenade with a surf retail plot and high-capacity event pier."}
+  {id:"village",name:"Student Village",level:3,cost:26000,color:"#d58b68",icon:"⌂",problem:"Evening economy",rhythm:"Evenings and weekends",description:"Residential demand arrives after lectures. Build useful, affordable services that remain viable beyond the lunch rush.",features:["Mini-market and laundrette","Late-night takeaway","Gym and study lounge","Resident guest group"]},
+  {id:"east",name:"Beachfront",level:5,cost:45000,color:"#f2b94b",icon:"☀",problem:"Weather exposure",rhythm:"Afternoons and sunset",description:"A leisure strip whose sales swing with coastal conditions, events and late staffing.",features:["Beach bar and surf rental","Ice-cream and seafood","Volleyball courts","Tourist and surfer traffic"]},
+  {id:"innovation",name:"Innovation District",level:7,cost:72000,color:"#a58bd0",icon:"◇",problem:"Premium expectations",rhythm:"Weekdays and corporate events",description:"High-spending business visitors expect excellent service, calm spaces and professional event capacity.",features:["Coworking café and tech shop","Startup incubator","Conference centre","Founder guest group"]},
+  {id:"sports",name:"Sports Campus",level:8,cost:88000,color:"#70b979",icon:"R",problem:"Peak capacity",rhythm:"Training blocks and tournaments",description:"Club traffic arrives in sharp waves and creates strong demand for hydration, recovery and specialist retail.",features:["Fitness and smoothie venues","Sports shop","Padel courts","Athlete guest group"]},
+  {id:"transit",name:"Transit & Arrival",level:9,cost:110000,color:"#779eb8",icon:"↗",problem:"Traffic and logistics",rhythm:"Arrival and departure peaks",description:"The busiest gateway increases campus capacity but requires clean routes and reliable delivery access.",features:["Parking and bus interchange","Bicycle station","Grab-and-go bakery","Commuter guest group"]}
+]);
+
+export const DISTRICT_BUSINESSES = Object.freeze([
+  {id:"village-market",districtId:"village",name:"Nova Mini-Market",icon:"▦",cost:12000,upkeep:90,income:520,appeal:5,problem:"Daily essentials",description:"Reliable residential shopping throughout the evening."},
+  {id:"village-laundry",districtId:"village",name:"Wave Laundrette",icon:"○",cost:9500,upkeep:70,income:360,appeal:3,problem:"Utility demand",description:"A steady service that performs best after lectures."},
+  {id:"village-takeaway",districtId:"village",name:"After Class Takeaway",icon:"◉",cost:16000,upkeep:130,income:740,appeal:8,problem:"Late queues",description:"Fast evening food for residents and student groups."},
+  {id:"village-gym",districtId:"village",name:"Village Gym",icon:"R",cost:22000,upkeep:190,income:820,appeal:10,problem:"Peak capacity",description:"Membership income with strong morning and evening peaks."},
+  {id:"village-study",districtId:"village",name:"Night Study Lounge",icon:"A",cost:14000,upkeep:105,income:430,appeal:9,problem:"Quiet capacity",description:"Long-stay study space that improves residential appeal."},
+  {id:"beach-bar",districtId:"east",name:"Maré Beach Bar",icon:"☀",cost:40000,upkeep:220,income:1120,appeal:14,problem:"Weather",description:"The established sunset anchor of the beachfront."},
+  {id:"beach-surf",districtId:"east",name:"Surf Rental",icon:"≈",cost:28000,upkeep:180,income:860,appeal:12,problem:"Weather",description:"Boards and wetsuits for tourists and club surfers."},
+  {id:"beach-icecream",districtId:"east",name:"Gelado Kiosk",icon:"●",cost:13000,upkeep:95,income:610,appeal:7,problem:"Weather",description:"A compact high-margin warm-weather kiosk."},
+  {id:"beach-seafood",districtId:"east",name:"Atlantic Table",icon:"◇",cost:46000,upkeep:360,income:1420,appeal:18,problem:"Premium service",description:"A destination seafood restaurant for sunset trade."},
+  {id:"beach-volleyball",districtId:"east",name:"Volleyball Courts",icon:"◎",cost:19000,upkeep:110,income:480,appeal:13,problem:"Event scheduling",description:"Bookable courts that create leisure crowds."},
+  {id:"innovation-cafe",districtId:"innovation",name:"Founders Café",icon:"☕",cost:24000,upkeep:180,income:900,appeal:11,problem:"Premium service",description:"Coffee, meeting booths and dependable weekday trade."},
+  {id:"innovation-tech",districtId:"innovation",name:"Print & Tech Lab",icon:"◆",cost:30000,upkeep:210,income:1060,appeal:9,problem:"Equipment reliability",description:"Printing, accessories and urgent technical support."},
+  {id:"innovation-incubator",districtId:"innovation",name:"Startup Incubator",icon:"I",cost:52000,upkeep:390,income:1520,appeal:20,problem:"Occupancy",description:"Premium desks that unlock a visible founder community."},
+  {id:"innovation-conference",districtId:"innovation",name:"Conference Centre",icon:"◇",cost:68000,upkeep:520,income:1940,appeal:24,problem:"Event calendar",description:"Large corporate bookings with demanding service standards."},
+  {id:"sports-fitness",districtId:"sports",name:"Atlantic Fitness",icon:"R",cost:42000,upkeep:320,income:1280,appeal:16,problem:"Peak capacity",description:"A full fitness centre serving students and clubs."},
+  {id:"sports-smoothie",districtId:"sports",name:"Recovery Smoothies",icon:"◒",cost:17000,upkeep:120,income:720,appeal:8,problem:"Rush throughput",description:"Fast nutrition before and after training blocks."},
+  {id:"sports-shop",districtId:"sports",name:"Club Sports Shop",icon:"◆",cost:29000,upkeep:190,income:980,appeal:10,problem:"Stock variety",description:"Specialist kit for teams, visitors and tournaments."},
+  {id:"sports-padel",districtId:"sports",name:"Padel Courts",icon:"◎",cost:48000,upkeep:290,income:1360,appeal:21,problem:"Booking peaks",description:"Bookable courts that generate club and tournament traffic."},
+  {id:"sports-recovery",districtId:"sports",name:"Recovery Station",icon:"○",cost:26000,upkeep:210,income:780,appeal:12,problem:"Staff coverage",description:"Treatment and recovery space for longer athlete visits."},
+  {id:"transit-parking",districtId:"transit",name:"Smart Parking",icon:"P",cost:52000,upkeep:350,income:1180,appeal:8,problem:"Traffic",description:"Paid parking that raises visitor capacity and congestion."},
+  {id:"transit-bike",districtId:"transit",name:"Bicycle Station",icon:"○",cost:18000,upkeep:90,income:440,appeal:7,problem:"Route access",description:"A low-cost mobility hub for students and staff."},
+  {id:"transit-bus",districtId:"transit",name:"Campus Bus Stop",icon:"↗",cost:34000,upkeep:230,income:680,appeal:13,problem:"Arrival surges",description:"High-volume arrivals in sharp timetable-driven waves."},
+  {id:"transit-bakery",districtId:"transit",name:"Gate Bakery",icon:"✦",cost:23000,upkeep:160,income:920,appeal:9,problem:"Fast queues",description:"Grab-and-go food built for impatient commuters."},
+  {id:"transit-store",districtId:"transit",name:"Arrival Convenience",icon:"▦",cost:27000,upkeep:180,income:1020,appeal:8,problem:"Restocking",description:"Travel essentials and dependable all-day trade."},
+  {id:"transit-info",districtId:"transit",name:"Visitor Information",icon:"i",cost:15000,upkeep:110,income:260,appeal:14,problem:"Wayfinding",description:"Guidance that improves the whole arrival experience."}
 ]);
 export const EVENT_CATALOGUE = Object.freeze([
   {id:"sunset",name:"Sunset Sessions",icon:"♫",level:7,cost:3500,duration:180,guestBonus:16,moodBonus:12,description:"A compact DJ event that creates an evening crowd spike."},
@@ -152,10 +225,10 @@ export const DJ_UPGRADES = Object.freeze([
 ]);
 export const PROGRESSION_LEVELS = Object.freeze([
   {level:1,xp:0,title:"Café Starter",unlock:"Atlantic Café"},{level:2,xp:50,title:"Campus Operator",unlock:"Fuel Bar + queue staff"},
-  {level:3,xp:130,title:"Amenity Builder",unlock:"Food Garden + repair staff"},{level:4,xp:240,title:"Retail Founder",unlock:"Merch Lab + student hosts"},
-  {level:5,xp:380,title:"District Developer",unlock:"East Promenade land"},{level:6,xp:560,title:"Beach Entrepreneur",unlock:"Maré Beach Bar + entertainers"},
-  {level:7,xp:780,title:"Event Producer",unlock:"Coastline event venue"},{level:8,xp:1050,title:"Coastal Magnate",unlock:"Ocean Pier + Surf Shack"},
-  {level:9,xp:1380,title:"Campus Icon",unlock:"Nova Surf Cup"},{level:10,xp:1750,title:"Nova Legend",unlock:"Maximum prestige"}
+  {level:3,xp:130,title:"Village Operator",unlock:"Student Village land"},{level:4,xp:240,title:"Retail Founder",unlock:"Merch Lab + village services"},
+  {level:5,xp:380,title:"District Developer",unlock:"Beachfront land"},{level:6,xp:560,title:"Beach Entrepreneur",unlock:"Maré Beach Bar + leisure venues"},
+  {level:7,xp:780,title:"Innovation Founder",unlock:"Innovation District + conferences"},{level:8,xp:1050,title:"Campus Athlete",unlock:"Sports Campus + Surf Shack"},
+  {level:9,xp:1380,title:"Mobility Director",unlock:"Transit & Arrival District"},{level:10,xp:1750,title:"Nova Legend",unlock:"Complete district portfolio"}
 ]);
 
 export const CATALOGUE = Object.freeze([
@@ -179,14 +252,14 @@ export const CATALOGUE = Object.freeze([
 export function createRun() {
   const stock = {}, prices = {};
   CATALOGUE.forEach(product => { stock[product.id] = 0; prices[product.id] = product.reference; });
-  return { version: 7, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, venueProjects:[], storeSpecializations:{}, specializationHistory:[], districts:{coast:1,east:0,pier:0}, eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
+  return { version: 9, cash: INITIAL_CASH, stock, prices, currentDay: 1, completed: false, history: [], purchases: [], deliveries:[], storeHours:structuredClone(DEFAULT_STORE_HOURS), venues: { cafe: 1, snack: 0, merch: 0, beach:0, surf:0 }, venueProjects:[], storeSpecializations:{}, specializationHistory:[], districts:{coast:1,village:0,east:0,innovation:0,sports:0,transit:0,pier:0}, districtBusinesses:{}, districtBusinessHistory:[], eventVenue:0, activeEvent:null, scheduledEvent:null, djOperations:{deckId:null,slotId:"sunset",styleId:"sunset",ticketPrice:600,djId:null,upgrades:{speakers:0,lighting:0,shade:0,capacity:0},lifetimeAttendance:0,lifetimeRevenue:0}, reputation: 0, upgrades: [], facilities: [], staff: { service:0, caretaker:0, technician:0, host:0, entertainer:0 }, staffRoster:[], operations:createOperationsState(), performance:createPerformanceState(), calendar:{cycle:"nova-week-v1",startedDay:1}, clockMinutes:DAY_START, speed:1, today:createToday(), salesMode:"guests", guestSales:[], salesProgress:{}, visitorProgress:0, totalSales:0, totalVisitors:0, totalCampusInteractions:0, facilityUsage:{}, venueVisits:{}, guestEconomy:{purchases:0,spend:0,walkaways:0}, player: { x: 21, y: 18, zone: "campus" } };
 }
 
 export function createShowcaseRun(){
   const run=createRun();run.campaignType="showcase";run.cash=SHOWCASE_BUDGET;run.totalSales=150;run.totalVisitors=250;run.totalCampusInteractions=120;run.reputation=50;run.speed=4;return run;
 }
 
-function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[]};}
+function createToday(){return {revenue:0,cogs:0,unitsSold:0,visitors:0,eventRevenue:0,eventCosts:0,eventAttendance:0,districtRevenue:0,staffWages:0,staffWagesPaid:0,operatingCosts:0,operatingCostsPaid:0,issuesResolved:0,walkaways:0,products:{},activities:{},deliveries:[],guestGroups:{}};}
 
 function createOperationsState(){return {issues:[],history:[],litterLoad:0,breakdownLoad:0,nextIssueSequence:1,payrollDue:0,totalWagesPaid:0,totalIssuesResolved:0};}
 function createPerformanceState(){return {momentum:50,peakRating:0,profitableDays:0,lossDays:0,operatingDue:0,totalOperatingCostsPaid:0,lastDay:null};}
@@ -238,7 +311,7 @@ function optionReason(parts){return parts.filter(Boolean).slice(0,3).join(" · "
 export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
   const profile=guestOrNeeds?.needs?guestOrNeeds:{needs:guestOrNeeds},needs=profile.needs||{};
   const hunger=guestNeed(needs,"hunger"),thirst=guestNeed(needs,"thirst"),bladder=guestNeed(needs,"bladder"),energy=guestNeed(needs,"energy"),mood=guestNeed(needs,"mood");
-  const budget=Math.max(0,guestTrait(profile,"budget",Number.POSITIVE_INFINITY)),patience=Math.max(0,Math.min(100,guestTrait(profile,"queuePatience",65))),quality=Math.max(0,Math.min(100,guestTrait(context,"campusQuality",campusMetrics(run).rating)));
+  const budget=Math.max(0,guestTrait(profile,"budget",Number.POSITIVE_INFINITY)),patience=Math.max(0,Math.min(100,guestTrait(profile,"queuePatience",65))),priceTolerance=Math.max(.55,Math.min(1.8,guestTrait(profile,"priceTolerance",1))),quality=Math.max(0,Math.min(100,guestTrait(context,"campusQuality",campusMetrics(run).rating)));
   const social=preference(profile,"social"),calm=preference(profile,"calm"),excitement=preference(profile,"excitement"),food=preference(profile,"food"),drinks=preference(profile,"drinks"),shopping=preference(profile,"shopping");
   const options=[
     {kind:"landmark",id:"academy",label:"Academic Wing",score:18+calm*18+quality*.08+((seed+1)%7),reason:optionReason(["quiet destination",`${quality}% campus quality`])},
@@ -262,6 +335,8 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     else score+=12;
     score-=queuePenalty(q,patience);options.push({kind:"facility",id:facility.id,type:facility.type,label:specialization?.name||facility.name,score,queueLength:q,reason:optionReason([specialization?.name,q?`${q} already there`:"available now",facility.type==="experience"?"attraction fit":`${quality}% campus quality`])});
   }
+  const groupDistrict={resident:"village",surfer:"east",tourist:"east",founder:"innovation",corporate:"innovation",athlete:"sports",commuter:"transit"}[profile.groupId];
+  for(const business of DISTRICT_BUSINESSES){if(!run.districtBusinesses?.[business.id]||assetIsClosed(run,"district-business",business.id))continue;const q=queueSize(context,"district-business",business.id),groupFit=groupDistrict===business.districtId?28:0,score=18+business.appeal*1.35+quality*.09+groupFit+social*8+((seed+business.id.length)%9)-queuePenalty(q,patience);options.push({kind:"district-business",id:business.id,type:business.id,label:business.name,score,queueLength:q,reason:optionReason([groupFit?"made for this visitor group":business.problem,q?`${q} already there`:"district destination"])});}
   for(const store of STORES){
     if((run.venues?.[store.id]??0)<1)continue;
     if(!storeIsOpen(run,store.id,run.clockMinutes))continue;
@@ -270,12 +345,12 @@ export function guestDestinationOptions(run,guestOrNeeds={},seed=0,context={}){
     const affordable=products.map(product=>({...product,price:run.prices?.[product.id]??product.reference})).filter(product=>product.price<=budget&&demandFor(product.price,product.reference)>0&&(demandFor(product.price,product.reference)>=10||Math.abs(Math.floor(seed))%10<demandFor(product.price,product.reference)));
     if(!affordable.length)continue;
     const choice=affordable.sort((a,b)=>(a.price/a.reference)-(b.price/b.reference)||a.price-b.price)[0],priceRatio=choice.price/choice.reference,q=queueSize(context,"store",store.id);
-    const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);let score=10+quality*.14+Math.max(-42,30-priceRatio*20)-queuePenalty(q,patience)+(specialization?.appeal||0)+synergy.appeal;
+    const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id),perceivedRatio=priceRatio/priceTolerance;let score=10+quality*.14+Math.max(-42,30-perceivedRatio*20)-queuePenalty(q,patience)+(specialization?.appeal||0)+synergy.appeal;
     if(store.id==="cafe")score+=hunger*.68+energy*.82+thirst*.18;
     else if(store.id==="snack")score+=hunger*.92+thirst*.6;
     else score+=mood*.52+12;
     if(store.id==="cafe")score+=food*22+drinks*18;else if(store.id==="snack"||store.id==="beach")score+=food*16+drinks*26;else if(store.id==="merch")score+=shopping*35;else if(store.id==="surf")score+=shopping*18+excitement*28;
-    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,baseDemand:demandFor(choice.price,choice.reference),queueLength:q,reason:optionReason([specialization?.name,synergy.matches?`${synergy.matches} district synergy`:null,priceRatio<=1?"good value":priceRatio>1.5?"high price":"acceptable price"])});
+    options.push({kind:"store",id:store.id,label:store.name,score,productIds:affordable.map(product=>product.id),productId:choice.id,productName:choice.name,price:choice.price,baseDemand:demandFor(choice.price,choice.reference),queueLength:q,reason:optionReason([profile.groupName,synergy.matches?`${synergy.matches} district synergy`:null,perceivedRatio<=1?"good value":perceivedRatio>1.5?"high price":"acceptable price"])});
   }
   return options.sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
 }
@@ -330,8 +405,8 @@ export function attractionStats(moduleIds=[]) {
   };
 }
 
-export function districtForPosition(x=0){return x>=49.5?"pier":x>=41?"east":"coast";}
-export function districtForStore(storeId){return storeId==="surf"?"pier":storeId==="beach"?"east":"coast";}
+export function districtForPosition(x=0,y=0){if(x>=66)return "transit";if(x>=57&&y>=15)return "sports";if(x>=51&&y<16)return "innovation";if(x>=40&&y<16)return "village";if(x>=40)return "east";return "coast";}
+export function districtForStore(storeId){return ["surf","beach"].includes(storeId)?"east":"coast";}
 
 function shiftFor(worker){return STAFF_SHIFTS.find(item=>item.id===worker?.shiftId)||STAFF_SHIFTS[1];}
 export function staffDailyWage(worker){const role=STAFF_CATALOGUE.find(item=>item.id===worker?.roleId);return role?Math.round(role.wage*shiftFor(worker).wageFactor):0;}
@@ -354,7 +429,7 @@ function ensureOperationsState(run){
   return run;
 }
 
-export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];(run.facilities||[]).forEach(facility=>{if(facility.specializationId&&!FACILITY_SPECIALIZATIONS.some(item=>item.id===facility.specializationId&&item.type===facility.type))delete facility.specializationId;});run.version=7;return run;}
+export function migrateStaffOperations(run){ensureOperationsState(run);ensurePerformanceState(run);if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];if(!run.calendar)run.calendar={cycle:"nova-week-v1",startedDay:1};if(!run.today)run.today=createToday();if(!run.today.guestGroups)run.today.guestGroups={};if(!run.districts)run.districts={coast:1};for(const id of ["coast","village","east","innovation","sports","transit","pier"])if(!Number.isInteger(run.districts[id]))run.districts[id]=id==="coast"?1:0;if(!run.districtBusinesses)run.districtBusinesses={};if(!Array.isArray(run.districtBusinessHistory))run.districtBusinessHistory=[];(run.facilities||[]).forEach(facility=>{if(facility.specializationId&&!FACILITY_SPECIALIZATIONS.some(item=>item.id===facility.specializationId&&item.type===facility.type))delete facility.specializationId;});run.version=9;return run;}
 
 export function activeVenueProject(run,storeId){return (run.venueProjects||[]).find(project=>project.storeId===storeId&&project.status==="building")||null;}
 export function venueProjectProgress(project){if(!project)return 1;const duration=Math.max(1,project.durationMinutes||1),remaining=Math.max(0,project.remainingMinutes||0);return Math.max(0,Math.min(1,1-remaining/duration));}
@@ -382,11 +457,11 @@ export function settlePayroll(run){const next=structuredClone(run);ensureOperati
 
 export function storeSpecialization(run,storeId){return STORE_SPECIALIZATIONS.find(item=>item.id===run.storeSpecializations?.[storeId]&&item.storeId===storeId)||null;}
 export function facilitySpecialization(facility){return FACILITY_SPECIALIZATIONS.find(item=>item.id===facility?.specializationId&&item.type===facility?.type)||null;}
-export function specializationSynergy(run,storeId){const specialization=storeSpecialization(run,storeId);if(!specialization)return {focus:null,matches:0,service:1,appeal:0};const districtId=districtForStore(storeId),matches=Math.min(3,(run.facilities||[]).filter(facility=>districtForPosition(facility.x)===districtId&&facilitySpecialization(facility)?.focus===specialization.focus).length);return {focus:specialization.focus,matches,service:1+matches*.04,appeal:matches*4};}
+export function specializationSynergy(run,storeId){const specialization=storeSpecialization(run,storeId);if(!specialization)return {focus:null,matches:0,service:1,appeal:0};const districtId=districtForStore(storeId),matches=Math.min(3,(run.facilities||[]).filter(facility=>districtForPosition(facility.x,facility.y)===districtId&&facilitySpecialization(facility)?.focus===specialization.focus).length);return {focus:specialization.focus,matches,service:1+matches*.04,appeal:matches*4};}
 
 export function specializationSnapshot(run){
   const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0).map(store=>{const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);return {id:store.id,name:store.name,level:run.venues[store.id],specializationId:specialization?.id||null,specializationName:specialization?.name||null,focus:specialization?.focus||null,synergy:synergy.matches,service:venueServiceMultiplier(run,store.id),appeal:(specialization?.appeal||0)+synergy.appeal};});
-  const facilities=(run.facilities||[]).filter(facility=>facilitySpecialization(facility)).map(facility=>{const specialization=facilitySpecialization(facility);return {id:facility.id,name:facility.name,type:facility.type,specializationId:specialization.id,specializationName:specialization.name,focus:specialization.focus,districtId:districtForPosition(facility.x)};});
+  const facilities=(run.facilities||[]).filter(facility=>facilitySpecialization(facility)).map(facility=>{const specialization=facilitySpecialization(facility);return {id:facility.id,name:facility.name,type:facility.type,specializationId:specialization.id,specializationName:specialization.name,focus:specialization.focus,districtId:districtForPosition(facility.x,facility.y)};});
   return {stores,facilities,configuredStores:stores.filter(store=>store.specializationId).length,specializedFacilities:facilities.length,totalSynergies:stores.reduce((sum,store)=>sum+store.synergy,0)};
 }
 
@@ -415,7 +490,8 @@ export function storeOperatingCost(run,storeId){
 export function dailyOperatingCosts(run){
   const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0).map(store=>({storeId:store.id,label:store.short,level:run.venues[store.id],cost:storeOperatingCost(run,store.id)}));
   const districts=OPERATIONS_DISTRICTS.filter(district=>district.id!=="coast"&&run.districts?.[district.id]).map(district=>({districtId:district.id,label:district.name,cost:DISTRICT_DAILY_COSTS[district.id]||0}));
-  return {stores,districts,total:[...stores,...districts].reduce((sum,item)=>sum+item.cost,0)};
+  const businesses=DISTRICT_BUSINESSES.filter(business=>run.districtBusinesses?.[business.id]).map(business=>({businessId:business.id,districtId:business.districtId,label:business.name,cost:business.upkeep}));
+  return {stores,districts,businesses,total:[...stores,...districts,...businesses].reduce((sum,item)=>sum+item.cost,0)};
 }
 
 export function settleOperatingCosts(run){const next=structuredClone(run),performance=ensurePerformanceState(next),amount=Math.min(next.cash,performance.operatingDue);next.cash-=amount;performance.operatingDue-=amount;performance.totalOperatingCostsPaid+=amount;return next;}
@@ -451,11 +527,11 @@ export function campusMetrics(run) {
   const intensityFit=attraction.intensity<=70?10:Math.max(-18,10-(attraction.intensity-70));
   const eventNoisePenalty=activeEvent?Math.max(0,(activeEvent.noise||0)-55)*.2:0,eventComfortBonus=activeEvent?((activeEvent.comfort||50)-50)*.08:0;
   const rating=Math.max(0,Math.min(100,Math.round(satisfaction*.72+Math.min(100,attraction.excitement+20)*.18+intensityFit-eventNoisePenalty+eventComfortBonus)));
-  const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=Object.values(run.districts||{}).filter(Boolean).length,eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0,momentumFactor=.7+performance.momentum*.006;
+  const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),openVenues=Object.values(run.venues||{}).filter(level=>level>0).length,districts=DISTRICT_CATALOGUE.filter(district=>run.districts?.[district.id]).length+1,builtBusinesses=DISTRICT_BUSINESSES.filter(business=>run.districtBusinesses?.[business.id]),businessAppeal=builtBusinesses.reduce((sum,business)=>sum+business.appeal,0),eventBonus=activeEvent?(activeEvent.guestBonus+activeRole("entertainer")*3):0,momentumFactor=.7+performance.momentum*.006;
   const specializationAppeal=STORES.reduce((sum,store)=>{const specialization=storeSpecialization(run,store.id),synergy=specializationSynergy(run,store.id);return sum+(specialization?.appeal||0)+synergy.appeal;},0)+(run.facilities||[]).reduce((sum,facility)=>sum+(facilitySpecialization(facility)?.appeal||0),0);
-  const baseGuests=10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,venueLevels-openVenues)*1.35+Math.max(0,districts-1)*5+eventBonus+specializationAppeal*.08;
-  const guests=Math.max(8,Math.round(baseGuests*momentumFactor));
-  return { needs, satisfaction, rating, guests, baseGuests:Math.round(baseGuests), momentum:performance.momentum, momentumFactor, attraction };
+  const baseGuests=10+rating*.27+(run.facilities||[]).length*1.5+activeRole("host")*3+attraction.excitement*.12+openVenues*2.3+Math.max(0,venueLevels-openVenues)*1.35+Math.max(0,districts-1)*5+builtBusinesses.length*1.6+businessAppeal*.16+eventBonus+specializationAppeal*.08;
+  const calendar=calendarDay(run),guests=Math.max(8,Math.round(baseGuests*momentumFactor*calendar.attendance));
+  return { needs, satisfaction, rating, guests, baseGuests:Math.round(baseGuests), momentum:performance.momentum, momentumFactor, attraction, calendar };
 }
 
 export function tycoonPulse(run){
@@ -475,7 +551,7 @@ export function tycoonPulse(run){
   if(priceScore<60)alerts.push({severity:"medium",title:"Price resistance is growing",detail:"Several products are priced high enough to reduce guest conversion.",action:"stores"});
   if(metrics.rating<60)alerts.push({severity:"medium",title:"Campus quality is limiting attendance",detail:`A ${metrics.rating}% rating suppresses the next visitor waves.`,action:"build"});
   if(!alerts.length)alerts.push({severity:"good",title:"Campus systems are aligned",detail:"Use the healthy momentum to invest before the next crowd peak.",action:"progress"});
-  const projectedProfit=(run.today?.revenue||0)-(run.today?.cogs||0)+(run.today?.eventRevenue||0)-(run.today?.eventCosts||0)-dailyPayroll(run)-costs.total;
+  const projectedProfit=(run.today?.revenue||0)-(run.today?.cogs||0)+(run.today?.eventRevenue||0)-(run.today?.eventCosts||0)+districtPortfolio(run).totalProjectedIncome-dailyPayroll(run)-costs.total;
   return {score,status:score>=82?"Thriving":score>=66?"Healthy":score>=48?"Under pressure":"At risk",guestScore,operationsScore,commercialScore,stockCoverage,priceScore,cleanliness,momentum:performance.momentum,momentumFactor:metrics.momentumFactor,projectedGuests:metrics.guests,projectedProfit,costs,alerts:alerts.slice(0,5)};
 }
 
@@ -488,7 +564,7 @@ export function managementOverview(run){
     return {id:store.id,name:store.name,short:store.short,color:store.color,districtId:districtForStore(store.id),level,open,closed,status:!level?"locked":closed?"repair":open?"open":"closed",products:products.length,stocked,stockUnits,stockCoverage:coverage,revenue:sales,grossProfit:sales-cogs,dailyCost:storeOperatingCost(run,store.id)};
   });
   const districts=operations.districts.map(district=>{
-    const venues=stores.filter(store=>store.level>0&&store.districtId===district.id),facilities=(run.facilities||[]).filter(facility=>districtForPosition(facility.x)===district.id);
+    const venues=stores.filter(store=>store.level>0&&store.districtId===district.id),facilities=(run.facilities||[]).filter(facility=>districtForPosition(facility.x,facility.y)===district.id);
     return {...district,venues:venues.length,openVenues:venues.filter(store=>store.open).length,stockUnits:venues.reduce((sum,store)=>sum+store.stockUnits,0),facilities:facilities.length};
   });
   const needs=Object.entries(metrics.needs).map(([id,value])=>({id,label:id[0].toUpperCase()+id.slice(1),value})).sort((a,b)=>a.value-b.value);
@@ -510,8 +586,8 @@ function closeDayMomentum(run,operatingProfit,metrics,stockCoverage){
 }
 
 export function progressionState(run){
-  const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),districtCount=Object.values(run.districts||{}).filter(Boolean).length;
-  const xp=Math.floor((run.totalSales||0)*12+(run.totalCampusInteractions||0)*1.5+(run.reputation||0)*8+(run.facilities||[]).length*18+(run.upgrades||[]).length*30+venueLevels*12+Math.max(0,districtCount-1)*70+(run.eventHistory||[]).length*45);
+  const venueLevels=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0),0),districtCount=DISTRICT_CATALOGUE.filter(district=>run.districts?.[district.id]).length+1,businessCount=Object.values(run.districtBusinesses||{}).filter(Boolean).length;
+  const xp=Math.floor((run.totalSales||0)*12+(run.totalCampusInteractions||0)*1.5+(run.reputation||0)*8+(run.facilities||[]).length*18+(run.upgrades||[]).length*30+venueLevels*12+Math.max(0,districtCount-1)*70+businessCount*24+(run.eventHistory||[]).length*45);
   let current=PROGRESSION_LEVELS[0];for(const tier of PROGRESSION_LEVELS)if(xp>=tier.xp)current=tier;
   const next=PROGRESSION_LEVELS.find(tier=>tier.level===current.level+1)||null,span=next?next.xp-current.xp:1,progress=next?Math.max(0,Math.min(100,Math.round((xp-current.xp)/span*100))):100;
   return {xp,level:current.level,title:current.title,unlock:current.unlock,next,progress};
@@ -520,22 +596,47 @@ export function progressionState(run){
 export function scenarioGoals(run){const metrics=campusMetrics(run),progress=progressionState(run);return [
   {id:"visitors",name:"Campus destination",description:"Welcome 250 lifetime guests",value:Math.min(250,run.totalVisitors||0),target:250,complete:(run.totalVisitors||0)>=250},
   {id:"rating",name:"World-class campus",description:"Reach a 90% campus rating",value:metrics.rating,target:90,complete:metrics.rating>=90},
-  {id:"portfolio",name:"Coastal portfolio",description:"Open all five stores",value:Object.values(run.venues||{}).filter(level=>level>0).length,target:STORES.length,complete:Object.values(run.venues||{}).filter(level=>level>0).length>=STORES.length},
+  {id:"portfolio",name:"District portfolio",description:"Acquire all five expansion districts",value:DISTRICT_CATALOGUE.filter(district=>run.districts?.[district.id]).length,target:DISTRICT_CATALOGUE.length,complete:DISTRICT_CATALOGUE.every(district=>run.districts?.[district.id])},
   {id:"legend",name:"Nova legend",description:"Reach company level 10",value:progress.level,target:10,complete:progress.level>=10}
 ];}
+
+export function districtWeather(run,offset=0){const states=[{id:"clear",name:"Clear Atlantic sun",icon:"☀",factor:1.22},{id:"wind",name:"Strong coastal wind",icon:"≈",factor:.92},{id:"cloud",name:"Bright overcast",icon:"☁",factor:1},{id:"rain",name:"Coastal showers",icon:"☂",factor:.58}],index=Math.abs(((run?.currentDay||1)+offset)*7+3)%states.length;return states[index];}
+
+function districtBusinessMultiplier(run,business){
+  const day=calendarDay(run),phase=campusPhase(run.clockMinutes),weather=districtWeather(run);let factor=1;
+  if(business.districtId==="village")factor*=phase.id==="sunset"||day.id==="weekend"?1.38:.88;
+  if(business.districtId==="east")factor*=weather.factor*(phase.id==="sunset"?1.25:1);
+  if(business.districtId==="innovation")factor*=day.id==="career"?1.52:["lecture","exam"].includes(day.id)?1.12:.76;
+  if(business.districtId==="sports")factor*=["surf","festival"].includes(day.id)?1.42:phase.id==="break"?1.22:.92;
+  if(business.districtId==="transit")factor*=["arrival","sunset"].includes(phase.id)?1.46:1.02;
+  return factor;
+}
+
+export function districtPortfolio(run){
+  const businesses=DISTRICT_BUSINESSES.map(business=>{const owned=Boolean(run.districtBusinesses?.[business.id]),closed=owned&&assetIsClosed(run,"district-business",business.id),multiplier=districtBusinessMultiplier(run,business);return {...business,owned,closed,multiplier,projectedIncome:owned&&!closed?Math.round(business.income*multiplier):0};});
+  const districts=[{id:"coast",name:"Academic Core",color:"#64cbc8",icon:"A",problem:"Predictable student traffic",rhythm:"Arrival, lunch and lecture breaks",owned:true,level:1,cost:0,description:"The original campus economy around Atlantic Café and the academic courtyard.",features:["Atlantic Café","Study spaces","Predictable student traffic"]},...DISTRICT_CATALOGUE].map(district=>{const rows=businesses.filter(business=>business.districtId===district.id),owned=district.id==="coast"||Boolean(run.districts?.[district.id]);return {...district,owned,businesses:rows,built:rows.filter(row=>row.owned).length,projectedIncome:rows.reduce((sum,row)=>sum+row.projectedIncome,0),upkeep:rows.filter(row=>row.owned).reduce((sum,row)=>sum+row.upkeep,0)};});
+  return {districts,businesses,weather:districtWeather(run),totalProjectedIncome:businesses.reduce((sum,row)=>sum+row.projectedIncome,0),totalUpkeep:businesses.filter(row=>row.owned).reduce((sum,row)=>sum+row.upkeep,0)};
+}
 
 export function unlockDistrict(run,districtId,now=new Date().toISOString()){
   const district=DISTRICT_CATALOGUE.find(item=>item.id===districtId);if(!district)throw new Error("Unknown campus district.");
   if(run.districts?.[districtId])throw new Error("This district is already unlocked.");
   if(progressionState(run).level<district.level)throw new Error(`Reach company level ${district.level} to acquire ${district.name}.`);
-  if(districtId==="pier"&&!run.districts?.east)throw new Error("Acquire the East Promenade first.");
+  const prerequisites={innovation:"village",sports:"east",transit:"innovation"},requiredDistrict=prerequisites[districtId];if(requiredDistrict&&!run.districts?.[requiredDistrict])throw new Error(`Acquire ${DISTRICT_CATALOGUE.find(item=>item.id===requiredDistrict)?.name} first.`);
   if(run.cash<district.cost)throw new Error(`You need ${formatEuro(district.cost)} to acquire ${district.name}.`);
-  const next=structuredClone(run);if(!next.districts)next.districts={coast:1,east:0,pier:0};next.cash-=district.cost;next.districts[districtId]=1;
+  const next=structuredClone(run);if(!next.districts)next.districts={coast:1,village:0,east:0,innovation:0,sports:0,transit:0,pier:0};next.cash-=district.cost;next.districts[districtId]=1;
   if(!Array.isArray(next.districtPurchases))next.districtPurchases=[];next.districtPurchases.push({at:now,day:run.currentDay,districtId,cost:district.cost});next.reputation=(next.reputation||0)+12;return next;
 }
 
+export function unlockDistrictBusiness(run,businessId,now=new Date().toISOString()){
+  const business=DISTRICT_BUSINESSES.find(item=>item.id===businessId);if(!business)throw new Error("Unknown district business.");
+  if(!run.districts?.[business.districtId])throw new Error(`Acquire ${DISTRICT_CATALOGUE.find(item=>item.id===business.districtId)?.name} first.`);
+  if(run.districtBusinesses?.[businessId])throw new Error("This business is already operating.");if(run.cash<business.cost)throw new Error(`You need ${formatEuro(business.cost)} to open ${business.name}.`);
+  const next=structuredClone(run);if(!next.districtBusinesses)next.districtBusinesses={};if(!Array.isArray(next.districtBusinessHistory))next.districtBusinessHistory=[];next.cash-=business.cost;next.districtBusinesses[businessId]=1;next.districtBusinessHistory.push({at:now,day:run.currentDay,businessId,districtId:business.districtId,cost:business.cost});next.reputation=(next.reputation||0)+Math.max(2,Math.round(business.appeal/3));return next;
+}
+
 export function unlockEventVenue(run,now=new Date().toISOString()){
-  if(run.eventVenue)throw new Error("The Coastline Pavilion is already open.");if(!run.districts?.east)throw new Error("Acquire the East Promenade first.");
+  if(run.eventVenue)throw new Error("The Coastline Pavilion is already open.");if(!run.districts?.east)throw new Error("Acquire the Beachfront first.");
   if(progressionState(run).level<7)throw new Error("Reach company level 7 to build the Coastline Pavilion.");const cost=50000;if(run.cash<cost)throw new Error(`You need ${formatEuro(cost)} to build the pavilion.`);
   const next=structuredClone(run);next.cash-=cost;next.eventVenue=1;next.reputation=(next.reputation||0)+18;next.eventVenueOpenedAt={at:now,day:run.currentDay,cost};return next;
 }
@@ -673,8 +774,8 @@ export function unlockVenue(run,storeId,now=new Date().toISOString()){
   if(!STORES.some(store=>store.id===storeId))throw new Error("Unknown venue.");
   if((run.venues?.[storeId]??0)>0)throw new Error("This venue is already open.");
   const required=STORE_REQUIREMENTS[storeId]||1;if(progressionState(run).level<required)throw new Error(`Reach company level ${required} to open this venue.`);
-  if(storeId==="beach"&&!run.districts?.east)throw new Error("Acquire the East Promenade before opening the Beach Bar.");
-  if(storeId==="surf"&&!run.districts?.pier)throw new Error("Acquire the Ocean Pier before opening the Surf Shack.");
+  if(storeId==="beach"&&!run.districts?.east)throw new Error("Acquire the Beachfront before opening the Beach Bar.");
+  if(storeId==="surf"&&!run.districts?.east)throw new Error("Acquire the Beachfront before opening the Surf Shack.");
   const cost=STORE_UNLOCKS[storeId];if(run.cash<cost)throw new Error(`You need ${formatEuro(cost)} to open this venue.`);
   if(activeVenueProject(run,storeId))throw new Error("This venue already has an active construction project.");
   const next=structuredClone(run);next.cash-=cost;next.venues[storeId]=1;startVenueProject(next,storeId,"open",0,1,VENUE_PROJECT_DURATIONS.open,now);
@@ -682,8 +783,8 @@ export function unlockVenue(run,storeId,now=new Date().toISOString()){
   return next;
 }
 
-export function crowdPeak(minutes){
-  const phase=campusPhase(minutes);return {id:phase.id,label:phase.name,multiplier:phase.multiplier,start:phase.start,end:phase.end,color:phase.color,description:phase.description};
+export function crowdPeak(minutes,run=null){
+  const phase=campusPhase(minutes),day=run?calendarDay(run):null,dayFactor=day?.phaseMultipliers?.[phase.id]||1;return {id:phase.id,label:phase.name,multiplier:phase.multiplier*dayFactor,start:phase.start,end:phase.end,color:phase.color,description:phase.description,dayFactor,calendarId:day?.id||null};
 }
 
 export function advanceTycoon(run,minutes){
@@ -699,31 +800,36 @@ export function advanceTycoon(run,minutes){
 
 function ensureTycoonState(run){
   if(!Number.isFinite(run.clockMinutes))run.clockMinutes=DAY_START;
-  if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};
+  if(!run.today)run.today=createToday();if(!run.today.products)run.today.products={};if(!run.today.activities)run.today.activities={};if(!run.today.guestGroups)run.today.guestGroups={};
   if(!Number.isFinite(run.today.eventRevenue))run.today.eventRevenue=0;if(!Number.isFinite(run.today.eventCosts))run.today.eventCosts=0;if(!Number.isInteger(run.today.eventAttendance))run.today.eventAttendance=0;
   if(!Number.isInteger(run.today.staffWages))run.today.staffWages=0;if(!Number.isInteger(run.today.staffWagesPaid))run.today.staffWagesPaid=0;if(!Number.isInteger(run.today.operatingCosts))run.today.operatingCosts=0;if(!Number.isInteger(run.today.operatingCostsPaid))run.today.operatingCostsPaid=0;if(!Number.isInteger(run.today.issuesResolved))run.today.issuesResolved=0;if(!Number.isInteger(run.today.walkaways))run.today.walkaways=0;
   if(!run.salesProgress)run.salesProgress={};if(!Number.isFinite(run.visitorProgress))run.visitorProgress=0;
   if(!Number.isInteger(run.totalSales))run.totalSales=run.history?.reduce((sum,day)=>sum+(day.totals?.unitsSold||0),0)||0;
   if(!Number.isInteger(run.totalVisitors))run.totalVisitors=run.history?.reduce((sum,day)=>sum+(day.campus?.guests||0),0)||0;
-  run.version=7;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];
+  run.version=9;run.salesMode="guests";if(!Array.isArray(run.guestSales))run.guestSales=[];if(!run.guestEconomy)run.guestEconomy={purchases:0,spend:0,walkaways:0};if(!run.storeSpecializations)run.storeSpecializations={};if(!Array.isArray(run.specializationHistory))run.specializationHistory=[];if(!Array.isArray(run.venueProjects))run.venueProjects=[];if(!run.calendar)run.calendar={cycle:"nova-week-v1",startedDay:1};if(!run.districtBusinesses)run.districtBusinesses={};if(!Array.isArray(run.districtBusinessHistory))run.districtBusinessHistory=[];
   if(!Number.isInteger(run.guestEconomy.purchases))run.guestEconomy.purchases=0;if(!Number.isInteger(run.guestEconomy.spend))run.guestEconomy.spend=0;if(!Number.isInteger(run.guestEconomy.walkaways))run.guestEconomy.walkaways=0;
-  if(!run.districts)run.districts={coast:1,east:0,pier:0};if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
+  if(!run.districts)run.districts={coast:1};for(const id of ["coast","village","east","innovation","sports","transit","pier"])if(!Number.isInteger(run.districts[id]))run.districts[id]=id==="coast"?1:0;if(!Number.isInteger(run.eventVenue))run.eventVenue=0;
   if(!run.storeHours)run.storeHours=structuredClone(DEFAULT_STORE_HOURS);for(const store of STORES)if(!run.storeHours[store.id])run.storeHours[store.id]={...DEFAULT_STORE_HOURS[store.id]};
   if(!Array.isArray(run.deliveries))run.deliveries=[];if(!Array.isArray(run.today.deliveries))run.today.deliveries=[];ensureDjOperations(run);ensureOperationsState(run);ensurePerformanceState(run);
 }
 
 const LITTER_POINTS=Object.freeze({
   coast:[{x:12.5,y:18.8},{x:25.4,y:19.7},{x:34.7,y:17.3},{x:18.2,y:22.1}],
+  village:[{x:43,y:12},{x:47,y:9.8},{x:49,y:14.2}],
   east:[{x:42.6,y:18.5},{x:46.4,y:16.5},{x:47.1,y:21.5}],
+  innovation:[{x:54,y:11},{x:59,y:9.5},{x:62,y:13.8}],
+  sports:[{x:59,y:19},{x:64,y:17.4},{x:68,y:21.2}],
+  transit:[{x:69,y:11.2},{x:74,y:14.3},{x:78,y:9.8}],
   pier:[{x:50.4,y:18.2},{x:53.8,y:19.6},{x:55.1,y:15.2}]
 });
 
 function unlockedDistricts(run){return OPERATIONS_DISTRICTS.filter(district=>run.districts?.[district.id]);}
 function breakdownTargets(run,districtId){
   const stores=STORES.filter(store=>(run.venues?.[store.id]||0)>0&&districtForStore(store.id)===districtId).map(store=>({targetKind:"store",targetId:store.id,label:store.name,districtId}));
-  const facilities=(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)&&districtForPosition(facility.x)===districtId).map(facility=>({targetKind:"facility",targetId:facility.id,label:facility.name,districtId}));
+  const facilities=(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)&&districtForPosition(facility.x,facility.y)===districtId).map(facility=>({targetKind:"facility",targetId:facility.id,label:facility.name,districtId}));
+  const businesses=DISTRICT_BUSINESSES.filter(business=>business.districtId===districtId&&run.districtBusinesses?.[business.id]).map(business=>({targetKind:"district-business",targetId:business.id,label:business.name,districtId}));
   if(districtId==="east"&&run.eventVenue)facilities.push({targetKind:"venue",targetId:"pavilion",label:"Coastline Pavilion",districtId});
-  return [...stores,...facilities].filter(target=>!assetIsClosed(run,target.targetKind,target.targetId));
+  return [...stores,...facilities,...businesses].filter(target=>!assetIsClosed(run,target.targetKind,target.targetId));
 }
 
 export function addOperationsIssue(run,type,districtId="coast",targetKind=null,targetId=null){
@@ -742,9 +848,9 @@ export function addOperationsIssue(run,type,districtId="coast",targetKind=null,t
 function createIssueInPlace(run,type,districtId){const next=addOperationsIssue(run,type,districtId);run.operations=next.operations;}
 
 function processOperations(run,minutes){
-  ensureOperationsState(run);const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes),districts=unlockedDistricts(run);
+  ensureOperationsState(run);const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes,run),districts=unlockedDistricts(run);
   run.operations.litterLoad+=metrics.guests*peak.multiplier*minutes/2400;
-  const venueWear=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0)*.72,0),assetCount=venueWear+(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)).length+(run.eventVenue?1.4:0),technicians=activeStaffCount(run,"technician","coast",run.clockMinutes)+activeStaffCount(run,"technician","east",run.clockMinutes)+activeStaffCount(run,"technician","pier",run.clockMinutes);
+  const venueWear=Object.values(run.venues||{}).reduce((sum,level)=>sum+(level||0)*.72,0),assetCount=venueWear+(run.facilities||[]).filter(facility=>!["path","scenery","bin"].includes(facility.type)).length+Object.values(run.districtBusinesses||{}).filter(Boolean).length*.42+(run.eventVenue?1.4:0),technicians=unlockedDistricts(run).reduce((sum,district)=>sum+activeStaffCount(run,"technician",district.id,run.clockMinutes),0);
   run.operations.breakdownLoad+=Math.max(.3,assetCount-technicians*.55)*minutes/900;
   while(run.operations.litterLoad>=1&&run.operations.issues.filter(issue=>issue.type==="litter").length<8){run.operations.litterLoad-=1;const district=districts[(run.operations.nextIssueSequence-1)%districts.length];createIssueInPlace(run,"litter",district.id);}
   while(run.operations.breakdownLoad>=1&&run.operations.issues.filter(issue=>issue.type==="breakdown").length<4){run.operations.breakdownLoad-=1;const candidates=districts.filter(district=>breakdownTargets(run,district.id).length);if(!candidates.length)break;const district=candidates[(run.operations.nextIssueSequence-1)%candidates.length];createIssueInPlace(run,"breakdown",district.id);}
@@ -787,17 +893,18 @@ function processSlice(run,minutes){
   processDeliveries(run,minutes);
   processDjEvent(run,minutes);
   processOperations(run,minutes);
-  const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes);
+  const metrics=campusMetrics(run),peak=crowdPeak(run.clockMinutes,run);
   run.visitorProgress+=metrics.guests*peak.multiplier*minutes/115;
   const arrived=Math.floor(run.visitorProgress);run.visitorProgress-=arrived;run.today.visitors+=arrived;run.totalVisitors+=arrived;
 }
 
 function closeTycoonDay(run){
   const metrics=campusMetrics(run),performance=ensurePerformanceState(run),items=CATALOGUE.map(product=>{const row=run.today.products[product.id]||{unitsSold:0,revenue:0,cogs:0};return {productId:product.id,unitsSold:row.unitsSold,demand:null,price:run.prices[product.id],revenue:row.revenue,cogs:row.cogs,grossProfit:row.revenue-row.cogs};});
+  const portfolio=districtPortfolio(run),districtRevenue=portfolio.totalProjectedIncome;run.cash+=districtRevenue;run.today.districtRevenue=districtRevenue;
   const wageDue=run.operations.payrollDue>0?0:dailyPayroll(run),wagesPaid=Math.min(run.cash,wageDue),wageShortfall=wageDue-wagesPaid;run.cash-=wagesPaid;run.operations.payrollDue+=wageShortfall;run.operations.totalWagesPaid+=wagesPaid;run.today.staffWages=wageDue;run.today.staffWagesPaid=wagesPaid;
   const operating=dailyOperatingCosts(run),totalOperatingDue=performance.operatingDue+operating.total,operatingPaid=Math.min(run.cash,totalOperatingDue),operatingShortfall=totalOperatingDue-operatingPaid;run.cash-=operatingPaid;performance.operatingDue=operatingShortfall;performance.totalOperatingCostsPaid+=operatingPaid;run.today.operatingCosts=operating.total;run.today.operatingCostsPaid=operatingPaid;
-  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),grossProfit=run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0),operatingProfit=grossProfit-wageDue-operating.total,unlocked=CATALOGUE.filter(product=>(run.venues?.[product.storeId]||0)>=(product.tier||1)),stockCoverage=unlocked.length?Math.round(unlocked.filter(product=>(run.stock?.[product.id]||0)>0).length/unlocked.length*100):0,momentum=closeDayMomentum(run,operatingProfit,metrics,stockCoverage),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,staffWages:wageDue,staffWagesPaid:wagesPaid,payrollShortfall:wageShortfall,operatingCosts:operating.total,operatingCostsPaid:operatingPaid,operatingShortfall,issuesResolved:run.today.issuesResolved||0,walkaways:run.today.walkaways||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit,operatingProfit};
-  run.history.push({day:run.currentDay,eventId:crowdPeak(720).id,completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,deliveries:structuredClone(run.today.deliveries||[]),storeHours:structuredClone(run.storeHours||{}),costs:operating,performance:structuredClone(momentum),campus:{...metrics,guests:run.today.visitors,stockCoverage,activities:{...(run.today.activities||{})}}});
+  const deliveredUnits=(run.today.deliveries||[]).reduce((sum,item)=>sum+item.quantity,0),grossProfit=run.today.revenue-run.today.cogs+(run.today.eventRevenue||0)-(run.today.eventCosts||0)+districtRevenue,operatingProfit=grossProfit-wageDue-operating.total,unlocked=CATALOGUE.filter(product=>(run.venues?.[product.storeId]||0)>=(product.tier||1)),stockCoverage=unlocked.length?Math.round(unlocked.filter(product=>(run.stock?.[product.id]||0)>0).length/unlocked.length*100):0,momentum=closeDayMomentum(run,operatingProfit,metrics,stockCoverage),totals={unitsSold:run.today.unitsSold,revenue:run.today.revenue,cogs:run.today.cogs,eventRevenue:run.today.eventRevenue||0,eventCosts:run.today.eventCosts||0,eventAttendance:run.today.eventAttendance||0,districtRevenue,staffWages:wageDue,staffWagesPaid:wagesPaid,payrollShortfall:wageShortfall,operatingCosts:operating.total,operatingCostsPaid:operatingPaid,operatingShortfall,issuesResolved:run.today.issuesResolved||0,walkaways:run.today.walkaways||0,deliveries:(run.today.deliveries||[]).length,deliveredUnits,grossProfit,operatingProfit};
+  run.history.push({day:run.currentDay,eventId:crowdPeak(720,run).id,calendar:calendarDay(run),guestGroups:structuredClone(run.today.guestGroups||{}),districts:portfolio.districts.filter(district=>district.owned).map(district=>({id:district.id,built:district.built,projectedIncome:district.projectedIncome})),completedAt:new Date().toISOString(),items,totals,closingCash:run.cash,deliveries:structuredClone(run.today.deliveries||[]),storeHours:structuredClone(run.storeHours||{}),costs:operating,performance:structuredClone(momentum),campus:{...metrics,guests:run.today.visitors,stockCoverage,activities:{...(run.today.activities||{})}}});
   run.reputation=(run.reputation||0)+Math.max(0,Math.floor(totals.operatingProfit/300))+Math.floor(metrics.rating/25);run.currentDay+=1;run.clockMinutes=DAY_START;run.today=createToday();
   if(run.history.length>60)run.history=run.history.slice(-60);
 }

@@ -28,9 +28,12 @@ The design has three goals:
 - Recruit individual staff, assign districts and shifts, and cover daily wages.
 - Respond to visible litter and breakdowns before cleanliness falls or assets remain closed.
 - Balance venue and district overhead against faster service, stronger ratings, and attendance momentum.
-- Upgrade stores through three visible levels and acquire two new districts.
+- Upgrade stores through three visible levels and acquire five new districts, each with a different operating problem.
 - Watch paid venue projects become fenced construction sites with workers, partial structures, completion cameras, shutters, and visible delivery carts.
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
+- Prepare for a recurring campus calendar with lecture days, exams, fairs, open days, surf tournaments, festivals, and weekends.
+- Serve twelve visitor groups with different schedules, budgets, patience, price tolerance, and preferences.
+- Develop 25 district businesses across the Student Village, Beachfront, Innovation District, Sports Campus, and Transit & Arrival District.
 - Follow six daily campus phases from morning arrival to the sunset period.
 - Review persistent daily ledgers without interrupting the larger campaign.
 - Switch between live guest-flow, needs, commercial, and operations map lenses.
@@ -70,6 +73,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Visual building lifecycle | Timed construction, operational shutters, visible logistics, and completion moments | [`specs/visual-building-lifecycle.md`](specs/visual-building-lifecycle.md) · `feature/visual-building-lifecycle` |
 | Environmental motion | Time-aware ocean, sky, vegetation, flags, fountains, and atmospheric haze | [`specs/environmental-motion.md`](specs/environmental-motion.md) · `feature/environmental-motion` |
 | Showcase editor | Separate level-ten presentation sandbox with the complete purchasable catalogue | [`specs/showcase-editor.md`](specs/showcase-editor.md) · `feature/showcase-editor` |
+| Larger district progression | Five map expansions, 25 businesses, district economies, and four unlockable guest cohorts | [`specs/larger-district-progression.md`](specs/larger-district-progression.md) · `feature/larger-district-progression` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
@@ -102,7 +106,7 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-The automated checks cover building placement, progression, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, world collision and depth, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
+The automated checks cover building placement, district progression, campus calendar forecasts, guest groups, guest decisions and sales, staff operations, DJ operations, scheduled deliveries, store hours, connected tycoon economics, management overlays, specializations, world collision and depth, continuous day progression, and the visual presentation contract. Pull requests run the same checks in GitHub Actions.
 
 ## Repository guide
 
@@ -137,6 +141,7 @@ The automated checks cover building placement, progression, guest decisions and 
 - A shop sale occurs only when a visible guest finishes service; queue staffing therefore controls throughput.
 - Staff only contribute while their assigned shift is active, wages are charged at day close, and breakdowns block affected destinations until repaired.
 - Open stores and acquired districts create daily operating costs. Store levels improve service speed while increasing overhead and wear.
+- District businesses add forecastable revenue, upkeep, visitor appeal, physical destinations, and additional maintenance risk.
 - Each closing report updates attendance momentum from rating, profit, product availability, unresolved work, and queue walkaways.
 - Store concepts and facility blueprints change service, appeal, needs, and overhead; matching focuses create a capped district synergy.
 - Revenue increases cash; cost of goods sold is reported but never deducted twice.

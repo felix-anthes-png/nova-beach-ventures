@@ -81,7 +81,7 @@ test("legacy staff counts migrate exactly once into the roster",()=>{
   const run=createRun();run.version=3;run.staff={service:0,caretaker:2,technician:1,host:0,entertainer:0};delete run.staffRoster;delete run.operations;
   migrateStaffOperations(run);const ids=run.staffRoster.map(worker=>worker.id);
   migrateStaffOperations(run);
-  assert.equal(run.version,7);
+  assert.equal(run.version,9);
   assert.equal(run.staffRoster.length,3);
   assert.equal(new Set(ids).size,3);
   assert.deepEqual(run.staff,{service:0,caretaker:2,technician:1,host:0,entertainer:0});

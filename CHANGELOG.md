@@ -1,5 +1,20 @@
 # Changelog
 
+## Larger district progression — 2026-11
+
+- Expanded the Academic Core into a six-district campus portfolio.
+- Added the Student Village, Beachfront, Innovation District, Sports Campus, and Transit & Arrival District.
+- Added 25 purchasable district businesses with income, upkeep, appeal, breakdowns, and visible map buildings.
+- Added resident, founder, athlete, and commuter guest groups that unlock with their relevant district.
+- Added district-specific demand rhythms, deterministic coastal weather, portfolio forecasts, and persistent daily results.
+
+## Campus calendar and guest groups — 2026-11
+
+- Added seven recurring campus day types with attendance, phase, crowd, and preparation forecasts.
+- Added eight visitor groups with distinct schedules, budgets, patience, preferences, price tolerance, colours, and accessories.
+- Added live crowd composition plus group purchases and spending to guest intelligence.
+- Added calendar and guest-group performance to the closing report and persistent ledger.
+
 ## World collision and depth — 2026-11
 
 - Added solid footprints for campus architecture, stores, props, facilities, and interior furniture.

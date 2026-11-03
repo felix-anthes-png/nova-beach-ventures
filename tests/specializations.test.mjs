@@ -60,7 +60,7 @@ test("facilities in another district do not strengthen a store concept",()=>{
 
 test("older saves migrate without inventing specializations",()=>{
   const run=createRun();delete run.storeSpecializations;delete run.specializationHistory;run.version=5;const migrated=migrateStaffOperations(run);
-  assert.equal(migrated.version,7);
+  assert.equal(migrated.version,9);
   assert.deepEqual(migrated.storeSpecializations,{});
   assert.deepEqual(migrated.specializationHistory,[]);
 });
