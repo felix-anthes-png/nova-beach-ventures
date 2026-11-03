@@ -103,3 +103,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Provide a Python-based Terminal launcher instead of requiring a framework development server.
 
 **Reason:** The game is a static application and the target Mac already provides Python, while Node and npm may not be available on the normal Terminal path. `./start-dev` therefore creates the development URL, opens the browser, and reloads changed source without an installation step. Optional npm aliases remain available for environments that already have Node.
+
+## D018 — Make investment visible before it becomes productive
+
+**Decision:** Store openings and upgrades create timed construction projects that close the venue until completion.
+
+**Reason:** Immediate model replacement made major spending feel like a menu transaction. A saved construction phase connects investment to the world, creates a readable temporary trade-off, and makes the finished venue feel earned. Modular level structures and specialisation fit-outs preserve variety without requiring a separate building asset for every combination.

@@ -6,8 +6,8 @@ const root=new URL("../",import.meta.url);
 
 test("the restrained tycoon presentation loads after all feature styles",async()=>{
   const html=await readFile(new URL("dist/index.html",root),"utf8");
-  assert.match(html,/specializations\.css[\s\S]*art-direction\.css/);
-  assert.match(html,/app\.js\?v=31-character-crowd-overhaul/);
+  assert.match(html,/specializations\.css[\s\S]*visual-building-lifecycle\.css[\s\S]*art-direction\.css/);
+  assert.match(html,/app\.js\?v=32-visual-building-lifecycle/);
 });
 
 test("world labels and guest intent are contextual",async()=>{

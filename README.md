@@ -29,6 +29,7 @@ The design has three goals:
 - Respond to visible litter and breakdowns before cleanliness falls or assets remain closed.
 - Balance venue and district overhead against faster service, stronger ratings, and attendance momentum.
 - Upgrade stores through three visible levels and acquire two new districts.
+- Watch paid venue projects become fenced construction sites with workers, partial structures, completion cameras, shutters, and visible delivery carts.
 - Run ticketed DJ events with configurable programme, pricing, staff, and equipment.
 - Follow six daily campus phases from morning arrival to the sunset period.
 - Review persistent daily ledgers without interrupting the larger campaign.
@@ -64,6 +65,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Designed campus spaces | Eight distinct public spaces and destination-aware guest circulation | [`specs/designed-campus-spaces.md`](specs/designed-campus-spaces.md) · `feature/designed-campus-spaces` |
 | Character and crowd overhaul | Directional movement, activity poses, stable queues, cohorts, and role-specific staff | [`specs/character-crowd-overhaul.md`](specs/character-crowd-overhaul.md) · `feature/character-crowd-overhaul` |
 | Editable development URL | One-command Terminal launcher with automatic browser reload | [`docs/development-workflow.md`](docs/development-workflow.md) · `chore/local-development-url` |
+| Visual building lifecycle | Timed construction, operational shutters, visible logistics, and completion moments | [`specs/visual-building-lifecycle.md`](specs/visual-building-lifecycle.md) · `feature/visual-building-lifecycle` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

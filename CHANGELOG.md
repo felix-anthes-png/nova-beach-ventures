@@ -4,6 +4,14 @@ This file records meaningful product increments. Individual implementation check
 
 ## Unreleased
 
+### Visual building lifecycle
+
+- Added persistent timed construction projects for new venues and level upgrades.
+- Added fencing, scaffolding, partial structures, site workers, progress boards, and completion camera moments.
+- Added physical shutters for scheduled closures and breakdowns.
+- Added visible delivery carts that follow the saved logistics schedule from the service lane to destination stores.
+- Added construction status to venue management and portfolio views, with duplicate upgrades prevented until completion.
+
 ### Character and crowd animation overhaul
 
 - Replaced the four-frame crowd figure with a directional six-frame character system shared by guests, staff, the player, interiors, and events.
