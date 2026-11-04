@@ -1,5 +1,13 @@
 # Changelog
 
+## World object depth correction — 2026-11
+
+- Split wide academic buildings into local render actors instead of one campus-wide layer.
+- Grounded every main building at its front wall and made that wall share one source of truth with collision.
+- Made wide-building depth follow the player's local façade position and added collision to every architectural planter.
+- Depth-sorted façade canopies, support columns, and planter sections by their position in the world.
+- Prevented distant building furniture from painting over nearby characters and appearing to float above the map.
+
 ## Larger district progression — 2026-11
 
 - Expanded the Academic Core into a six-district campus portfolio.

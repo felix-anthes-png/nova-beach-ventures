@@ -139,3 +139,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Treat districts as separate economies with their own traffic rhythm, visitor group, business catalogue, income profile, upkeep, and maintenance exposure.
 
 **Reason:** A larger map is not meaningful progression when every parcel behaves like more space for the same shop. The district portfolio makes expansion a strategic choice: residential trade peaks late, the Beachfront depends on weather, Innovation rewards premium weekday demand, Sports produces capacity spikes, and Transit increases high-volume arrival pressure. Deterministic modifiers keep those differences forecastable and auditable.
+
+## D024 — Depth-sort architecture by local footprint
+
+**Decision:** Render wide buildings as local sections and give façade furniture its own world-depth actor.
+
+**Reason:** One depth value for an entire building lets its distant front edge paint over characters standing elsewhere on the map. Local actors preserve the existing isometric painter model while making occlusion follow the visible position of each canopy, column, and planter.
