@@ -145,3 +145,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Render wide buildings as local sections and give façade furniture its own world-depth actor.
 
 **Reason:** One depth value for an entire building lets its distant front edge paint over characters standing elsewhere on the map. Local actors preserve the existing isometric painter model while making occlusion follow the visible position of each canopy, column, and planter.
+
+## D025 — Compose districts before decorating plots
+
+**Decision:** Give every expansion its own ground plan, circulation system, architectural family, and verified plot geometry.
+
+**Reason:** Recolouring identical buildings does not create district identity, and placing them independently produces overlaps with paths and established venues. Authored layouts make each expansion readable at a glance while shared materials keep the full campus coherent.
