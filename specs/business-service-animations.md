@@ -17,6 +17,8 @@ Give expansion businesses a visible operating identity instead of relying on sig
 
 Animations respond to real capacity, breakdowns, active guests, queues, and campaign time. Broken or depleted businesses stop operating.
 
+All scenes share a grounded miniature art system: consistent character scale, equipment shadows, layered materials, restrained motion trails, and props aligned to the isometric venue footprint.
+
 ## Acceptance checks
 
 Automated coverage verifies business-to-animation mapping, operating gates, guest-driven intensity, and renderer integration. Manual review checks that activity remains inside each business footprint and stays readable at normal camera zoom.

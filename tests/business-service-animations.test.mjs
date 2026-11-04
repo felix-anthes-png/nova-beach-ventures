@@ -26,5 +26,6 @@ test("business animation state exposes a stable campaign-time phase",()=>{
 test("the world renderer contains all eight authored activity scenes",async()=>{
   const app=await readFile(new URL("../dist/app.js",import.meta.url),"utf8");
   for(const renderer of ["drawBakeryActivity","drawGymActivity","drawPadelActivity","drawLaundryActivity","drawRestaurantActivity","drawSurfRentalActivity","drawParkingActivity","drawConferenceActivity"])assert.match(app,new RegExp(`function ${renderer}\\(`));
+  assert.match(app,/function drawActivityFigure\(/);assert.match(app,/function drawTinyCar\(/);
   assert.match(app,/drawBusinessActivity\(business,x,y,w,h,lastTime\)/);
 });

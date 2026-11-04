@@ -81,6 +81,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Interior interaction overhaul | Building-specific rooms, operational counters, indoor activity, collision-safe routes, and contextual venue feedback | [`specs/interior-interaction-overhaul.md`](specs/interior-interaction-overhaul.md) · `feature/interior-interaction-overhaul` |
 | Venue operational states | Physical open, closed, stock, delivery, queue, repair, cleaning, and event-preparation feedback | [`specs/venue-operational-states.md`](specs/venue-operational-states.md) · `feature/venue-operational-states` |
 | Business service animations | Authored bakery, gym, padel, laundry, restaurant, surf, parking, and conference activity | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `feature/business-service-animations` |
+| Business animation art polish | Unified miniature scale, stronger equipment depth, grounded shadows, and refined motion across district activities | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `fix/business-animation-art-polish` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
