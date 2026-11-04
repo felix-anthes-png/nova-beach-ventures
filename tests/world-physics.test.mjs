@@ -39,6 +39,7 @@ test("the world connects physics to player movement and depth ordering",async()=
   assert.match(app,/function campusColliders\(/);
   assert.match(app,/function roomColliders\(/);
   assert.match(app,/resolveMovement\(run\.player/);
-  assert.match(app,/depth:50\.45,draw:\(\)=>drawStudentHub/);
+  assert.match(app,/CAMPUS_BUILDINGS/);
+  assert.match(app,/buildingDepth\(CAMPUS_BUILDINGS\.studentHub\)/);
   assert.match(app,/movementImpact/);
 });

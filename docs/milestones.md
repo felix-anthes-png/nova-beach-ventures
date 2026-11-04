@@ -138,13 +138,13 @@ The portfolio contains 25 separately purchasable businesses. They create daily i
 
 **Checkpoint:** `fix/world-object-depth`
 
-Corrected the painter ordering that made long façade objects appear to float over characters. The academic complex now renders as separate wings, while canopies, columns, and planter sections are sorted at their local map position. Characters can therefore pass naturally behind or in front of each architectural section. Coverage lives in `tests/world-depth-layers.test.mjs`.
+Corrected the painter ordering that made long façade objects appear to float over characters. The academic complex now renders as separate wings, while canopies, columns, and planter sections are sorted at their local map position. Main building walls share their footprint with collision and sort from the centre of the visible front wall, so characters remain in front of the façade and stop at its physical edge. Coverage lives in `tests/world-depth-layers.test.mjs`.
 
 ## Verification baseline
 
 At the end of milestone 22:
 
-- 108 automated tests pass, including district progression, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 109 automated tests pass, including district progression, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

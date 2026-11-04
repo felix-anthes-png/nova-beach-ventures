@@ -65,6 +65,14 @@ const CAMPUS_SPACES = Object.freeze({
   promenade:{id:"promenade",name:"Beach Promenade",x:30.5,y:22.15},
   eventSquare:{id:"eventSquare",name:"Event Square",x:20.5,y:21.35}
 });
+const CAMPUS_BUILDINGS=Object.freeze({
+  library:{id:"learning-center",x:2.2,y:3.25,w:8.4,h:5.15,label:"Learning Center"},
+  mercado:{id:"mercado-building",x:3.15,y:8.85,w:8.25,h:4.45,label:"Mercado Supply Hall"},
+  academicWest:{id:"academic-west",x:12.2,y:3.1,w:6.2,h:5.7,label:"Academic Wing"},
+  academicCentre:{id:"academic-centre",x:18.2,y:3.55,w:5.8,h:5.15,label:"Academic Wing"},
+  academicEast:{id:"academic-east",x:23.8,y:3.05,w:6.3,h:5.75,label:"Academic Wing"},
+  studentHub:{id:"student-hub",x:30.05,y:5.05,w:9.2,h:6.15,label:"Student Hub"}
+});
 const RESERVED_BUILD_AREAS = [
   {kind:"rect",x:1.8,y:8,w:9.7,h:6.3,label:"Mercado building"},
   {kind:"rect",x:13.3,y:7.2,w:14.6,h:6.8,label:"Academic complex"},
@@ -112,12 +120,7 @@ function facilityCollider(facility){
 
 function campusColliders(){
   const fixed=[
-    rectCollider("learning-center",2.2,3.25,8.4,5.15,{label:"Learning Center",kind:"building"}),
-    rectCollider("mercado-building",3.15,8.85,8.25,4.45,{label:"Mercado Supply Hall",kind:"building"}),
-    rectCollider("academic-west",12.2,3.1,6.2,5.7,{label:"Academic Wing",kind:"building"}),
-    rectCollider("academic-centre",18.2,3.55,5.8,5.15,{label:"Academic Wing",kind:"building"}),
-    rectCollider("academic-east",23.8,3.05,6.3,5.75,{label:"Academic Wing",kind:"building"}),
-    rectCollider("student-hub",30.05,5.05,9.2,6.15,{label:"Student Hub",kind:"building"}),
+    ...Object.values(CAMPUS_BUILDINGS).map(building=>rectCollider(building.id,building.x,building.y,building.w,building.h,{label:building.label,kind:"building"})),
     rectCollider("sunset-forum",18.35,22.08,4.3,2.25,{label:"Sunset Forum",kind:"venue"}),
     rectCollider("arrival-bench-west",5.05,16.1,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
     rectCollider("arrival-bench-east",9.45,14.72,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
@@ -456,14 +459,15 @@ function drawWorld(t) {
   drawTerrain(t);
   if(zone.outdoor)drawCoastalMotion(t,environment);
   if(zone.outdoor)drawCampusGroundPlan(t);
+  const buildingDepth=building=>building.x+building.w/2+building.y+building.h+.02;
   const worldActors=zone.outdoor?[
-    {depth:19.05,draw:()=>drawLibrary()},
-    {depth:24.7,draw:()=>drawMercadoExterior()},
-    {depth:30.25,draw:()=>drawCampusWestWing(t)},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.library),draw:()=>drawLibrary()},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.mercado),draw:()=>drawMercadoExterior()},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.academicWest),draw:()=>drawCampusWestWing(t)},
     {depth:29.9,draw:()=>drawCampusBridgeAndIdentity()},
-    {depth:32.75,draw:()=>drawCampusCentreWing(t)},
-    {depth:38.95,draw:()=>drawCampusEastWing(t)},
-    {depth:50.45,draw:()=>drawStudentHub()},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.academicCentre),draw:()=>drawCampusCentreWing(t)},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.academicEast),draw:()=>drawCampusEastWing(t)},
+    {depth:buildingDepth(CAMPUS_BUILDINGS.studentHub),draw:()=>drawStudentHub()},
     {depth:46.98,draw:()=>drawBeachStage(t)},
     ...architecturalForegroundActors(),
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
@@ -689,17 +693,17 @@ function drawCanopy(x,y,w,h,z=31){
 }
 
 function drawCampusWestWing(t) {
-  drawCampusWing(12.2,3.1,6.2,5.7,90,{glass:"#245761",roofGarden:true,slats:true});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.academicWest;drawCampusWing(x,y,w,h,90,{glass:"#245761",roofGarden:true,slats:true});
   const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(13.25,3.6,112,"#ed7458",t,environment,.86);
 }
 
 function drawCampusCentreWing(t) {
-  drawCampusWing(18.2,3.55,5.8,5.15,70,{glass:"#2b6670",accent:"#f2c85f"});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.academicCentre;drawCampusWing(x,y,w,h,70,{glass:"#2b6670",accent:"#f2c85f"});
   const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(24.8,3.5,133,"#f5c95e",t+180,environment,.86);
 }
 
 function drawCampusEastWing(t) {
-  drawCampusWing(23.8,3.05,6.3,5.75,111,{glass:"#214e5b",slats:true,roofGarden:true,accent:"#ed7458"});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.academicEast;drawCampusWing(x,y,w,h,111,{glass:"#214e5b",slats:true,roofGarden:true,accent:"#ed7458"});
   const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(29.1,4.15,119,"#64cbc8",t+340,environment,.86);
 }
 
@@ -709,17 +713,17 @@ function drawCampusBridgeAndIdentity() {
 }
 
 function drawLibrary(){
-  drawCampusWing(2.2,3.25,8.4,5.15,73,{glass:"#285d67",slats:true,roofGarden:true,accent:"#64cbc8"});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.library;drawCampusWing(x,y,w,h,73,{glass:"#285d67",slats:true,roofGarden:true,accent:"#64cbc8"});
   drawWorldLabel(6.4,8.05,88,"LEARNING CENTER","#64cbc8");
 }
 
 function drawMercadoExterior(){
-  drawCampusWing(3.15,8.85,8.25,4.45,58,{glass:"#2b555b",slats:true,accent:"#f5c95e"});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.mercado;drawCampusWing(x,y,w,h,58,{glass:"#2b555b",slats:true,accent:"#f5c95e"});
   drawWorldLabel(7.3,13.15,74,"MERCADO SUPPLY","#f5c95e");
 }
 
 function drawStudentHub(){
-  drawCampusWing(30.05,5.05,9.2,6.15,84,{glass:"#225762",roofGarden:true,accent:"#ff7458",slats:true});
+  const {x,y,w,h}=CAMPUS_BUILDINGS.studentHub;drawCampusWing(x,y,w,h,84,{glass:"#225762",roofGarden:true,accent:"#ff7458",slats:true});
   drawWorldLabel(34.65,10.95,100,"STUDENT HUB","#ff7458");
 }
 

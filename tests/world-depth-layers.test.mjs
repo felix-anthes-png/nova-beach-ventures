@@ -13,6 +13,16 @@ test("large campus architecture is split into local depth actors",()=>{
   assert.match(source,/\.\.\.architecturalForegroundActors\(\)/);
 });
 
+test("building walls and collision share one grounded footprint",()=>{
+  assert.match(source,/const CAMPUS_BUILDINGS=Object\.freeze/);
+  assert.match(source,/Object\.values\(CAMPUS_BUILDINGS\)\.map\(building=>rectCollider/);
+  for(const building of ["library","mercado","academicWest","academicCentre","academicEast","studentHub"]){
+    assert.match(source,new RegExp(`buildingDepth\\(CAMPUS_BUILDINGS\\.${building}\\)`));
+  }
+  assert.match(source,/CAMPUS_BUILDINGS\.studentHub;drawCampusWing\(x,y,w,h,84/);
+  assert.match(source,/building\.x\+building\.w\/2\+building\.y\+building\.h/);
+});
+
 test("foreground furniture is no longer painted inside whole-building actors",()=>{
   for(const name of ["drawLibrary","drawMercadoExterior","drawStudentHub"]){const exterior=body(name);assert.doesNotMatch(exterior,/drawCanopy|drawColumnLine|drawLinearPlanter/);}
   assert.match(body("architecturalForegroundActors"),/addCanopy/);
