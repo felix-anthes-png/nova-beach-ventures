@@ -73,6 +73,14 @@ const CAMPUS_BUILDINGS=Object.freeze({
   academicEast:{id:"academic-east",x:23.8,y:3.05,w:6.3,h:5.75,label:"Academic Wing"},
   studentHub:{id:"student-hub",x:30.05,y:5.05,w:9.2,h:6.15,label:"Student Hub"}
 });
+const ARCHITECTURAL_PLANTERS=Object.freeze([
+  {id:"academic-planter-west",x:13.1,y:8.95,w:4.2,h:.62,z:13},
+  {id:"academic-planter-east",x:24.6,y:8.95,w:4.35,h:.62,z:13},
+  {id:"library-planter",x:3.05,y:8.58,w:2.55,h:.55,z:12},
+  {id:"mercado-planter",x:4.05,y:13.36,w:2.35,h:.52,z:11},
+  {id:"hub-planter-west",x:31.05,y:11.35,w:3.15,h:.58,z:12},
+  {id:"hub-planter-east",x:36.15,y:11.35,w:2.15,h:.58,z:12}
+]);
 const RESERVED_BUILD_AREAS = [
   {kind:"rect",x:1.8,y:8,w:9.7,h:6.3,label:"Mercado building"},
   {kind:"rect",x:13.3,y:7.2,w:14.6,h:6.8,label:"Academic complex"},
@@ -121,6 +129,7 @@ function facilityCollider(facility){
 function campusColliders(){
   const fixed=[
     ...Object.values(CAMPUS_BUILDINGS).map(building=>rectCollider(building.id,building.x,building.y,building.w,building.h,{label:building.label,kind:"building"})),
+    ...ARCHITECTURAL_PLANTERS.map(planter=>rectCollider(planter.id,planter.x+.04,planter.y+.04,planter.w-.08,planter.h-.08,{label:"Façade planter",kind:"prop"})),
     rectCollider("sunset-forum",18.35,22.08,4.3,2.25,{label:"Sunset Forum",kind:"venue"}),
     rectCollider("arrival-bench-west",5.05,16.1,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
     rectCollider("arrival-bench-east",9.45,14.72,1.4,.42,{label:"Atlantic bench",kind:"prop"}),
@@ -459,7 +468,7 @@ function drawWorld(t) {
   drawTerrain(t);
   if(zone.outdoor)drawCoastalMotion(t,environment);
   if(zone.outdoor)drawCampusGroundPlan(t);
-  const buildingDepth=building=>building.x+building.w/2+building.y+building.h+.02;
+  const buildingDepth=building=>Math.max(building.x,Math.min(building.x+building.w,run.player.x))+building.y+building.h+.02;
   const worldActors=zone.outdoor?[
     {depth:buildingDepth(CAMPUS_BUILDINGS.library),draw:()=>drawLibrary()},
     {depth:buildingDepth(CAMPUS_BUILDINGS.mercado),draw:()=>drawMercadoExterior()},
@@ -732,10 +741,11 @@ function architecturalForegroundActors(){
   const addCanopy=(x,y,w,h,z,maxSlice=3)=>{const slices=Math.max(1,Math.ceil(w/maxSlice)),slice=w/slices;for(let index=0;index<slices;index++){const sx=x+index*slice;actors.push({depth:sx+slice+y+h+.015,draw:()=>drawCanopy(sx,y,slice,h,z)});}};
   const addColumns=(x,y,length,count,z,axis="x",color="#244b54")=>{for(let index=0;index<count;index++){const amount=count===1?.5:index/(count-1),px=x+(axis==="x"?length*amount:0),py=y+(axis==="y"?length*amount:0);actors.push({depth:px+py+.02,draw:()=>drawColumnLine(px,py,0,1,z,axis,color)});}};
   const addPlanter=(x,y,w,h,z,maxSlice=1.15)=>{const slices=Math.max(1,Math.ceil(w/maxSlice)),slice=w/slices;for(let index=0;index<slices;index++){const sx=x+index*slice;actors.push({depth:sx+slice+y+h+.025,draw:()=>drawLinearPlanter(sx,y,slice,h,z)});}};
-  addCanopy(12,8.25,18.3,1.15,31,3.05);addColumns(12.3,9.36,17.7,11,30);addPlanter(13.1,8.95,4.2,.62,13);addPlanter(24.6,8.95,4.35,.62,13);
-  addCanopy(9.8,6.75,3.1,1.2,28,1.55);addColumns(2.55,8.42,7.7,7,27);addPlanter(3.05,8.58,2.55,.55,12);
-  addCanopy(10.75,10.4,2.1,1.4,26,1.05);addColumns(3.45,13.27,7.55,6,25);addPlanter(4.05,13.36,2.35,.52,11);
-  addCanopy(29.25,8.15,2.2,1.25,29,1.1);addColumns(30.35,11.17,8.45,8,28);addPlanter(31.05,11.35,3.15,.58,12);addPlanter(36.15,11.35,2.15,.58,12);
+  addCanopy(12,8.25,18.3,1.15,31,3.05);addColumns(12.3,9.36,17.7,11,30);
+  addCanopy(9.8,6.75,3.1,1.2,28,1.55);addColumns(2.55,8.42,7.7,7,27);
+  addCanopy(10.75,10.4,2.1,1.4,26,1.05);addColumns(3.45,13.27,7.55,6,25);
+  addCanopy(29.25,8.15,2.2,1.25,29,1.1);addColumns(30.35,11.17,8.45,8,28);
+  ARCHITECTURAL_PLANTERS.forEach(planter=>addPlanter(planter.x,planter.y,planter.w,planter.h,planter.z));
   return actors;
 }
 

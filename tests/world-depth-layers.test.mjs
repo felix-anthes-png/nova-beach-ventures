@@ -20,7 +20,13 @@ test("building walls and collision share one grounded footprint",()=>{
     assert.match(source,new RegExp(`buildingDepth\\(CAMPUS_BUILDINGS\\.${building}\\)`));
   }
   assert.match(source,/CAMPUS_BUILDINGS\.studentHub;drawCampusWing\(x,y,w,h,84/);
-  assert.match(source,/building\.x\+building\.w\/2\+building\.y\+building\.h/);
+  assert.match(source,/Math\.max\(building\.x,Math\.min\(building\.x\+building\.w,run\.player\.x\)\)\+building\.y\+building\.h/);
+});
+
+test("façade planters are solid world objects",()=>{
+  assert.match(source,/const ARCHITECTURAL_PLANTERS=Object\.freeze/);
+  assert.match(source,/ARCHITECTURAL_PLANTERS\.map\(planter=>rectCollider/);
+  assert.match(source,/ARCHITECTURAL_PLANTERS\.forEach\(planter=>addPlanter/);
 });
 
 test("foreground furniture is no longer painted inside whole-building actors",()=>{
