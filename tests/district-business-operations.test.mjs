@@ -20,7 +20,7 @@ test("district offer demand follows price boundaries and need timing",()=>{
 });
 
 test("a real guest purchase reconciles cash, capacity, revenue and cogs",()=>{
-  let run=operatingRun();const offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id==="transit-bakery-filled-roll");run=buyDistrictOfferStock(run,offer.id,3);run=setDistrictOfferPrice(run,offer.id,700);const beforeCash=run.cash;run=completeDistrictOfferSale(run,offer.id,1200,"guest-1");assert.equal(run.cash,beforeCash+700);assert.equal(run.districtOperations[offer.businessId].stock[offer.id],2);assert.deepEqual(run.today.districtOffers[offer.id],{units:1,revenue:700,cogs:offer.cost});assert.equal(run.districtOfferSales.length,1);
+  let run=operatingRun();const offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id==="transit-bakery-filled-roll"),beforeStock=run.districtOperations[offer.businessId].stock[offer.id];run=buyDistrictOfferStock(run,offer.id,3);run=setDistrictOfferPrice(run,offer.id,700);const beforeCash=run.cash;run=completeDistrictOfferSale(run,offer.id,1200,"guest-1");assert.equal(run.cash,beforeCash+700);assert.equal(run.districtOperations[offer.businessId].stock[offer.id],beforeStock+2);assert.deepEqual(run.today.districtOffers[offer.id],{units:1,revenue:700,cogs:offer.cost});assert.equal(run.districtOfferSales.length,1);
 });
 
 test("guest decisions only expose stocked and affordable district offers",()=>{
@@ -28,5 +28,5 @@ test("guest decisions only expose stocked and affordable district offers",()=>{
 });
 
 test("business forecasts expose demand, margin and remaining stock",()=>{
-  let run=operatingRun("village-gym"),offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id==="village-gym-day-pass");run=buyDistrictOfferStock(run,offer.id,8);const forecast=districtBusinessForecast(run,"village-gym"),row=forecast.offers.find(item=>item.id===offer.id);assert.equal(row.stock,8);assert.ok(row.demand>0);assert.equal(row.grossProfit,row.units*(row.price-row.cost));
+  let run=operatingRun("village-gym"),offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id==="village-gym-day-pass"),beforeStock=run.districtOperations[offer.businessId].stock[offer.id];run=buyDistrictOfferStock(run,offer.id,8);const forecast=districtBusinessForecast(run,"village-gym"),row=forecast.offers.find(item=>item.id===offer.id);assert.equal(row.stock,beforeStock+8);assert.ok(row.demand>0);assert.equal(row.grossProfit,row.units*(row.price-row.cost));
 });

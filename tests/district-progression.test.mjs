@@ -13,6 +13,7 @@ import {
   guestDestinationOptions,
   advanceTycoon,
   migrateStaffOperations,
+  buyDistrictOfferStock,
   completeDistrictOfferSale
 } from "../dist/core.js";
 import { readFile } from "node:fs/promises";
@@ -66,7 +67,7 @@ test("guests can physically choose an operating district business",()=>{
 });
 
 test("Beachfront performance responds to deterministic coastal weather",()=>{
-  const run=fundedRun();run.districts.east=1;run.districtBusinesses["beach-icecream"]=1;
+  let run=fundedRun();run.districts.east=1;run.districtBusinesses["beach-icecream"]=1;run=migrateStaffOperations(run);for(const offer of DISTRICT_BUSINESS_OFFERS.filter(item=>item.businessId==="beach-icecream"))run=buyDistrictOfferStock(run,offer.id,30);
   const values=[];for(let day=1;day<=8;day++){run.currentDay=day;values.push({weather:districtWeather(run).id,income:districtPortfolio(run).districts.find(district=>district.id==="east").projectedIncome});}
   const clear=values.find(row=>row.weather==="clear"),rain=values.find(row=>row.weather==="rain");
   assert.ok(clear.income>rain.income);
