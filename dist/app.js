@@ -2,6 +2,7 @@ import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGU
 import { rectCollider, circleCollider, pointBlocked, resolveMovement, nearestFreePoint } from "./world-physics.js?v=35-world-collision";
 import { interiorLayout } from "./interior-layouts.js?v=45-interior-interaction";
 import { venueVisualState, eventPreparationState } from "./venue-visual-states.js?v=46-venue-operational-states";
+import { businessActivityState } from "./business-activity.js?v=47-business-service-animations";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -678,6 +679,44 @@ function drawDistrictVenueDetails(business,x,y,w,h,height,palette){
   if(business.id==="transit-info"){const p=isoPoint(x,front,27);ctx.fillStyle="#8bd7d6";ctx.font="900 16px DM Mono";ctx.textAlign="center";ctx.fillText("i",p.x,p.y);}
 }
 
+function districtBusinessActivityState(business){
+  const operation=run.districtOperations?.[business.id],offers=DISTRICT_BUSINESS_OFFERS.filter(offer=>offer.businessId===business.id),stock=offers.reduce((sum,offer)=>sum+(operation?.stock?.[offer.id]||0),0),activeGuests=guestAgents.filter(guest=>guest.target?.kind==="district-business"&&guest.target?.id===business.id&&guest.state==="using").length,queuedGuests=guestAgents.filter(guest=>guest.target?.kind==="district-business"&&guest.target?.id===business.id&&guest.state==="queueing").length;
+  return businessActivityState({businessId:business.id,broken:assetIsClosed(run,"district-business",business.id),stock,activeGuests,queuedGuests,clockMinutes:run.clockMinutes});
+}
+function drawBakeryActivity(x,y,w,h,state,t){
+  const front=y+h*.48,oven=isoPoint(x-w*.24,front,24),glow=state.open?(.45+(state.running?Math.sin(t*.01)*.15:.05)):0;roundedRect(oven.x-12,oven.y-12,24,19,3,"#263f45");ctx.fillStyle=`rgba(255,151,65,${glow})`;ctx.fillRect(oven.x-8,oven.y-8,16,10);ctx.fillStyle="#f2dfb4";for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(oven.x-5+i*5,oven.y-3,2.3,1.4,-.3,0,Math.PI*2);ctx.fill();}
+  const tray=isoPoint(x+w*.18,front+.06,17);ctx.fillStyle="#d9d6ca";ctx.fillRect(tray.x-17,tray.y-4,34,8);ctx.strokeStyle="#738081";ctx.strokeRect(tray.x-17,tray.y-4,34,8);for(let i=0;i<4;i++){ctx.fillStyle="#dca65f";ctx.beginPath();ctx.arc(tray.x-12+i*8,tray.y-1,2.7,0,Math.PI*2);ctx.fill();}if(state.running)drawPersonFigure(x+w*.5,y+h*.56,t,301,{color:"#e8a958",phase:.2,moving:false,facing:{x:-1,y:-.2},pose:"eat",role:"service"});
+}
+function drawGymActivity(x,y,w,h,state,t){
+  const front=y+h*.48;for(let i=0;i<2;i++){const gx=x-w*.22+i*w*.44,p=isoPoint(gx,front,13),belt=(t*.035+i*8)%12;ctx.strokeStyle="#203f47";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x-12,p.y+3);ctx.lineTo(p.x+12,p.y-8);ctx.stroke();ctx.strokeStyle="#bce65f";ctx.lineWidth=1.3;for(let line=-8;line<12;line+=6){ctx.beginPath();ctx.moveTo(p.x+line+belt,p.y-2-line*.45-belt*.45);ctx.lineTo(p.x+line+3+belt,p.y-3-line*.45-belt*.45);ctx.stroke();}}
+  const rack=isoPoint(x+w*.35,front-.08,18);ctx.strokeStyle="#274c54";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(rack.x,rack.y-10);ctx.lineTo(rack.x,rack.y+8);ctx.stroke();for(let i=0;i<3;i++){ctx.fillStyle=i%2?"#ff8060":"#64cbc8";ctx.fillRect(rack.x-10+i*7,rack.y-6+i*3,6,3);}if(state.running)drawPersonFigure(x-w*.18,y+h*.57,t,302,{color:"#70b979",phase:.8,moving:true,facing:{x:1,y:-1},pose:"walk"});
+}
+function drawPadelActivity(x,y,w,h,state,t){
+  if(!state.open)return;const rally=state.running?1:.28,phase=t*.004*rally,ballX=x+Math.sin(phase)*w*.25,ballY=y+Math.cos(phase*1.3)*h*.24,ball=isoPoint(ballX,ballY,19+Math.abs(Math.sin(phase))*12);ctx.fillStyle="#e8f35c";ctx.beginPath();ctx.arc(ball.x,ball.y,3,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(232,243,92,.35)";ctx.lineWidth=1.5;const trail=isoPoint(ballX-Math.cos(phase)*.2,ballY-Math.sin(phase)*.12,15);ctx.beginPath();ctx.moveTo(trail.x,trail.y);ctx.lineTo(ball.x,ball.y);ctx.stroke();if(state.occupied){drawPersonFigure(x-w*.23,y-h*.18,t,303,{color:"#70b979",phase:0,moving:false,facing:{x:1,y:1},pose:"dance"});drawPersonFigure(x+w*.23,y+h*.18,t,304,{color:"#f5c95e",phase:1,moving:false,facing:{x:-1,y:-1},pose:"dance"});}
+}
+function drawLaundryActivity(x,y,w,h,state,t){
+  const front=y+h*.5;for(let i=0;i<3;i++){const p=isoPoint(x-w*.27+i*w*.27,front,22),angle=state.open?t*.004*(i+1):0;ctx.fillStyle="#dce8e3";ctx.beginPath();ctx.arc(p.x,p.y,6,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#315d66";ctx.lineWidth=2;ctx.stroke();ctx.strokeStyle=i%2?"#64cbc8":"#a58bd0";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,3.5,angle,angle+Math.PI*1.25);ctx.stroke();}
+  const basket=isoPoint(x+w*.38,front+.12,7);ctx.fillStyle="#d8b06d";ctx.fillRect(basket.x-8,basket.y-5,16,8);ctx.strokeStyle="#765d43";ctx.strokeRect(basket.x-8,basket.y-5,16,8);if(state.running)drawPersonFigure(x+w*.5,y+h*.55,t,305,{color:"#67b8bb",phase:.4,moving:false,facing:{x:-1,y:-1},pose:"browse",role:"service"});
+}
+function drawRestaurantActivity(x,y,w,h,state,t){
+  const occupied=Math.max(state.occupied,state.open?1:0);for(let i=0;i<3;i++){const tx=x-w*.3+i*w*.3,ty=y+h*.62+(i%2)*.16,p=isoPoint(tx,ty,10);ctx.fillStyle="#f0e4c8";ctx.beginPath();ctx.ellipse(p.x,p.y,8,3.5,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#7c684f";ctx.lineWidth=1;ctx.stroke();if(i<occupied){ctx.fillStyle=i%2?"#ff8060":"#64cbc8";ctx.beginPath();ctx.arc(p.x-8,p.y-6,4,0,Math.PI*2);ctx.fill();ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.arc(p.x+8,p.y+1,4,0,Math.PI*2);ctx.fill();}}
+  if(state.running){const travel=Math.sin(t*.003)*.18;drawPersonFigure(x+w*.46+travel,y+h*.72,t,306,{color:"#f5c95e",phase:.9,moving:true,facing:{x:-1,y:0},pose:"eat",role:"service"});const tray=isoPoint(x+w*.33+travel,y+h*.6,34);ctx.fillStyle="#d8d8d1";ctx.fillRect(tray.x-8,tray.y-2,16,4);}
+}
+function drawSurfRentalActivity(x,y,w,h,state,t){
+  const front=y+h*.5,remove=state.running?(Math.sin(t*.003)+1)*.16:0;for(let i=-1;i<=1;i++){const offset=i===1?remove:0,p=isoPoint(x+i*w*.23+offset,front+.04+offset*.2,19);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-.25+i*.08);ctx.strokeStyle=i===0?"#ff8060":"#69c8c5";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,7);ctx.quadraticCurveTo(5,0,2,-10);ctx.stroke();ctx.restore();}if(state.running)drawPersonFigure(x+w*.52,y+h*.56,t,307,{color:"#64cbc8",phase:.6,moving:true,facing:{x:1,y:1},pose:"walk"});
+}
+function drawParkingActivity(x,y,w,h,state,t){
+  const parked=Math.max(1,Math.min(3,state.occupied||1));for(let i=0;i<parked;i++){const px=x-w*.28+i*w*.28,py=y+(i%2?-.12:.1),p=isoPoint(px,py,8);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-.45);roundedRect(-10,-5,20,10,3,i%2?"#779eb8":"#d58b68");ctx.fillStyle="#dcebea";ctx.fillRect(-4,-4,8,3);ctx.fillStyle="#173743";ctx.beginPath();ctx.arc(-6,5,2,0,Math.PI*2);ctx.arc(6,5,2,0,Math.PI*2);ctx.fill();ctx.restore();}
+  if(state.running){const progress=(t*.00008)%1,px=x-w*.48+progress*w*.96,py=y+h*.48,p=isoPoint(px,py,9);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(-.45);roundedRect(-11,-5,22,10,3,"#f5c95e");ctx.fillStyle="#294e57";ctx.fillRect(-4,-4,8,3);ctx.restore();}
+}
+function drawConferenceActivity(x,y,w,h,state,t){
+  const front=y+h*.51,screen=isoPoint(x-w*.19,front,35);roundedRect(screen.x-17,screen.y-15,34,22,2,"#edf1ea");ctx.fillStyle="#315d66";ctx.fillRect(screen.x-12,screen.y-10,24,14);ctx.strokeStyle="#bce65f";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(screen.x-9,screen.y+1);ctx.lineTo(screen.x-3,screen.y-4);ctx.lineTo(screen.x+3,screen.y-1);ctx.lineTo(screen.x+9,screen.y-8);ctx.stroke();
+  const seats=Math.max(state.occupied,state.open?1:0);for(let i=0;i<4;i++){const p=isoPoint(x-w*.02+(i%2)*w*.22,front+.12+Math.floor(i/2)*.2,10);ctx.fillStyle=i<seats?"#a58bd0":"#718486";ctx.beginPath();ctx.arc(p.x,p.y-4,3,0,Math.PI*2);ctx.fill();ctx.fillRect(p.x-3,p.y-1,6,5);}if(state.running){const pointer=isoPoint(x-w*.03,front,28),target=isoPoint(x-w*.2,front,34+Math.sin(t*.004)*5);ctx.strokeStyle="#ff8060";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(pointer.x,pointer.y);ctx.lineTo(target.x,target.y);ctx.stroke();}
+}
+function drawBusinessActivity(business,x,y,w,h,t){
+  const state=districtBusinessActivityState(business);if(!state.type)return;({bakery:drawBakeryActivity,gym:drawGymActivity,padel:drawPadelActivity,laundry:drawLaundryActivity,restaurant:drawRestaurantActivity,"surf-rental":drawSurfRentalActivity,parking:drawParkingActivity,conference:drawConferenceActivity}[state.type])?.(x,y,w,h,state,t);
+}
+
 function drawDistrictVenue(business,x,y,w,h,index){
   const palette=districtPalette(business.districtId),isKiosk=/icecream|smoothie|info|takeaway|bakery/.test(business.id),height=business.id.includes("conference")?64:business.id.includes("incubator")?61:business.id.includes("fitness")||business.id.includes("gym")?53:isKiosk?29:34+(index%3)*6;drawSoftShadow(x,y,Math.max(34,w*24),Math.max(11,h*9),.16);
   if(business.id==="beach-bar"){drawGroundSlab(x-w/2,y-h/2,w,h,"#b68a58",5);drawCanopy(x-w*.43,y-h*.37,w*.86,h*.64,35);drawColumnLine(x-w*.32,y+h*.18,w*.64,4,22,"x","#815f3e");}
@@ -702,6 +741,7 @@ function drawTransitFacility(business,x,y,w,h,index){
 function drawDistrictBusiness(business,x,y,index,plot){
   const built=Boolean(run.districtBusinesses?.[business.id]),w=plot?.[2]||1.6,h=plot?.[3]||1.1;if(!built){drawGroundSlab(x-w/2,y-h/2,w,h,"#c9cbc4",3);ctx.save();ctx.strokeStyle="rgba(23,55,67,.38)";ctx.lineWidth=1.5;ctx.setLineDash([5,4]);const corners=[isoPoint(x-w*.38,y-h*.32,6),isoPoint(x+w*.38,y-h*.32,6),isoPoint(x+w*.38,y+h*.32,6),isoPoint(x-w*.38,y+h*.32,6)];ctx.beginPath();corners.forEach((point,i)=>i?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);ctx.restore();return;}
   if(business.id==="beach-volleyball"||business.id==="sports-padel")drawActivityCourt(business,x,y,w,h);else if(business.districtId==="transit")drawTransitFacility(business,x,y,w,h,index);else drawDistrictVenue(business,x,y,w,h,index);
+  drawBusinessActivity(business,x,y,w,h,lastTime);
   const serviceVenue=/volleyball|padel|parking|bike|bus|gym|fitness|study|conference|incubator|recovery/.test(business.id);drawVenueOperationalState(x,y,w,districtOperationalVisualState(business),lastTime,{showShelf:!serviceVenue});
   if(assetIsClosed(run,"district-business",business.id)){const warning=isoPoint(x,y,70);roundedRect(warning.x-25,warning.y-6,50,12,5,"#ff8060");ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 4.5px DM Mono";ctx.fillText("REPAIR",warning.x,warning.y+1.5);}
 }
