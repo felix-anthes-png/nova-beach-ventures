@@ -10,7 +10,7 @@ const modal = $("#modal");
 const modalCard = $("#modalCard");
 const keys = new Set();
 const ZONES = {
-  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:82, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
+  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:90, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
   mercado: { id:"mercado", name:"Mercado Supply Hall", sub:"LOGISTICS INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d8c79f", accent:"#f5c95e" },
   academy: { id:"academy", name:"Academic Wing", sub:"COURTYARD INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d7dad3", accent:"#ff7b5b" },
   hub: { id:"hub", name:"Student Hub", sub:"VENTURE INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#cddbd5", accent:"#64cbc8" }
@@ -52,7 +52,7 @@ const WALK_SPEED = 3.5;
 const PLAYER_RADIUS = .28;
 const GUEST_SPEED = 1.45;
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:47.5,y:21.2},{x:55.2,y:16.2},{x:63.2,y:14.8},{x:69.5,y:22.2},{x:79.2,y:14.4}];
+const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:51.2,y:23.7},{x:58.4,y:17.2},{x:66.8,y:14.8},{x:77.2,y:23.4},{x:87.2,y:14.4}];
 const GUEST_NAMES = ["Inês","Tomás","Maya","Luca","Beatriz","Rafael","Sofia","Noah","Leonor","Mateo","Clara","Tiago","Amélia","Hugo","Nina","Martim"];
 const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",beach:"☀",surf:"≈",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",pavilion:"♫",exit:"↗"};
 const CAMPUS_SPACES = Object.freeze({
@@ -104,9 +104,9 @@ const locations = {
   beach: { zone:"campus", x:45.9, y:20.6, label:"Manage Maré Beach Bar", panel:()=>openStore("beach"), color:"#f2b94b", title:"MARÉ BEACH BAR", sub:"EAST PROMENADE" },
   pavilion: { zone:"campus", x:42.5, y:21.6, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"BEACH EVENT LAWN" },
   surf: { zone:"campus", x:53.1, y:16.1, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
-  innovationGate: { zone:"campus", x:51.1, y:10.5, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"LAND" },
-  sportsGate: { zone:"campus", x:57.1, y:19.1, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"LAND" },
-  transitGate: { zone:"campus", x:66.1, y:11.6, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"LAND" },
+  innovationGate: { zone:"campus", x:53.6, y:10.5, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"LAND" },
+  sportsGate: { zone:"campus", x:61, y:19.1, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"LAND" },
+  transitGate: { zone:"campus", x:69.6, y:11.6, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"LAND" },
   supplier: { zone:"mercado", x:7.5, y:4.2, label:"Open wholesale inventory", panel:()=>openSupplier(currentSupplierStore), color:"#f5c95e", title:"SUPPLY DESK", sub:"WHOLESALE" },
   marketExit: { zone:"mercado", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:7,y:16.8}, color:"#f5c95e", title:"CAMPUS", sub:"EXIT" },
   cafe: { zone:"academy", x:7.3, y:4.3, label:"Manage Atlantic Café", panel:()=>openStore("cafe"), color:"#ff7b5b", title:"ATLANTIC CAFÉ", sub:"ACADEMIC WING" },
@@ -119,7 +119,7 @@ const locations = {
 const locationAvailable=id=>!(["beach","pavilion","surf"].includes(id)&&!run.districts?.east)&&!(id==="innovationGate"&&!run.districts?.village)&&!(id==="sportsGate"&&!run.districts?.east)&&!(id==="transitGate"&&!run.districts?.innovation);
 const zoneLocations = () => Object.entries(locations).filter(([id,location]) => location.zone === currentZone&&locationAvailable(id));
 const activeZone = () => ZONES[currentZone];
-function syncCampusBounds(){ZONES.campus.maxX=run.districts?.transit?80:run.districts?.sports?71:run.districts?.innovation?65:run.districts?.east?57:run.districts?.village?51:41;}
+function syncCampusBounds(){ZONES.campus.maxX=run.districts?.transit?89:run.districts?.sports?79:run.districts?.innovation?69:run.districts?.east?60:run.districts?.village?53:41;}
 
 function facilityCollider(facility){
   if(facility.type==="path")return null;const size=facilityFootprint(facility.type,facility.rotation||0),padding=facility.type==="bench"?.04:.1;
@@ -639,11 +639,11 @@ function drawCampusGroundPlan(t){
 }
 
 const DISTRICT_WORLD_LAYOUTS=Object.freeze({
-  village:{x:40.4,y:7.5,w:10.2,h:8.1,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[42.1,9.7,2.25,1.4],[45.25,9.55,1.85,1.3],[48.15,10.1,2.15,1.3],[42.8,13.35,2.55,1.5],[48.2,14.5,2.3,1.2]]},
-  east:{x:40.4,y:16.1,w:16.2,h:7.3,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[43.2,18.3,2.7,1.45],[52.8,17.9,2.2,1.35],[47.2,18.1,1.25,1],[50.4,21.3,3,1.55],[54.3,21.5,3.2,1.8]]},
-  innovation:{x:51,y:7.5,w:13.4,h:8.1,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[53.1,9.8,2.3,1.35],[56.7,9.7,2.35,1.35],[60.7,10.2,2.75,1.55],[57.3,13.45,3.4,1.7]]},
-  sports:{x:57,y:16.1,w:14.2,h:7.3,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[59.4,18.1,2.8,1.55],[63.2,17.9,1.65,1.05],[66.6,18.2,2.25,1.3],[60.7,21.35,3.25,1.75],[66,21.25,2.45,1.4]]},
-  transit:{x:65.8,y:7.5,w:14.4,h:8.1,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[68.4,9.8,3.7,1.7],[72.9,9.6,2.2,1.15],[76.8,9.9,3,1.15],[68.9,13.2,2.15,1.2],[72.2,13.25,2.2,1.2],[76.2,13.25,1.6,1.15]]}
+  village:{x:40.4,y:7.5,w:12,h:8.2,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[42.15,9.65,2.25,1.4],[46,9.55,1.85,1.3],[50.15,9.85,2.15,1.3],[43,13.45,2.55,1.5],[49.35,14.25,2.3,1.2]]},
+  east:{x:40.4,y:16.6,w:19.2,h:8,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[49.6,18.45,2.7,1.45],[56.7,18.75,2.2,1.35],[52.9,19.1,1.25,1],[49.8,22.45,3,1.55],[55.8,22.55,3.2,1.8]]},
+  innovation:{x:53.4,y:7.5,w:15.2,h:8.2,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[55.7,9.75,2.3,1.35],[59.8,9.65,2.35,1.35],[64.5,10.05,2.75,1.55],[60.9,13.55,3.4,1.7]]},
+  sports:{x:60.8,y:16.6,w:18,h:8,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[63.35,18.55,2.8,1.55],[67.7,18.3,1.65,1.05],[72.25,18.55,2.25,1.3],[64.3,22.35,3.25,1.75],[72,22.35,2.45,1.4]]},
+  transit:{x:69.4,y:7.5,w:19,h:8.2,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[72.25,9.75,3.7,1.7],[77.4,9.55,2.2,1.15],[83.1,9.75,3,1.15],[72.9,13.35,2.15,1.2],[77.6,13.3,2.2,1.2],[83,13.35,1.6,1.15]]}
 });
 
 const districtPalette=id=>({village:{top:"#f5eee2",right:"#9eaaa5",left:"#c8c8bc",glass:"#315d62",accent:"#d58b68"},east:{top:"#f7f0df",right:"#967e62",left:"#c7aa79",glass:"#2f6870",accent:"#f2b94b"},innovation:{top:"#f3f1ed",right:"#82969a",left:"#b3c0be",glass:"#285765",accent:"#a58bd0"},sports:{top:"#eef1e7",right:"#7d9180",left:"#aebdab",glass:"#285a59",accent:"#70b979"},transit:{top:"#ecece7",right:"#7d8c90",left:"#aeb8b8",glass:"#294e5b",accent:"#779eb8"}}[id]);
@@ -709,11 +709,11 @@ function drawDistrictBusiness(business,x,y,index,plot){
 function districtBusinessWorldActors(){const actors=[];for(const district of DISTRICT_CATALOGUE){if(!run.districts?.[district.id])continue;const layout=DISTRICT_WORLD_LAYOUTS[district.id];DISTRICT_BUSINESSES.filter(item=>item.districtId===district.id).forEach((business,index)=>{const plot=layout?.plots[index];if(plot&&run.districtBusinesses?.[business.id])actors.push({depth:plot[0]+plot[1]+(plot[3]||1.1)/2+.03,draw:()=>drawDistrictBusiness(business,plot[0],plot[1],index,plot)});});}return actors;}
 
 function drawDistrictGroundDetails(district,layout,t){
-  if(district.id==="village"){drawGroundSlab(layout.x+.45,layout.y+3.35,layout.w-.9,1.05,"#efe8dc",4);drawGroundSlab(layout.x+3.75,layout.y+.4,1.1,layout.h-.8,"#e7ded2",4);for(let i=0;i<4;i++)drawLinearPlanter(layout.x+.8+i*2.35,layout.y+3.48,1.15,.34,8);}
-  if(district.id==="east"){drawGroundSlab(layout.x+.2,layout.y+.25,layout.w-.4,2.15,"#d4aa6b",5);for(let i=0;i<13;i++){const a=isoPoint(layout.x+.45+i*1.18,layout.y+.4,7),b=isoPoint(layout.x+.45+i*1.18,layout.y+2.15,7);ctx.strokeStyle="rgba(92,61,37,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}for(let i=0;i<7;i++){const p=isoPoint(layout.x+1+i*2.15,layout.y+layout.h-.35,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}}
-  if(district.id==="innovation"){drawGroundSlab(layout.x+.35,layout.y+3.4,layout.w-.7,.95,"#ece9e1",5);const a=isoPoint(layout.x+.7,layout.y+3.9,7),b=isoPoint(layout.x+layout.w-.7,layout.y+3.9,7);ctx.strokeStyle="#a58bd0";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();for(let i=0;i<4;i++)drawLinearPlanter(layout.x+1+i*3.1,layout.y+3.45,1.2,.32,8);}
+  if(district.id==="village"){drawGroundSlab(layout.x+.45,layout.y+3.35,layout.w-.9,1.05,"#efe8dc",4);drawGroundSlab(layout.x+4.45,layout.y+.4,1.1,layout.h-.8,"#e7ded2",4);for(let i=0;i<5;i++)drawLinearPlanter(layout.x+.8+i*(layout.w-2)/4,layout.y+3.48,1.15,.34,8);}
+  if(district.id==="east"){drawGroundSlab(layout.x+.2,layout.y+.25,layout.w-.4,2.15,"#d4aa6b",5);const seams=Math.floor(layout.w/.95);for(let i=0;i<seams;i++){const a=isoPoint(layout.x+.45+i*(layout.w-.9)/(seams-1),layout.y+.4,7),b=isoPoint(layout.x+.45+i*(layout.w-.9)/(seams-1),layout.y+2.15,7);ctx.strokeStyle="rgba(92,61,37,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}for(let i=0;i<9;i++){const p=isoPoint(layout.x+1+i*(layout.w-2)/8,layout.y+layout.h-.35,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}}
+  if(district.id==="innovation"){drawGroundSlab(layout.x+.35,layout.y+3.4,layout.w-.7,.95,"#ece9e1",5);const a=isoPoint(layout.x+.7,layout.y+3.9,7),b=isoPoint(layout.x+layout.w-.7,layout.y+3.9,7);ctx.strokeStyle="#a58bd0";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();for(let i=0;i<5;i++)drawLinearPlanter(layout.x+1+i*(layout.w-2)/4,layout.y+3.45,1.2,.32,8);}
   if(district.id==="sports"){drawGroundSlab(layout.x+.3,layout.y+.3,layout.w-.6,layout.h-.6,"#91ae83",3);const a=isoPoint(layout.x+.6,layout.y+3.65,6),b=isoPoint(layout.x+layout.w-.6,layout.y+3.65,6);ctx.strokeStyle="rgba(245,248,232,.8)";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
-  if(district.id==="transit"){drawGroundSlab(layout.x+.3,layout.y+.35,layout.w-.6,2.5,"#778589",3);for(let i=0;i<6;i++){const a=isoPoint(layout.x+.8+i*2.25,layout.y+.55,6),b=isoPoint(layout.x+.8+i*2.25,layout.y+2.5,6);ctx.strokeStyle="rgba(245,238,207,.72)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawGroundSlab(layout.x+.3,layout.y+3.45,layout.w-.6,1.05,"#e6e4dc",4);}
+  if(district.id==="transit"){drawGroundSlab(layout.x+.3,layout.y+.35,layout.w-.6,2.5,"#778589",3);for(let i=0;i<8;i++){const a=isoPoint(layout.x+.8+i*(layout.w-1.6)/7,layout.y+.55,6),b=isoPoint(layout.x+.8+i*(layout.w-1.6)/7,layout.y+2.5,6);ctx.strokeStyle="rgba(245,238,207,.72)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawGroundSlab(layout.x+.3,layout.y+3.45,layout.w-.6,1.05,"#e6e4dc",4);}
 }
 
 function drawExpansionDistricts(t){

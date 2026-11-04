@@ -2,6 +2,8 @@
 
 ## District visual overhaul — 2026-11
 
+- Expanded the outer campus from 80 to 89 walkable tiles and introduced wider circulation seams between every expansion parcel.
+- Re-spaced all 25 business plots so roofs, terraces, shelters, existing Beachfront venues, and nearby scenery no longer visually collide.
 - Rebuilt all five expansion districts with distinct residential, leisure, innovation, sports, and transit art direction.
 - Replaced identical business boxes with varied venue footprints, heights, façades, courts, shelters, parking, and mobility infrastructure.
 - Added purpose-built silhouettes and operational details including open beach pavilions, stepped innovation buildings, shop displays, solar roofs, arrival shelters, and route furniture.

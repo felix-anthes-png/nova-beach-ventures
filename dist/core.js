@@ -405,7 +405,7 @@ export function attractionStats(moduleIds=[]) {
   };
 }
 
-export function districtForPosition(x=0,y=0){if(x>=66)return "transit";if(x>=57&&y>=15)return "sports";if(x>=51&&y<16)return "innovation";if(x>=40&&y<16)return "village";if(x>=40)return "east";return "coast";}
+export function districtForPosition(x=0,y=0){if(x>=69.4)return "transit";if(x>=60.8&&y>=16)return "sports";if(x>=53.4&&y<16)return "innovation";if(x>=40&&y<16)return "village";if(x>=40)return "east";return "coast";}
 export function districtForStore(storeId){return ["surf","beach"].includes(storeId)?"east":"coast";}
 
 function shiftFor(worker){return STAFF_SHIFTS.find(item=>item.id===worker?.shiftId)||STAFF_SHIFTS[1];}

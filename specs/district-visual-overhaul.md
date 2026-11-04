@@ -29,6 +29,8 @@ Make every expansion feel like an intentionally designed part of Nova's coastal 
 - Beachfront businesses do not overlap the existing Beach Bar, Surf Shop, or Coastline Pavilion.
 - Coastline Pavilion belongs to the Beachfront rather than occupying Student Village.
 - Business labels appear contextually during normal play and remain available through management overlays.
+- District borders retain visible circulation gaps, with at least one full tile between the two southern expansion parcels.
+- Roofs, terraces, shelters, and legacy Beachfront venues remain visually separated at normal camera framing.
 
 ## Verification
 

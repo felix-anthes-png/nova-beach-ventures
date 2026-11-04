@@ -23,6 +23,17 @@ test("district plots stay inside their land and do not overlap",()=>{
   }
 });
 
+test("district parcels and venue rows retain generous circulation gaps",()=>{
+  assert.ok(layouts.innovation.x-(layouts.village.x+layouts.village.w)>=.8);
+  assert.ok(layouts.sports.x-(layouts.east.x+layouts.east.w)>=1.2);
+  assert.ok(layouts.east.y-(layouts.village.y+layouts.village.h)>=.8);
+  assert.ok(layouts.sports.y-(layouts.innovation.y+layouts.innovation.h)>=.8);
+  for(const id of ["village","east","innovation","sports","transit"]){
+    const plots=layouts[id].plots.map(rect);
+    for(let i=0;i<plots.length;i++)for(let j=i+1;j<plots.length;j++)assert.equal(overlaps(plots[i],plots[j],.45),false,`${layouts[id].label} plots ${i+1} and ${j+1} need more circulation space`);
+  }
+});
+
 test("Beachfront plots clear the legacy bar, surf shop and relocated pavilion",()=>{
   const legacy=[{x:44.72,y:19.82,w:2.36,h:1.56},{x:52.02,y:15.4,w:2.16,h:1.4},{x:40.85,y:20.65,w:3.3,h:1.9}];
   for(const plot of layouts.east.plots.map(rect))for(const venue of legacy)assert.equal(overlaps(plot,venue),false,"Beachfront business overlaps a legacy venue");

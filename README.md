@@ -76,6 +76,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Larger district progression | Five map expansions, 25 businesses, district economies, and four unlockable guest cohorts | [`specs/larger-district-progression.md`](specs/larger-district-progression.md) · `feature/larger-district-progression` |
 | World object depth correction | Local depth layers for wide buildings, canopies, columns, and planters | [`specs/world-object-depth.md`](specs/world-object-depth.md) · `fix/world-object-depth` |
 | District visual overhaul | Authored expansion environments, recognisable venue silhouettes, and collision-safe plot composition | [`specs/district-visual-overhaul.md`](specs/district-visual-overhaul.md) · `feature/district-visual-overhaul` |
+| District spacing correction | Wider expansion parcels, clearer circulation seams, and re-spaced venue plots | [`specs/district-visual-overhaul.md`](specs/district-visual-overhaul.md) · `fix/district-spacing-overlaps` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
