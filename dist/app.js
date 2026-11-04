@@ -91,7 +91,7 @@ const RESERVED_BUILD_AREAS = [
   {kind:"circle",x:20.5,y:22.35,r:3.25,label:"Sunset Forum"},
   {kind:"rect",x:43.3,y:18.7,w:5.8,h:4.2,label:"Beach Bar plot"},
   {kind:"rect",x:50.2,y:13.6,w:5.4,h:4.8,label:"Surf Shack plot"},
-  {kind:"circle",x:48,y:11.9,r:3.2,label:"Coastline Pavilion"}
+  {kind:"circle",x:42.5,y:21.6,r:2.2,label:"Coastline Pavilion"}
 ];
 
 const locations = {
@@ -102,7 +102,7 @@ const locations = {
   villageGate: { zone:"campus", x:40.2, y:12.2, label:"Review Student Village expansion", panel:()=>openDistrictPanel("village"), color:"#d58b68", title:"STUDENT VILLAGE", sub:"LAND" },
   eastGate: { zone:"campus", x:40.2, y:19.2, label:"Review Beachfront expansion", panel:()=>openDistrictPanel("east"), color:"#f2b94b", title:"BEACHFRONT", sub:"LAND" },
   beach: { zone:"campus", x:45.9, y:20.6, label:"Manage Maré Beach Bar", panel:()=>openStore("beach"), color:"#f2b94b", title:"MARÉ BEACH BAR", sub:"EAST PROMENADE" },
-  pavilion: { zone:"campus", x:47.9, y:11.9, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"EVENT LAWN" },
+  pavilion: { zone:"campus", x:42.5, y:21.6, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"BEACH EVENT LAWN" },
   surf: { zone:"campus", x:53.1, y:16.1, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
   innovationGate: { zone:"campus", x:51.1, y:10.5, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"LAND" },
   sportsGate: { zone:"campus", x:57.1, y:19.1, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"LAND" },
@@ -146,8 +146,8 @@ function campusColliders(){
   campusTrees.forEach(([x,y],index)=>fixed.push(circleCollider(`tree-${index}`,x,y,.27,{label:"Palm tree",kind:"prop"})));
   const storeFootprints={snack:[1.08,.72],beach:[1.18,.78],surf:[1.08,.7]};
   for(const [id,[halfW,halfH]] of Object.entries(storeFootprints)){if((run.venues?.[id]||0)>0){const loc=locations[id];fixed.push(rectCollider(`store-${id}`,loc.x-halfW,loc.y-halfH,halfW*2,halfH*2,{label:STORES.find(store=>store.id===id)?.name||"Store",kind:"store"}));}}
-  for(const district of DISTRICT_CATALOGUE){const layout=DISTRICT_WORLD_LAYOUTS[district.id];if(!layout)continue;DISTRICT_BUSINESSES.filter(business=>business.districtId===district.id&&run.districtBusinesses?.[business.id]).forEach((business,index)=>{const plot=layout.plots[index];if(plot)fixed.push(rectCollider(`business-${business.id}`,plot[0]-.8,plot[1]-.55,1.6,1.1,{label:business.name,kind:"district-business"}));});}
-  if(run.eventVenue)fixed.push(rectCollider("coastline-pavilion",46.25,10.95,3.3,1.9,{label:"Coastline Pavilion",kind:"venue"}));
+  for(const district of DISTRICT_CATALOGUE){const layout=DISTRICT_WORLD_LAYOUTS[district.id];if(!layout)continue;DISTRICT_BUSINESSES.filter(business=>business.districtId===district.id&&run.districtBusinesses?.[business.id]).forEach((business,index)=>{const plot=layout.plots[index];if(plot){const width=plot[2]||1.6,height=plot[3]||1.1;fixed.push(rectCollider(`business-${business.id}`,plot[0]-width/2,plot[1]-height/2,width,height,{label:business.name,kind:"district-business"}));}});}
+  if(run.eventVenue)fixed.push(rectCollider("coastline-pavilion",40.85,20.65,3.3,1.9,{label:"Coastline Pavilion",kind:"venue"}));
   return [...fixed,...(run.facilities||[]).map(facilityCollider).filter(Boolean)];
 }
 
@@ -478,6 +478,7 @@ function drawWorld(t) {
     {depth:buildingDepth(CAMPUS_BUILDINGS.academicEast),draw:()=>drawCampusEastWing(t)},
     {depth:buildingDepth(CAMPUS_BUILDINGS.studentHub),draw:()=>drawStudentHub()},
     {depth:46.98,draw:()=>drawBeachStage(t)},
+    ...districtBusinessWorldActors(),
     ...architecturalForegroundActors(),
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
@@ -638,22 +639,85 @@ function drawCampusGroundPlan(t){
 }
 
 const DISTRICT_WORLD_LAYOUTS=Object.freeze({
-  village:{x:40.4,y:7.5,w:10.2,h:8.1,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[42.2,10],[45.4,9.6],[48.4,10.3],[43.5,13.2],[47.5,13.3]]},
-  east:{x:40.4,y:16.1,w:16.2,h:7.3,label:"BEACHFRONT",color:"#f2b94b",ground:"#ddc78d",plots:[[42.4,18],[46.1,18.1],[50,19.2],[54,20.1],[51.8,22]]},
-  innovation:{x:51,y:7.5,w:13.4,h:8.1,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[53.2,10],[57,9.5],[61,10.2],[57.5,13.3]]},
-  sports:{x:57,y:16.1,w:14.2,h:7.3,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[59.2,18.2],[62.5,18],[66,18.2],[60.8,21.3],[65.4,21.2]]},
-  transit:{x:65.8,y:7.5,w:14.4,h:8.1,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[68,10],[71.5,9.6],[75,10.2],[69.5,13.2],[74,13.3]]}
+  village:{x:40.4,y:7.5,w:10.2,h:8.1,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[42.1,9.7,2.25,1.4],[45.25,9.55,1.85,1.3],[48.15,10.1,2.15,1.3],[42.8,13.35,2.55,1.5],[48.2,14.5,2.3,1.2]]},
+  east:{x:40.4,y:16.1,w:16.2,h:7.3,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[43.2,18.3,2.7,1.45],[52.8,17.9,2.2,1.35],[47.2,18.1,1.25,1],[50.4,21.3,3,1.55],[54.3,21.5,3.2,1.8]]},
+  innovation:{x:51,y:7.5,w:13.4,h:8.1,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[53.1,9.8,2.3,1.35],[56.7,9.7,2.35,1.35],[60.7,10.2,2.75,1.55],[57.3,13.45,3.4,1.7]]},
+  sports:{x:57,y:16.1,w:14.2,h:7.3,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[59.4,18.1,2.8,1.55],[63.2,17.9,1.65,1.05],[66.6,18.2,2.25,1.3],[60.7,21.35,3.25,1.75],[66,21.25,2.45,1.4]]},
+  transit:{x:65.8,y:7.5,w:14.4,h:8.1,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[68.4,9.8,3.7,1.7],[72.9,9.6,2.2,1.15],[76.8,9.9,3,1.15],[68.9,13.2,2.15,1.2],[72.2,13.25,2.2,1.2],[76.2,13.25,1.6,1.15]]}
 });
 
-function drawDistrictBusiness(business,x,y,index){
-  const built=Boolean(run.districtBusinesses?.[business.id]),p=isoPoint(x,y,7);if(!built){drawGroundSlab(x-1.05,y-.72,2.1,1.44,"#c6c6bd",3);ctx.save();ctx.strokeStyle="rgba(23,55,67,.42)";ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(p.x-42,p.y-11);ctx.lineTo(p.x,p.y-31);ctx.lineTo(p.x+42,p.y-11);ctx.lineTo(p.x,p.y+8);ctx.closePath();ctx.stroke();ctx.setLineDash([]);ctx.restore();return;}
-  const district=DISTRICT_CATALOGUE.find(item=>item.id===business.districtId),height=30+(index%3)*7;drawSoftShadow(x,y,34,11,.16);drawBlock(x-.8,y-.55,1.6,1.1,height,"#f1efe7","#899a97","#b1bbb6");drawFacadeBandY(x-.68,y+.56,1.36,8,height-5,"#28545e",3);drawRaisedSlab(x-.9,y-.64,1.8,1.28,height+4,4,"#f7f4eb","#8b9996","#b9c0bb");const sign=isoPoint(x,y+.6,17);roundedRect(sign.x-23,sign.y-6,46,12,3,"#173743");ctx.fillStyle=district?.color||"#64cbc8";ctx.textAlign="center";ctx.font="900 5px DM Mono";ctx.fillText(`${business.icon} ${business.name.toUpperCase().slice(0,12)}`,sign.x,sign.y+2);
-  if(assetIsClosed(run,"district-business",business.id)){const warning=isoPoint(x,y,58);roundedRect(warning.x-25,warning.y-6,50,12,5,"#ff8060");ctx.fillStyle="#173743";ctx.font="900 4.5px DM Mono";ctx.fillText("REPAIR",warning.x,warning.y+1.5);}
+const districtPalette=id=>({village:{top:"#f5eee2",right:"#9eaaa5",left:"#c8c8bc",glass:"#315d62",accent:"#d58b68"},east:{top:"#f7f0df",right:"#967e62",left:"#c7aa79",glass:"#2f6870",accent:"#f2b94b"},innovation:{top:"#f3f1ed",right:"#82969a",left:"#b3c0be",glass:"#285765",accent:"#a58bd0"},sports:{top:"#eef1e7",right:"#7d9180",left:"#aebdab",glass:"#285a59",accent:"#70b979"},transit:{top:"#ecece7",right:"#7d8c90",left:"#aeb8b8",glass:"#294e5b",accent:"#779eb8"}}[id]);
+
+function drawDistrictBusinessSign(business,x,y,z,color){if(Math.hypot(run.player.x-x,run.player.y-y)>3.2&&managementOverlay!=="trade"&&managementOverlay!=="operations")return;const sign=isoPoint(x,y,z);roundedRect(sign.x-29,sign.y-6,58,12,3,"#173743");ctx.fillStyle=color;ctx.textAlign="center";ctx.font="900 4.6px DM Mono";ctx.fillText(`${business.icon} ${business.name.toUpperCase().slice(0,15)}`,sign.x,sign.y+1.8);}
+
+function drawDistrictRoofMark(x,y,w,h,z,color,type="stripe"){
+  if(type==="garden"){drawRoofGarden(x-w*.32,y-h*.23,w*.64,h*.46,z);return;}
+  if(type==="solar"){for(let i=-1;i<=1;i++)drawPlane([isoPoint(x+i*w*.22-w*.08,y-h*.18,z),isoPoint(x+i*w*.22+w*.08,y-h*.18,z),isoPoint(x+i*w*.22+w*.08,y+h*.15,z),isoPoint(x+i*w*.22-w*.08,y+h*.15,z)],"#315b65","rgba(255,255,255,.32)");return;}
+  const a=isoPoint(x-w*.3,y,z),b=isoPoint(x+w*.3,y,z);ctx.strokeStyle=color;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+}
+
+function drawDistrictVenueDetails(business,x,y,w,h,height,palette){
+  const front=y+h/2+.03;
+  if(business.id==="village-market"){for(let i=0;i<3;i++){const p=isoPoint(x-w*.28+i*w*.27,front,14);ctx.fillStyle=["#70a06f","#edb454","#d46f5f"][i];ctx.fillRect(p.x-4,p.y-3,8,6);}drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"garden");}
+  if(business.id==="village-laundry"){for(let i=0;i<3;i++){const p=isoPoint(x-w*.28+i*w*.28,front,22);ctx.fillStyle="#dce8e3";ctx.strokeStyle="#67b8bb";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,Math.PI*2);ctx.fill();ctx.stroke();}drawDistrictRoofMark(x,y,w,h,height+8,"#67b8bb");}
+  if(business.id==="village-takeaway"){const a=isoPoint(x-w*.34,front,24),b=isoPoint(x+w*.34,front,24);ctx.strokeStyle="#ff8060";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  if(business.id==="village-gym"){drawDistrictRoofMark(x,y,w,h,height+8,"#d58b68","solar");const p=isoPoint(x,front,29);ctx.fillStyle="#f4b25e";ctx.font="900 10px DM Mono";ctx.textAlign="center";ctx.fillText("MOVE",p.x,p.y);}
+  if(business.id==="village-study")drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"garden");
+  if(business.id==="beach-surf"){for(let i=-1;i<=1;i++){const p=isoPoint(x+i*w*.25,front,19);ctx.strokeStyle=i===0?"#ff8060":"#69c8c5";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(p.x-2,p.y+7);ctx.quadraticCurveTo(p.x+5,p.y,p.x+2,p.y-9);ctx.stroke();}}
+  if(business.id==="beach-icecream"){const p=isoPoint(x+w*.56,y+h*.12,25);ctx.fillStyle="#ff8060";ctx.beginPath();ctx.moveTo(p.x-12,p.y);ctx.lineTo(p.x,p.y-9);ctx.lineTo(p.x+12,p.y);ctx.closePath();ctx.fill();ctx.strokeStyle="#31545b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x,p.y+18);ctx.stroke();}
+  if(business.id==="beach-seafood"){for(let i=-1;i<=1;i++){const p=isoPoint(x+i*w*.27,front+.13,9);ctx.fillStyle="#eee5cf";ctx.beginPath();ctx.ellipse(p.x,p.y,6,2.5,0,0,Math.PI*2);ctx.fill();}drawDistrictRoofMark(x,y,w,h,height+8,"#f2b94b");}
+  if(business.id==="innovation-cafe")drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"garden");
+  if(business.id==="innovation-tech")drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"solar");
+  if(business.id==="innovation-incubator"){drawDistrictRoofMark(x-w*.15,y,w*.65,h,height+8,palette.accent,"solar");const p=isoPoint(x+w*.34,front,34);ctx.fillStyle="#c0a7e7";ctx.font="900 12px DM Mono";ctx.fillText("I",p.x,p.y);}
+  if(business.id==="innovation-conference"){for(let i=-1;i<=1;i++){const p=isoPoint(x+i*w*.22,front+.02,26);ctx.fillStyle="#d4c3ef";ctx.beginPath();ctx.arc(p.x,p.y,3,0,Math.PI*2);ctx.fill();}drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"solar");}
+  if(business.id==="sports-fitness"){drawDistrictRoofMark(x,y,w,h,height+8,"#70b979","solar");const p=isoPoint(x,front,31);ctx.fillStyle="#bde35b";ctx.font="900 8px DM Mono";ctx.textAlign="center";ctx.fillText("ATLANTIC MOVE",p.x,p.y);}
+  if(business.id==="sports-smoothie"){for(let i=-1;i<=1;i++){const p=isoPoint(x+i*w*.24,front,18);ctx.fillStyle=i===0?"#f1c85a":"#8bcf76";ctx.beginPath();ctx.arc(p.x,p.y,3.3,0,Math.PI*2);ctx.fill();}}
+  if(business.id==="sports-shop"){const a=isoPoint(x-w*.35,front,25),b=isoPoint(x+w*.35,front,25);ctx.strokeStyle="#70b979";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  if(business.id==="sports-recovery"){drawDistrictRoofMark(x,y,w,h,height+8,"#64cbc8","garden");const p=isoPoint(x,front,22);ctx.strokeStyle="#64cbc8";ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,7,0,Math.PI*2);ctx.stroke();}
+  if(business.id==="transit-bakery"){const a=isoPoint(x-w*.34,front,23),b=isoPoint(x+w*.34,front,23);ctx.strokeStyle="#e6a65e";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  if(business.id==="transit-store")drawDistrictRoofMark(x,y,w,h,height+8,palette.accent,"solar");
+  if(business.id==="transit-info"){const p=isoPoint(x,front,27);ctx.fillStyle="#8bd7d6";ctx.font="900 16px DM Mono";ctx.textAlign="center";ctx.fillText("i",p.x,p.y);}
+}
+
+function drawDistrictVenue(business,x,y,w,h,index){
+  const palette=districtPalette(business.districtId),isKiosk=/icecream|smoothie|info|takeaway|bakery/.test(business.id),height=business.id.includes("conference")?64:business.id.includes("incubator")?61:business.id.includes("fitness")||business.id.includes("gym")?53:isKiosk?29:34+(index%3)*6;drawSoftShadow(x,y,Math.max(34,w*24),Math.max(11,h*9),.16);
+  if(business.id==="beach-bar"){drawGroundSlab(x-w/2,y-h/2,w,h,"#b68a58",5);drawCanopy(x-w*.43,y-h*.37,w*.86,h*.64,35);drawColumnLine(x-w*.32,y+h*.18,w*.64,4,22,"x","#815f3e");}
+  else if(business.id==="innovation-incubator"){drawBlock(x-w/2,y-h/2,w*.62,h,height,palette.top,palette.right,palette.left);drawBlock(x+w*.12,y-h*.3,w*.38,h*.8,height-17,"#e5e3df",palette.right,palette.left);drawFacadeBandY(x-w/2+.13,y+h/2+.01,w-.26,10,height-8,palette.glass,6);drawRaisedSlab(x-w/2-.06,y-h/2-.06,w+.12,h+.12,height+4,4,"#fbf8ef",palette.right,palette.left);}
+  else if(business.id==="innovation-conference"){drawBlock(x-w/2,y-h/2,w*.58,h,height,palette.top,palette.right,palette.left);drawBlock(x+w*.08,y-h/2,w*.42,h,height-17,"#dedfd9",palette.right,palette.left);drawFacadeBandY(x-w/2+.15,y+h/2+.01,w-.3,10,height-8,palette.glass,7);drawRaisedSlab(x-w/2-.07,y-h/2-.07,w+.14,h+.14,height+4,4,"#fbf8ef",palette.right,palette.left);}
+  else {drawBlock(x-w/2,y-h/2,w,h,height,palette.top,palette.right,palette.left);drawFacadeBandY(x-w/2+.16,y+h/2+.01,w-.32,9,height-7,palette.glass,Math.max(3,Math.round(w*2.3)));drawFacadeBandX(x+w/2+.01,y-h/2+.15,h-.3,9,height-7,mixColor(palette.glass,"#000000",.12),Math.max(2,Math.round(h*2)));drawRaisedSlab(x-w/2-.08,y-h/2-.08,w+.16,h+.16,height+4,4,"#fbf8ef",palette.right,palette.left);}
+  if(business.id!=="beach-bar"){const awning=isoPoint(x-w*.34,y+h/2+.04,Math.min(31,height-5)),awningB=isoPoint(x+w*.18,y+h/2+.04,Math.min(31,height-5));ctx.strokeStyle=palette.accent;ctx.lineWidth=isKiosk?7:5;ctx.beginPath();ctx.moveTo(awning.x,awning.y);ctx.lineTo(awningB.x,awningB.y);ctx.stroke();}
+  drawDistrictVenueDetails(business,x,y,w,h,height,palette);drawDistrictBusinessSign(business,x,y+h/2+.04,18,palette.accent);
+}
+
+function drawActivityCourt(business,x,y,w,h){
+  const sports=business.districtId==="sports",top=sports?"#5f9a78":"#dfc77f";drawGroundSlab(x-w/2,y-h/2,w,h,top,5);const corners=[isoPoint(x-w*.42,y-h*.37,7),isoPoint(x+w*.42,y-h*.37,7),isoPoint(x+w*.42,y+h*.37,7),isoPoint(x-w*.42,y+h*.37,7)];ctx.strokeStyle="rgba(255,255,255,.86)";ctx.lineWidth=1.4;ctx.beginPath();corners.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();const a=isoPoint(x,y-h*.38,8),b=isoPoint(x,y+h*.38,8);ctx.strokeStyle=sports?"#173743":"#f7f1df";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();drawDistrictBusinessSign(business,x,y+h/2,18,districtPalette(business.districtId).accent);
+}
+
+function drawTransitFacility(business,x,y,w,h,index){
+  const palette=districtPalette("transit");if(business.id==="transit-parking"){drawGroundSlab(x-w/2,y-h/2,w,h,"#66767a",4);for(let i=-1;i<=1;i++){const a=isoPoint(x+i*.9,y-h*.34,6),b=isoPoint(x+i*.9,y+h*.34,6);ctx.strokeStyle="#e8e2ce";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawColumnLine(x-w*.43,y+h*.34,w*.3,2,15,"x","#e9bd59");const meter=isoPoint(x+w*.42,y+h*.25,14);roundedRect(meter.x-3,meter.y-8,6,10,2,"#264c57");drawDistrictBusinessSign(business,x,y+h/2,17,palette.accent);return;}
+  if(business.id==="transit-bike"){drawGroundSlab(x-w/2,y-h/2,w,h,"#d9ddd8",4);drawCanopy(x-w*.42,y-h*.34,w*.84,h*.55,20);for(let i=0;i<4;i++){const p=isoPoint(x-w*.3+i*w*.2,y+h*.12,8);ctx.strokeStyle="#31545b";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(p.x,p.y,5,Math.PI,0);ctx.stroke();}drawDistrictBusinessSign(business,x,y+h/2,17,palette.accent);return;}
+  if(business.id==="transit-bus"){drawGroundSlab(x-w/2,y-h/2,w,h,"#75878a",4);drawRaisedSlab(x-w*.45,y-h*.38,w*.9,h*.45,29,4,"#eef0ea","#829194","#b0b9b7");drawColumnLine(x-w*.38,y-h*.1,w*.76,3,28,"x");const pole=isoPoint(x+w*.42,y+h*.22,27);ctx.strokeStyle="#f2c85f";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(pole.x,pole.y);ctx.lineTo(pole.x,pole.y+18);ctx.stroke();ctx.fillStyle="#f2c85f";ctx.beginPath();ctx.arc(pole.x,pole.y,5,0,Math.PI*2);ctx.fill();drawDistrictBusinessSign(business,x,y+h/2,17,palette.accent);return;}
+  drawDistrictVenue(business,x,y,w,h,index);
+}
+
+function drawDistrictBusiness(business,x,y,index,plot){
+  const built=Boolean(run.districtBusinesses?.[business.id]),w=plot?.[2]||1.6,h=plot?.[3]||1.1;if(!built){drawGroundSlab(x-w/2,y-h/2,w,h,"#c9cbc4",3);ctx.save();ctx.strokeStyle="rgba(23,55,67,.38)";ctx.lineWidth=1.5;ctx.setLineDash([5,4]);const corners=[isoPoint(x-w*.38,y-h*.32,6),isoPoint(x+w*.38,y-h*.32,6),isoPoint(x+w*.38,y+h*.32,6),isoPoint(x-w*.38,y+h*.32,6)];ctx.beginPath();corners.forEach((point,i)=>i?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);ctx.restore();return;}
+  if(business.id==="beach-volleyball"||business.id==="sports-padel")drawActivityCourt(business,x,y,w,h);else if(business.districtId==="transit")drawTransitFacility(business,x,y,w,h,index);else drawDistrictVenue(business,x,y,w,h,index);
+  if(assetIsClosed(run,"district-business",business.id)){const warning=isoPoint(x,y,70);roundedRect(warning.x-25,warning.y-6,50,12,5,"#ff8060");ctx.fillStyle="#173743";ctx.textAlign="center";ctx.font="900 4.5px DM Mono";ctx.fillText("REPAIR",warning.x,warning.y+1.5);}
+}
+
+function districtBusinessWorldActors(){const actors=[];for(const district of DISTRICT_CATALOGUE){if(!run.districts?.[district.id])continue;const layout=DISTRICT_WORLD_LAYOUTS[district.id];DISTRICT_BUSINESSES.filter(item=>item.districtId===district.id).forEach((business,index)=>{const plot=layout?.plots[index];if(plot&&run.districtBusinesses?.[business.id])actors.push({depth:plot[0]+plot[1]+(plot[3]||1.1)/2+.03,draw:()=>drawDistrictBusiness(business,plot[0],plot[1],index,plot)});});}return actors;}
+
+function drawDistrictGroundDetails(district,layout,t){
+  if(district.id==="village"){drawGroundSlab(layout.x+.45,layout.y+3.35,layout.w-.9,1.05,"#efe8dc",4);drawGroundSlab(layout.x+3.75,layout.y+.4,1.1,layout.h-.8,"#e7ded2",4);for(let i=0;i<4;i++)drawLinearPlanter(layout.x+.8+i*2.35,layout.y+3.48,1.15,.34,8);}
+  if(district.id==="east"){drawGroundSlab(layout.x+.2,layout.y+.25,layout.w-.4,2.15,"#d4aa6b",5);for(let i=0;i<13;i++){const a=isoPoint(layout.x+.45+i*1.18,layout.y+.4,7),b=isoPoint(layout.x+.45+i*1.18,layout.y+2.15,7);ctx.strokeStyle="rgba(92,61,37,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}for(let i=0;i<7;i++){const p=isoPoint(layout.x+1+i*2.15,layout.y+layout.h-.35,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}}
+  if(district.id==="innovation"){drawGroundSlab(layout.x+.35,layout.y+3.4,layout.w-.7,.95,"#ece9e1",5);const a=isoPoint(layout.x+.7,layout.y+3.9,7),b=isoPoint(layout.x+layout.w-.7,layout.y+3.9,7);ctx.strokeStyle="#a58bd0";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();for(let i=0;i<4;i++)drawLinearPlanter(layout.x+1+i*3.1,layout.y+3.45,1.2,.32,8);}
+  if(district.id==="sports"){drawGroundSlab(layout.x+.3,layout.y+.3,layout.w-.6,layout.h-.6,"#91ae83",3);const a=isoPoint(layout.x+.6,layout.y+3.65,6),b=isoPoint(layout.x+layout.w-.6,layout.y+3.65,6);ctx.strokeStyle="rgba(245,248,232,.8)";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  if(district.id==="transit"){drawGroundSlab(layout.x+.3,layout.y+.35,layout.w-.6,2.5,"#778589",3);for(let i=0;i<6;i++){const a=isoPoint(layout.x+.8+i*2.25,layout.y+.55,6),b=isoPoint(layout.x+.8+i*2.25,layout.y+2.5,6);ctx.strokeStyle="rgba(245,238,207,.72)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawGroundSlab(layout.x+.3,layout.y+3.45,layout.w-.6,1.05,"#e6e4dc",4);}
 }
 
 function drawExpansionDistricts(t){
-  for(const district of DISTRICT_CATALOGUE){const layout=DISTRICT_WORLD_LAYOUTS[district.id],owned=Boolean(run.districts?.[district.id]);if(!layout)continue;if(owned){drawGroundSlab(layout.x,layout.y,layout.w,layout.h,layout.ground,4);drawConcreteSeams(layout.x,layout.y,layout.w,layout.h,6,1.7);const pathY=layout.y+layout.h*.52;drawGroundSlab(layout.x+.3,pathY,layout.w-.6,.9,"#e8e4da",5);drawWorldLabel(layout.x+layout.w*.5,layout.y+.35,55,layout.label,layout.color);const businesses=DISTRICT_BUSINESSES.filter(item=>item.districtId===district.id);businesses.forEach((business,index)=>{const plot=layout.plots[index];if(plot)drawDistrictBusiness(business,plot[0],plot[1],index);});if(district.id==="east")for(let i=0;i<7;i++){const p=isoPoint(layout.x+.8+i*2.1,layout.y+layout.h-.4,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}}else{drawGroundSlab(layout.x+.3,layout.y+.3,layout.w-.6,layout.h-.6,district.id==="east"?"#cdbd87":"#8fa17f",2);for(let i=0;i<5;i++){const p=isoPoint(layout.x+1+i*(layout.w-2)/4,layout.y+layout.h*.55+(i%2)*.45,5);ctx.fillStyle=i%2?"#839573":"#9bae87";ctx.beginPath();ctx.ellipse(p.x,p.y,18,7,0,0,Math.PI*2);ctx.fill();}}}
-  if(run.districts?.east){drawGroundSlab(49,13.1,7.4,7.5,"#caa36e",6);for(let i=0;i<13;i++){const a=isoPoint(49.2+i*.55,13.35,8),b=isoPoint(49.2+i*.55,20.25,8);ctx.strokeStyle=i%2?"rgba(86,59,38,.28)":"rgba(255,255,255,.18)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawWorldLabel(52.7,13.2,67,"OCEAN DECK","#479fb5");}
+  for(const district of DISTRICT_CATALOGUE){const layout=DISTRICT_WORLD_LAYOUTS[district.id],owned=Boolean(run.districts?.[district.id]);if(!layout)continue;if(owned){drawGroundSlab(layout.x,layout.y,layout.w,layout.h,layout.ground,4);drawDistrictGroundDetails(district,layout,t);drawWorldLabel(layout.x+layout.w*.5,layout.y+.35,55,layout.label,layout.color);const businesses=DISTRICT_BUSINESSES.filter(item=>item.districtId===district.id);businesses.forEach((business,index)=>{const plot=layout.plots[index];if(plot&&!run.districtBusinesses?.[business.id])drawDistrictBusiness(business,plot[0],plot[1],index,plot);});}else{drawGroundSlab(layout.x+.3,layout.y+.3,layout.w-.6,layout.h-.6,district.id==="east"?"#cdbd87":"#8fa17f",2);for(let i=0;i<5;i++){const p=isoPoint(layout.x+1+i*(layout.w-2)/4,layout.y+layout.h*.55+(i%2)*.45,5);ctx.fillStyle=i%2?"#839573":"#9bae87";ctx.beginPath();ctx.ellipse(p.x,p.y,18,7,0,0,Math.PI*2);ctx.fill();}}}
 }
 
 function drawFacadeBandY(x,y,w,zBottom,zTop,color="#244e58",mullions=5){
@@ -843,7 +907,7 @@ function drawBlock(x,y,w,h,z,top,right,left){const a=isoPoint(x,y,z),b=isoPoint(
 const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,.76],[29,19,.88],[32,9,.83],[39,12,.92],[37,19,.8],[6,21,.75],[24,22,.72],[40,21,.86]];
 const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
 const GUEST_PREFERENCE_LABELS={food:"Foodie",drinks:"Drinks",shopping:"Shopping",social:"Social",excitement:"Thrill seeker",calm:"Quiet spaces"};
-const guestTargetPoints={cafe:{x:17.55,y:14.45},snack:{x:28.15,y:20.55},merch:{x:34.15,y:15.25},beach:{x:45.55,y:20.2},surf:{x:52.7,y:16.5},academy:{x:20.1,y:12.75},hub:{x:35.3,y:18.65},forum:{x:20.5,y:21.35},pavilion:{x:47.8,y:12.8}};
+const guestTargetPoints={cafe:{x:17.55,y:14.45},snack:{x:28.15,y:20.55},merch:{x:34.15,y:15.25},beach:{x:45.55,y:20.2},surf:{x:52.7,y:16.5},academy:{x:20.1,y:12.75},hub:{x:35.3,y:18.65},forum:{x:20.5,y:21.35},pavilion:{x:42.5,y:22.55}};
 
 function guestRandom(seed,offset=0){const value=Math.sin((seed+1)*91.733+offset*37.119)*43758.5453;return value-Math.floor(value);}
 function guestGroupRow(groupId){if(!run.today.guestGroups)run.today.guestGroups={};if(!run.today.guestGroups[groupId])run.today.guestGroups[groupId]={arrivals:0,visits:0,purchases:0,spend:0,walkaways:0};return run.today.guestGroups[groupId];}
@@ -1242,7 +1306,7 @@ function drawStoreSpecializationFeature(id,loc,z,size){
 
 function drawVenuePlot(id,loc){const store=STORES.find(item=>item.id===id),p=isoPoint(loc.x,loc.y,8);drawGroundSlab(loc.x-1.05,loc.y-.72,2.1,1.44,"#d8d4c8",4);ctx.strokeStyle="#7d8b8c";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(p.x-55,p.y-18);ctx.lineTo(p.x,p.y-43);ctx.lineTo(p.x+55,p.y-17);ctx.lineTo(p.x,p.y+8);ctx.closePath();ctx.stroke();ctx.setLineDash([]);roundedRect(p.x-36,p.y-29,72,18,4,"#173743");ctx.fillStyle=store?.color||"#bce65f";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("AVAILABLE PLOT",p.x,p.y-18);}
 
-function drawExpansionGate(loc,unlocked){const p=isoPoint(loc.x,loc.y,4);ctx.strokeStyle=unlocked?loc.color:"#173743";ctx.lineWidth=5;for(const dx of [-.75,.75]){const a=isoPoint(loc.x+dx,loc.y,4),b=isoPoint(loc.x+dx,loc.y,55);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}const top=isoPoint(loc.x,loc.y,57);roundedRect(top.x-48,top.y-9,96,18,4,unlocked?loc.color:"#173743");ctx.fillStyle=unlocked?"#173743":"#f5c95e";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText(unlocked?"DISTRICT OPEN":"LAND FOR SALE",top.x,top.y+2);if(!unlocked){ctx.strokeStyle="#e9dfc8";ctx.lineWidth=2;for(let i=-2;i<=2;i++){const a=isoPoint(loc.x-1.1,loc.y+i*.18,16),b=isoPoint(loc.x+1.1,loc.y+i*.18,16);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}}
+function drawExpansionGate(loc,unlocked){if(unlocked){const base=isoPoint(loc.x,loc.y,7),post=isoPoint(loc.x,loc.y,28);ctx.strokeStyle=loc.color;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(post.x,post.y);ctx.stroke();roundedRect(post.x-26,post.y-6,52,12,4,"#173743");ctx.fillStyle=loc.color;ctx.textAlign="center";ctx.font="800 5px DM Mono";ctx.fillText(loc.title.split(" ")[0],post.x,post.y+1.8);return;}ctx.strokeStyle="#173743";ctx.lineWidth=5;for(const dx of [-.75,.75]){const a=isoPoint(loc.x+dx,loc.y,4),b=isoPoint(loc.x+dx,loc.y,55);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}const top=isoPoint(loc.x,loc.y,57);roundedRect(top.x-48,top.y-9,96,18,4,"#173743");ctx.fillStyle="#f5c95e";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("LAND FOR SALE",top.x,top.y+2);ctx.strokeStyle="#e9dfc8";ctx.lineWidth=2;for(let i=-2;i<=2;i++){const a=isoPoint(loc.x-1.1,loc.y+i*.18,16),b=isoPoint(loc.x+1.1,loc.y+i*.18,16);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}}
 
 function drawEventPavilion(loc){if(!run.eventVenue){drawGroundSlab(loc.x-1.45,loc.y-1.05,2.9,2.1,"#d9d5c9",4);const p=isoPoint(loc.x,loc.y,12);roundedRect(p.x-45,p.y-12,90,24,4,"#173743");ctx.fillStyle="#e47768";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("EVENT VENUE PLOT",p.x,p.y+2);return;}const managed=run.djOperations?.deckId==="pavilion",upgrades=managed?run.djOperations.upgrades||{}:{},width=3.1+(upgrades.capacity||0)*.28,active=run.activeEvent?.source==="dj"&&run.activeEvent.deckId==="pavilion";drawRaisedSlab(loc.x-width/2,loc.y-.95,width,1.9,15,7,"#e2c08b","#765c43","#a17c56");drawCanopy(loc.x-1.32-(upgrades.shade||0)*.08,loc.y-.76,2.64+(upgrades.shade||0)*.16,1.28,62);const stage=isoPoint(loc.x,loc.y,23);roundedRect(stage.x-42,stage.y-19,84,29,4,"#173743");ctx.fillStyle=active?"#bce65f":"#e47768";for(let i=0;i<7;i++)ctx.fillRect(stage.x-29+i*9,stage.y-9-Math.sin(lastTime*.008+i)*4,4,9+Math.sin(lastTime*.008+i)*4);if((upgrades.speakers||0)>0)[-1,1].forEach(side=>{for(let level=0;level<(upgrades.speakers||0);level++){const p=isoPoint(loc.x+side*(1.25+level*.16),loc.y-.25,42+level*15);roundedRect(p.x-8,p.y-12,16,24,2,"#102d36");ctx.fillStyle="#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+4,4,0,Math.PI*2);ctx.fill();}});if((upgrades.lighting||0)>0||active){const rail=isoPoint(loc.x,loc.y-.78,69);for(let i=-2;i<=2;i++){ctx.fillStyle=i%2?"#ff8060":"#f5c95e";ctx.beginPath();ctx.arc(rail.x+i*13,rail.y+i*6,3.2,0,Math.PI*2);ctx.fill();}}}
 

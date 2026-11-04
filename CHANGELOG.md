@@ -1,5 +1,13 @@
 # Changelog
 
+## District visual overhaul — 2026-11
+
+- Rebuilt all five expansion districts with distinct residential, leisure, innovation, sports, and transit art direction.
+- Replaced identical business boxes with varied venue footprints, heights, façades, courts, shelters, parking, and mobility infrastructure.
+- Added purpose-built silhouettes and operational details including open beach pavilions, stepped innovation buildings, shop displays, solar roofs, arrival shelters, and route furniture.
+- Moved built district businesses into the world depth system and aligned collision with their real footprints.
+- Relocated the Coastline Pavilion to the Beachfront and removed plot, legacy-venue, label, and district-gate overlaps.
+
 ## World object depth correction — 2026-11
 
 - Split wide academic buildings into local render actors instead of one campus-wide layer.

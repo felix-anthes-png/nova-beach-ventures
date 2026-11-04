@@ -140,11 +140,17 @@ The portfolio contains 25 separately purchasable businesses. They create daily i
 
 Corrected the painter ordering that made long façade objects appear to float over characters. The academic complex now renders as separate wings, while canopies, columns, and planter sections are sorted at their local map position. Main building walls share their footprint with collision and sort from the player's local position along the visible front wall. Façade planter boxes now have matching solid footprints, so characters remain in front of the architecture and cannot enter its furniture. Coverage lives in `tests/world-depth-layers.test.mjs`.
 
+## 23. District visual overhaul
+
+**Checkpoint:** `feature/district-visual-overhaul`
+
+Recomposed the five expansion areas as recognisable campus environments rather than repeated white kiosks. Student Village now uses a residential courtyard, Beachfront combines timber boardwalks and leisure venues, Innovation uses glass pavilions and a connected spine, Sports Campus uses turf and real courts, and Transit & Arrival uses parking, bus, bicycle, and pedestrian infrastructure. Business footprints now determine both rendering depth and collision. Automated layout checks keep plots inside their land, separated from one another, and clear of the established Beach Bar, Surf Shop, and Coastline Pavilion.
+
 ## Verification baseline
 
-At the end of milestone 22:
+At the end of milestone 23:
 
-- 110 automated tests pass, including district progression, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 113 automated tests pass, including district progression and composition, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
