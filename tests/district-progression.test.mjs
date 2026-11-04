@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   DISTRICT_CATALOGUE,
   DISTRICT_BUSINESSES,
+  DISTRICT_BUSINESS_OFFERS,
   createRun,
   unlockDistrict,
   unlockDistrictBusiness,
@@ -11,7 +12,8 @@ import {
   guestGroupMix,
   guestDestinationOptions,
   advanceTycoon,
-  migrateStaffOperations
+  migrateStaffOperations,
+  completeDistrictOfferSale
 } from "../dist/core.js";
 import { readFile } from "node:fs/promises";
 
@@ -71,9 +73,9 @@ test("Beachfront performance responds to deterministic coastal weather",()=>{
 });
 
 test("district income is recorded once when a day closes",()=>{
-  const run=fundedRun();run.districts.village=1;run.districtBusinesses["village-market"]=1;run.clockMinutes=1169;
+  let run=fundedRun();run.districts.village=1;run.districtBusinesses["village-market"]=1;run=migrateStaffOperations(run);const offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.businessId==="village-market");run=completeDistrictOfferSale(run,offer.id,10000,"resident-1");const expectedRevenue=run.districtOperations[offer.businessId].prices[offer.id];run.clockMinutes=1169;
   const closed=advanceTycoon(run,2),day=closed.history.at(-1);
-  assert.equal(closed.currentDay,2);assert.ok(day.totals.districtRevenue>0);assert.equal(day.districts.find(district=>district.id==="village").built,1);
+  assert.equal(closed.currentDay,2);assert.equal(day.totals.districtRevenue,expectedRevenue);assert.equal(day.districts.find(district=>district.id==="village").built,1);
 });
 
 test("version eight campaigns migrate without losing their original land",()=>{
@@ -84,5 +86,5 @@ test("version eight campaigns migrate without losing their original land",()=>{
 
 test("the browser exposes the district portfolio and business construction flow",async()=>{
   const [app,html,css]=await Promise.all([readFile(new URL("../dist/app.js",import.meta.url),"utf8"),readFile(new URL("../dist/index.html",import.meta.url),"utf8"),readFile(new URL("../dist/district-progression.css",import.meta.url),"utf8")]);
-  assert.match(app,/Six economies, six operating problems/);assert.match(app,/data-buy-business/);assert.match(app,/DISTRICT_WORLD_LAYOUTS/);assert.match(html,/district-progression\.css\?v=37-district-progression/);assert.match(css,/district-business-grid/);
+  assert.match(app,/Six economies, six operating problems/);assert.match(app,/data-buy-business/);assert.match(app,/data-operate-business/);assert.match(app,/DISTRICT_WORLD_LAYOUTS/);assert.match(html,/district-progression\.css\?v=44-district-business-operations/);assert.match(css,/district-business-grid/);
 });

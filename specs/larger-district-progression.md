@@ -18,10 +18,10 @@ Turn land acquisition into long-term tycoon progression. The Academic Core remai
 - Five expansion districts are shown in the progression portfolio before acquisition.
 - Buying land deducts its cost atomically, persists immediately, extends the traversable map, and unlocks its guest group.
 - Each acquired district exposes its own business development pipeline.
-- The 25 district businesses have a purchase cost, daily upkeep, base income, appeal, and operating problem.
+- The 25 district businesses have a purchase cost, daily upkeep, appeal, operating problem, and two player-managed offers.
 - Built businesses become visible world objects and guest destinations. Their footprints block movement.
-- District income is modified by its operating rhythm and recorded once in the closing report.
-- Breakdowns close affected businesses and remove their projected income until repaired.
+- District demand is modified by its operating rhythm; realised guest purchases are recorded once in the closing report.
+- Breakdowns close affected businesses and remove their offers from guest decisions until repaired.
 - Old campaigns migrate to save version 9 without losing existing Beachfront or Ocean Pier ownership.
 
 ## Acceptance checks
@@ -30,7 +30,7 @@ Turn land acquisition into long-term tycoon progression. The Academic Core remai
 2. Land purchases enforce company-level and district prerequisites without changing rejected saves.
 3. Business construction deducts the exact price and immediately appears in its district portfolio.
 4. Student Village, Innovation, Sports, and Transit unlock residents, founders, athletes, and commuters respectively.
-5. Clear weather produces stronger Beachfront income than rain.
-6. Built businesses contribute income and upkeep to exactly one daily report.
+5. Clear weather produces stronger Beachfront sales forecasts than rain.
+6. Built businesses contribute realised sales and upkeep to exactly one daily report.
 7. Guests can select and physically travel to an operating district business.
 8. Version-eight saves migrate with cash, progress, and original land preserved.

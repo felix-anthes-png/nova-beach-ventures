@@ -1,5 +1,14 @@
 # Changelog
 
+## District business operations — 2026-11
+
+- Added 50 products, services, rentals, bookings, passes, and memberships across all 25 district businesses.
+- Added player-controlled stock or capacity purchasing and selling prices to every district venue.
+- Added forecasts for demand, expected units, revenue, cost of sales, and gross profit.
+- Connected guest needs, budgets, groups, campus phases, district rhythms, and weather to offer selection.
+- Replaced passive district income with real guest transactions and reconciled daily results.
+- Added migration defaults so previously owned businesses begin with usable capacity and reference prices.
+
 ## District visual overhaul — 2026-11
 
 - Expanded the outer campus from 80 to 89 walkable tiles and introduced wider circulation seams between every expansion parcel.
