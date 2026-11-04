@@ -1,5 +1,12 @@
 # Changelog
 
+## Business animation art polish — 2026-11
+
+- Rebuilt all eight business scenes around a consistent miniature character scale.
+- Replaced symbolic equipment with layered ovens, treadmills, machines, racks, tables, vehicles, courts, and presentation furniture.
+- Added grounded contact shadows, material contrast, glass court walls, equipment framing, and restrained motion trails.
+- Reduced oversized character overlap and aligned every activity more closely with its venue footprint.
+
 ## Business and service animations — 2026-11
 
 - Added working ovens, pastry trays, preparation, and service to Gate Bakery.

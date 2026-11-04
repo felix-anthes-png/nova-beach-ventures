@@ -186,9 +186,17 @@ Gave eight expansion business categories their own operational motion and props.
 
 The activity is driven by real capacity, operational condition, active guests, queues, and campaign time. Broken or depleted businesses become inactive instead of continuing a decorative loop. Coverage lives in `tests/business-service-animations.test.mjs`.
 
+## 29. Business animation art polish
+
+**Checkpoint:** `fix/business-animation-art-polish`
+
+Reworked the eight service scenes so they share the architectural model’s scale and material language. Oversized generic characters were replaced by grounded miniature workers and customers, while symbolic props became layered equipment with contact shadows, frames, glazing, furniture, and restrained motion.
+
+The refinement does not change business simulation rules. Existing capacity, breakdown, queue, and guest-driven animation gates remain intact.
+
 ## Verification baseline
 
-At the end of milestone 28:
+At the end of milestone 29:
 
 - 139 automated tests are defined, including business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
