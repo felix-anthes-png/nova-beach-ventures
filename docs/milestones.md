@@ -170,11 +170,19 @@ Rebuilt the three enterable buildings as operational spaces with their own autho
 
 Interior geometry now drives both visual placement and player collision. Purposeful service, queueing, browsing, studying, restocking, and networking poses make each room readable, while contextual markers expose venue condition and stock. The batch deliberately keeps fixed roofs and walls and introduces no transparency system. Coverage lives in `tests/interior-interaction-overhaul.test.mjs`.
 
+## 27. Venue operational states
+
+**Checkpoint:** `feature/venue-operational-states`
+
+Moved venue status out of management-only screens and into the campus world. Original stores and expansion businesses now communicate whether they are open, closed, busy, low on stock, sold out, restocking, being cleaned, or under repair. Scheduled DJ venues also prepare physically before an event with bunting, cases, and setup signage.
+
+The visuals are driven by live simulation state rather than a decorative loop. Service venues use availability boards while retail venues expose shelf stock. Coverage lives in `tests/venue-operational-states.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 26:
+At the end of milestone 27:
 
-- 126 automated tests are defined, including interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 134 automated tests are defined, including venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

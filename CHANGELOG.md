@@ -1,5 +1,15 @@
 # Changelog
 
+## Venue operational states — 2026-11
+
+- Added illuminated counters and physical open signs to operating venues.
+- Added switched-off frontages and shutters outside opening hours.
+- Added stocked, low-stock, and sold-out displays, plus service availability boards.
+- Added destination boxes and a restocking worker after deliveries.
+- Added queue barriers during rushes and visible repair closures during breakdowns.
+- Added progressive litter removal, cleaning equipment, and caretaker feedback.
+- Added event setup decorations before scheduled DJ events.
+
 ## Interior and building interaction overhaul — 2026-11
 
 - Rebuilt the Academic Wing, Mercado Supply Hall, and Student Hub around distinct operational zones and circulation routes.
