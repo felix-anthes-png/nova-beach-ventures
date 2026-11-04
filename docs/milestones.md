@@ -146,11 +146,19 @@ Corrected the painter ordering that made long façade objects appear to float ov
 
 Recomposed the five expansion areas as recognisable campus environments rather than repeated white kiosks. Student Village now uses a residential courtyard, Beachfront combines timber boardwalks and leisure venues, Innovation uses glass pavilions and a connected spine, Sports Campus uses turf and real courts, and Transit & Arrival uses parking, bus, bicycle, and pedestrian infrastructure. Business footprints now determine both rendering depth and collision. Automated layout checks keep plots inside their land, separated from one another, and clear of the established Beach Bar, Surf Shop, and Coastline Pavilion.
 
+## 24. District spacing correction
+
+**Checkpoint:** `fix/district-spacing-overlaps`
+
+Expanded the outer campus from 80 to 89 walkable tiles and rebuilt the expansion layout around deliberate circulation space. The northern parcels now retain a visible pedestrian seam, the southern Beachfront and Sports parcels are separated by more than a full tile, and all 25 business plots have larger visual clearances. Beachfront venues were specifically moved away from the established Maré Beach Bar, Surf Shack, and Coastline Pavilion. District gates, guest arrival points, walking bounds, operational ownership, and map classification moved with the new geometry.
+
+Automated composition coverage now rejects plots with less than the required circulation clearance.
+
 ## Verification baseline
 
-At the end of milestone 23:
+At the end of milestone 24:
 
-- 113 automated tests pass, including district progression and composition, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 116 automated tests pass, including district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
