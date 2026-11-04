@@ -154,11 +154,19 @@ Expanded the outer campus from 80 to 89 walkable tiles and rebuilt the expansion
 
 Automated composition coverage now rejects plots with less than the required circulation clearance.
 
+## 25. District business operations
+
+**Checkpoint:** `feature/district-business-operations`
+
+Replaced passive district revenue with 50 player-managed offers across all 25 expansion businesses. Players purchase physical stock or service capacity, choose selling prices, and use forecasts that expose demand, revenue, cost of sales, and gross profit. Guests select suitable offers according to their needs, group, budget, campus phase, district rhythm, weather, availability, and price, then create the actual cash transaction while physically using the venue.
+
+The daily ledger now records realised district sales rather than background income. Existing campaigns migrate owned businesses with starter capacity and reference prices. Coverage lives in `tests/district-business-operations.test.mjs` and the updated district-progression regression suite.
+
 ## Verification baseline
 
-At the end of milestone 24:
+At the end of milestone 25:
 
-- 116 automated tests pass, including district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 122 automated tests are defined, including district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

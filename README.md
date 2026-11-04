@@ -77,6 +77,7 @@ Every major system was developed as an isolated feature batch. The specification
 | World object depth correction | Local depth layers for wide buildings, canopies, columns, and planters | [`specs/world-object-depth.md`](specs/world-object-depth.md) · `fix/world-object-depth` |
 | District visual overhaul | Authored expansion environments, recognisable venue silhouettes, and collision-safe plot composition | [`specs/district-visual-overhaul.md`](specs/district-visual-overhaul.md) · `feature/district-visual-overhaul` |
 | District spacing correction | Wider expansion parcels, clearer circulation seams, and re-spaced venue plots | [`specs/district-visual-overhaul.md`](specs/district-visual-overhaul.md) · `fix/district-spacing-overlaps` |
+| District business operations | Stock, capacity, pricing, needs-based demand, and real guest sales across all 25 district businesses | [`specs/district-business-operations.md`](specs/district-business-operations.md) · `feature/district-business-operations` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 
