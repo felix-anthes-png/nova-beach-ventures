@@ -1,5 +1,15 @@
 # Changelog
 
+## Interior and building interaction overhaul — 2026-11
+
+- Rebuilt the Academic Wing, Mercado Supply Hall, and Student Hub around distinct operational zones and circulation routes.
+- Removed the exterior-style café and merch building pods from their interiors and connected management to real counters.
+- Added café displays, menu boards, dispatch equipment, delivery crates, checkout furniture, and venture workstations.
+- Added purposeful service, queueing, browsing, eating, studying, restocking, and networking characters.
+- Unified furniture and counter rendering with player collision and safe click-to-move resolution.
+- Added contextual indoor venue status, stock feedback, entrance markers, and proximity activity labels.
+- Kept roofs and exterior walls fixed, with no transparency or cutaway behaviour.
+
 ## District business operations — 2026-11
 
 - Added 50 products, services, rentals, bookings, passes, and memberships across all 25 district businesses.
