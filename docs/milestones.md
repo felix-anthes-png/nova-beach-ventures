@@ -162,11 +162,19 @@ Replaced passive district revenue with 50 player-managed offers across all 25 ex
 
 The daily ledger now records realised district sales rather than background income. Existing campaigns migrate owned businesses with starter capacity and reference prices. Coverage lives in `tests/district-business-operations.test.mjs` and the updated district-progression regression suite.
 
+## 26. Interior interaction overhaul
+
+**Checkpoint:** `feature/interior-interaction-overhaul`
+
+Rebuilt the three enterable buildings as operational spaces with their own authored floor zones, circulation routes, counters, displays, furniture, and character activities. Atlantic Café, Mercado dispatch, Nova Merch Lab, and Venture HQ now use fixtures that belong to their rooms instead of rendering exterior-style buildings indoors.
+
+Interior geometry now drives both visual placement and player collision. Purposeful service, queueing, browsing, studying, restocking, and networking poses make each room readable, while contextual markers expose venue condition and stock. The batch deliberately keeps fixed roofs and walls and introduces no transparency system. Coverage lives in `tests/interior-interaction-overhaul.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 25:
+At the end of milestone 26:
 
-- 122 automated tests are defined, including district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 126 automated tests are defined, including interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

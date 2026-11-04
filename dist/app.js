@@ -1,5 +1,6 @@
 import { CATALOGUE, STORES, STORE_UNLOCKS, STORE_REQUIREMENTS, DISTRICT_CATALOGUE, DISTRICT_BUSINESSES, DISTRICT_BUSINESS_OFFERS, EVENT_CATALOGUE, DJ_EVENT_SLOTS, DJ_STYLES, DJ_ROSTER, DJ_UPGRADES, CAMPUS_DAY_PHASES, CAMPUS_CALENDAR, GUEST_GROUPS, DEFAULT_STORE_HOURS, DELIVERY_WINDOWS, PROGRESSION_LEVELS, FACILITY_CATALOGUE, STAFF_CATALOGUE, STAFF_SHIFTS, OPERATIONS_DISTRICTS, EXPERIENCE_MODULES, SPECIALIZATION_FOCUSES, STORE_SPECIALIZATIONS, FACILITY_SPECIALIZATIONS, DAY_START, DAY_END, STORAGE_KEY, SHOWCASE_BUDGET, createRun, createShowcaseRun, demandFor, parseEuro, buyStock, scheduleDelivery, nextDeliveryWindow, storeIsOpen, setStoreHours, campusPhase, calendarDay, calendarForecast, guestGroupMix, selectGuestGroup, setPrice, inventoryValue, overallResult, formatEuro, upgradeVenue, unlockVenue, unlockDistrict, unlockDistrictBusiness, districtPortfolio, districtWeather, districtBusinessForecast, buyDistrictOfferStock, setDistrictOfferPrice, completeDistrictOfferSale, unlockEventVenue, launchEvent, djEventProjection, configureDjOperations, hireDj, upgradeDjDeck, scheduleDjEvent, progressionState, scenarioGoals, attractionStats, campusMetrics, tycoonPulse, managementOverview, dailyOperatingCosts, storeOperatingCost, venueServiceMultiplier, storeSpecialization, facilitySpecialization, specializationSynergy, specializationSnapshot, setStoreSpecialization, setFacilitySpecialization, settleOperatingCosts, crowdPeak, advanceTycoon, facilityFootprint, placeFacility, moveFacility, demolishFacility, hireStaff, assignStaff, setStaffShift, settlePayroll, activeStaffCount, staffDailyWage, staffIsOnShift, operationsSnapshot, assetIsClosed, migrateStaffOperations, activeVenueProject, venueProjectProgress, districtForStore, districtForPosition, guestDestinationOptions, applyGuestNeedRelief, recordGuestActivity, completeGuestSale } from "./core.js?v=44-district-business-operations";
 import { rectCollider, circleCollider, pointBlocked, resolveMovement, nearestFreePoint } from "./world-physics.js?v=35-world-collision";
+import { interiorLayout } from "./interior-layouts.js?v=45-interior-interaction";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -109,9 +110,9 @@ const locations = {
   transitGate: { zone:"campus", x:69.6, y:11.6, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"LAND" },
   supplier: { zone:"mercado", x:7.5, y:4.2, label:"Open wholesale inventory", panel:()=>openSupplier(currentSupplierStore), color:"#f5c95e", title:"SUPPLY DESK", sub:"WHOLESALE" },
   marketExit: { zone:"mercado", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:7,y:16.8}, color:"#f5c95e", title:"CAMPUS", sub:"EXIT" },
-  cafe: { zone:"academy", x:7.3, y:4.3, label:"Manage Atlantic Café", panel:()=>openStore("cafe"), color:"#ff7b5b", title:"ATLANTIC CAFÉ", sub:"ACADEMIC WING" },
+  cafe: { zone:"academy", x:7.25, y:3.72, label:"Manage Atlantic Café", panel:()=>openStore("cafe"), color:"#ff7b5b", title:"ATLANTIC CAFÉ", sub:"SERVICE COUNTER" },
   academyExit: { zone:"academy", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:20,y:13.8}, color:"#ff7b5b", title:"CAMPUS", sub:"EXIT" },
-  merch: { zone:"hub", x:5.3, y:4.2, label:"Manage Nova Merch Lab", panel:()=>openStore("merch"), color:"#5ac7c4", title:"MERCH LAB", sub:"STUDENT HUB" },
+  merch: { zone:"hub", x:5.25, y:4.85, label:"Manage Nova Merch Lab", panel:()=>openStore("merch"), color:"#5ac7c4", title:"MERCH LAB", sub:"RETAIL COUNTER" },
   board: { zone:"hub", x:10.5, y:5.2, label:"Open the venture ledger", panel:openLedger, color:"#67b7d1", title:"VENTURE HQ", sub:"FINANCE" },
   hubExit: { zone:"hub", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:34.5,y:15.8}, color:"#64cbc8", title:"CAMPUS", sub:"EXIT" }
 };
@@ -152,10 +153,7 @@ function campusColliders(){
 }
 
 function roomColliders(zoneId){
-  const common=[rectCollider("north-wall",0,0,15,1,{label:"Wall",kind:"wall"}),rectCollider("west-wall",0,0,1,12,{label:"Wall",kind:"wall"})];
-  if(zoneId==="academy")return [...common,rectCollider("cafe-counter",5.65,2.15,4.3,.85,{label:"Atlantic Café counter",kind:"counter"}),rectCollider("academy-table-west",2.1,5.65,3.5,.75,{label:"Communal table",kind:"furniture"}),rectCollider("academy-table-east",9.9,4.2,3,.75,{label:"Communal table",kind:"furniture"}),rectCollider("academy-lounge",2.2,7.25,2.5,1.85,{label:"Study lounge",kind:"furniture"}),circleCollider("academy-plant",11.8,7.2,.38,{label:"Planter",kind:"prop"})];
-  if(zoneId==="mercado")return [...common,rectCollider("shelf-north",2.05,2.45,4,.62,{label:"Market shelving",kind:"furniture"}),rectCollider("shelf-west",2.1,6.55,3.6,.62,{label:"Market shelving",kind:"furniture"}),rectCollider("cold-room",9.7,2.05,3.15,2.25,{label:"Cold store",kind:"room"}),rectCollider("shelf-east",10.1,6.1,2.8,.62,{label:"Market shelving",kind:"furniture"}),circleCollider("mercado-plant",7.6,7.7,.35,{label:"Planter",kind:"prop"})];
-  return [...common,rectCollider("merch-display",2.05,2.15,3.5,.65,{label:"Merch display",kind:"furniture"}),rectCollider("hub-lounge-west",2.15,7,2.5,1.85,{label:"Student lounge",kind:"furniture"}),rectCollider("hub-lounge-east",9.8,6.1,2.5,1.85,{label:"Student lounge",kind:"furniture"}),circleCollider("hub-plant",7.8,6.9,.38,{label:"Planter",kind:"prop"})];
+  const common=[rectCollider("north-wall",0,0,15,1,{label:"Wall",kind:"wall"}),rectCollider("west-wall",0,0,1,12,{label:"Wall",kind:"wall"})],layout=interiorLayout(zoneId);if(!layout)return common;return [...common,...layout.colliders.map(item=>item.type==="circle"?circleCollider(item.id,item.x,item.y,item.r,{label:item.label,kind:item.kind}):rectCollider(item.id,item.x,item.y,item.w,item.h,{label:item.label,kind:item.kind}))];
 }
 
 function activeColliders(){return currentZone==="campus"?campusColliders():roomColliders(currentZone);}
@@ -828,7 +826,11 @@ function drawInteriorFloor(zone){
   const accent=zone.id==="academy"?"#d7e7dd":zone.id==="mercado"?"#ead9b8":"#cae0dc";drawGroundSlab(2.1,2.05,10.8,1.15,accent,5);
   for(let i=0;i<6;i++){const p=isoPoint(2.6+i*1.75,2.6,6);ctx.strokeStyle=i%2?"rgba(255,255,255,.62)":"rgba(25,72,75,.12)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x-22,p.y-10);ctx.lineTo(p.x+22,p.y+10);ctx.stroke();}
   if(zone.id==="academy"){drawGroundSlab(1.7,6.5,11.6,1.35,"#d6c19a",5);}else if(zone.id==="mercado"){drawGroundSlab(1.65,5.6,11.7,.65,"#c9d4cd",5);}else{drawGroundSlab(6.55,3.7,1.3,5.7,"#b8d6d3",5);}
+  drawInteriorWayfinding(zone.id);
 }
+
+function drawInteriorWayfinding(zoneId){const layout=interiorLayout(zoneId);if(!layout)return;ctx.save();for(const area of layout.zones){const a=isoPoint(area.x,area.y+area.h,6),b=isoPoint(area.x+area.w,area.y+area.h,6);ctx.strokeStyle=area.color;ctx.globalAlpha=.72;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();const label=isoPoint(area.x+.18,area.y+area.h-.1,7);ctx.fillStyle="#173743";ctx.font="800 5px DM Mono";ctx.textAlign="left";ctx.fillText(area.label.toUpperCase(),label.x,label.y);}
+  ctx.globalAlpha=.46;ctx.strokeStyle="#31545b";ctx.lineWidth=3;ctx.setLineDash([7,6]);for(let index=1;index<layout.route.length;index++){const a=isoPoint(layout.route[index-1].x,layout.route[index-1].y,7),b=isoPoint(layout.route[index].x,layout.route[index].y,7);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.setLineDash([]);const entry=isoPoint(layout.route[0].x,layout.route[0].y,7);ctx.fillStyle=activeZone().accent;ctx.globalAlpha=.9;ctx.beginPath();ctx.ellipse(entry.x,entry.y,30,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#173743";ctx.font="900 5px DM Mono";ctx.textAlign="center";ctx.fillText("ENTRANCE",entry.x,entry.y+2);ctx.restore();}
 
 function drawIndoorPlant(x,y,scale=1){
   drawBlock(x-.32,y-.32,.64,.64,18,"#d7cfc1","#8e8f87","#aaa99f");const p=isoPoint(x,y,20);ctx.save();ctx.translate(p.x,p.y);ctx.scale(scale,scale);ctx.strokeStyle="#4c7654";ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.save();ctx.rotate(i*Math.PI/3);ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(8,-9,4,-19);ctx.stroke();ctx.restore();}ctx.restore();
@@ -845,6 +847,8 @@ function drawCafeWorkshop(){
   drawFacadeBandY(5.8,3.01,4,10,31,"#244e58",5);
   const machine=isoPoint(8.7,2.7,49);ctx.fillStyle="#ecede7";roundedRect(machine.x-17,machine.y-16,34,19,4,"#ecede7");ctx.fillStyle="#173743";ctx.fillRect(machine.x-10,machine.y-11,20,5);ctx.fillStyle="#ff7458";ctx.beginPath();ctx.arc(machine.x+11,machine.y-8,2,0,Math.PI*2);ctx.fill();
   const shelf=isoPoint(8,1.6,47);ctx.strokeStyle="#b48a56";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(shelf.x-64,shelf.y);ctx.lineTo(shelf.x+64,shelf.y+32);ctx.stroke();for(let i=0;i<6;i++){ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(shelf.x-47+i*18,shelf.y+7+i*4,4,0,Math.PI*2);ctx.fill();}
+  drawRaisedSlab(5.8,3.05,1.15,.65,31,6,"#f0ece1","#788c8c","#a8b3af");const display=isoPoint(6.38,3.38,34);ctx.fillStyle="rgba(171,224,220,.72)";ctx.beginPath();ctx.moveTo(display.x-23,display.y-9);ctx.lineTo(display.x+23,display.y+2);ctx.lineTo(display.x+23,display.y-13);ctx.lineTo(display.x-23,display.y-24);ctx.closePath();ctx.fill();for(let i=0;i<4;i++){ctx.fillStyle=i%2?"#e6a953":"#c9874e";ctx.beginPath();ctx.ellipse(display.x-14+i*9,display.y-10+i*2,4,2,0,0,Math.PI*2);ctx.fill();}
+  const menu=isoPoint(6.2,1.12,68);ctx.save();ctx.translate(menu.x,menu.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-46,-19,92,38,3,"#173743");ctx.fillStyle="#f5c95e";ctx.font="900 6px DM Mono";ctx.fillText("ATLANTIC CAFÉ",-37,-7);ctx.fillStyle="#e5efeb";for(let i=0;i<3;i++){ctx.fillRect(-36,2+i*7,34+i*7,2);}ctx.restore();
 }
 
 function drawMercadoShelf(x,y,w=3.1){
@@ -852,6 +856,8 @@ function drawMercadoShelf(x,y,w=3.1){
   for(let z=15;z<55;z+=17){drawFacadeBandY(x+.15,y+.63,w-.3,z,z+6,"#31545b",Math.max(3,Math.round(w)));}
   const colors=["#f5c95e","#ff7458","#64cbc8","#bce65f"];for(let i=0;i<4;i++){const p=isoPoint(x+.5+i*(w-1)/3,y+.68,31);ctx.fillStyle=colors[i];ctx.fillRect(p.x-4,p.y-5,8,9);}
 }
+
+function drawMercadoDispatch(){drawRaisedSlab(6.4,3.78,2.2,.82,32,7,"#d9bb83","#745e46","#947657");const scanner=isoPoint(7.55,4.05,39);roundedRect(scanner.x-8,scanner.y-13,16,17,3,"#173743");ctx.fillStyle="#bce65f";ctx.fillRect(scanner.x-4,scanner.y-9,8,5);for(const [x,y,color] of [[6.1,5.2,"#d0a05e"],[8.8,6.5,"#c98b55"],[5.3,7.25,"#e0b978"]]){drawBlock(x-.35,y-.3,.7,.6,24,color,mixColor(color,"#000000",.35),mixColor(color,"#000000",.2));const p=isoPoint(x,y,26);ctx.strokeStyle="rgba(69,51,35,.45)";ctx.beginPath();ctx.moveTo(p.x-10,p.y-4);ctx.lineTo(p.x+10,p.y+6);ctx.stroke();}}
 
 function drawColdRoom(){
   drawCampusWing(9.7,2.05,3.15,2.25,65,{glass:"#326a74",accent:"#64cbc8"});const p=isoPoint(11.3,4.32,37);roundedRect(p.x-26,p.y-8,52,16,3,"#173743");ctx.fillStyle="#d8fbff";ctx.textAlign="center";ctx.font="800 6px DM Mono";ctx.fillText("COLD STORE",p.x,p.y+2);
@@ -868,6 +874,10 @@ function drawMerchDisplay(){
   const colors=["#64cbc8","#f5c95e","#ff7458"];for(let i=0;i<3;i++){const p=isoPoint(2.7+i,2.55,47);ctx.fillStyle=colors[i];ctx.beginPath();ctx.moveTo(p.x-8,p.y-4);ctx.lineTo(p.x,p.y-12);ctx.lineTo(p.x+8,p.y-4);ctx.lineTo(p.x+5,p.y+9);ctx.lineTo(p.x-5,p.y+9);ctx.closePath();ctx.fill();}
 }
 
+function drawMerchCounter(){drawRaisedSlab(4.35,3.55,1.9,1.25,34,7,"#e8e7df","#768b8a","#a5b2ae");drawFacadeBandY(4.5,4.81,1.6,12,29,"#225762",5);const till=isoPoint(5.3,4.05,39);roundedRect(till.x-10,till.y-13,20,17,3,"#173743");ctx.fillStyle="#64cbc8";ctx.fillRect(till.x-6,till.y-9,12,5);const wall=isoPoint(2.15,1.08,68);ctx.save();ctx.translate(wall.x,wall.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));ctx.fillStyle="#173743";ctx.font="900 11px DM Mono";ctx.fillText("NOVA / MERCH",0,0);ctx.strokeStyle="#64cbc8";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,7);ctx.lineTo(85,7);ctx.stroke();ctx.restore();}
+
+function drawVentureDesk(){drawRaisedSlab(9.55,4.78,1.9,.82,31,7,"#d5b271","#745d42","#95754e");const screens=[[10,4.8],[10.55,5.12],[11,4.88]];for(const [x,y] of screens){const p=isoPoint(x,y,48);roundedRect(p.x-9,p.y-9,18,13,2,"#173743");ctx.fillStyle="#bce65f";ctx.fillRect(p.x-5,p.y-5,10,2);ctx.fillStyle="#64cbc8";ctx.fillRect(p.x-5,p.y-1,7,2);}}
+
 function drawVentureWall(){
   const p=isoPoint(10.8,1.08,63);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-64,-27,128,54,4,"#173743");ctx.fillStyle="#bce65f";ctx.font="800 7px DM Mono";ctx.fillText("VENTURE BOARD",-52,-11);ctx.fillStyle="#d9e5e1";for(let i=0;i<4;i++){ctx.fillRect(-50,-1+i*8,32+i*8,3);}ctx.restore();
 }
@@ -877,14 +887,15 @@ function drawRoomActors(t){
   if(zone.id==="academy"){
     actors.push({depth:4.7,draw:drawCafeWorkshop},{depth:8.1,draw:()=>drawCommunalTable(2.1,5.65,3.5,"#d2a66c")},{depth:14.1,draw:()=>drawCommunalTable(9.9,4.2,3,"#d2a66c")},{depth:10.5,draw:()=>drawLounge(2.2,7.25,"#608a8b")},{depth:12.9,draw:()=>drawIndoorPlant(11.8,7.2,1.2)});
   }else if(zone.id==="mercado"){
-    actors.push({depth:5.1,draw:()=>drawMercadoShelf(2.05,2.45,4)},{depth:9.3,draw:()=>drawMercadoShelf(2.1,6.55,3.6)},{depth:12,draw:drawColdRoom},{depth:16.2,draw:()=>drawMercadoShelf(10.1,6.1,2.8)},{depth:10,draw:()=>drawIndoorPlant(7.6,7.7,.9)});
+    actors.push({depth:5.1,draw:()=>drawMercadoShelf(2.05,2.45,4)},{depth:9.3,draw:()=>drawMercadoShelf(2.1,6.55,3.6)},{depth:12,draw:drawColdRoom},{depth:8.9,draw:drawMercadoDispatch},{depth:16.2,draw:()=>drawMercadoShelf(10.1,6.1,2.8)},{depth:10,draw:()=>drawIndoorPlant(7.6,7.7,.9)});
   }else{
-    actors.push({depth:4.5,draw:drawMerchDisplay},{depth:11.8,draw:()=>drawLounge(2.15,7,"#7c70a2")},{depth:15.2,draw:()=>drawLounge(9.8,6.1,"#568c8c")},{depth:12,draw:drawVentureWall},{depth:10.7,draw:()=>drawIndoorPlant(7.8,6.9,1.1)});
+    actors.push({depth:4.5,draw:drawMerchDisplay},{depth:8.6,draw:drawMerchCounter},{depth:15.3,draw:drawVentureDesk},{depth:11.8,draw:()=>drawLounge(2.15,7,"#7c70a2")},{depth:15.2,draw:()=>drawLounge(9.8,6.1,"#568c8c")},{depth:12,draw:drawVentureWall},{depth:10.7,draw:()=>drawIndoorPlant(7.8,6.9,1.1)});
   }
-  const roomPeople=zone.id==="mercado"?[[4.8,5.4,"#f5c95e",.5],[10,5.5,"#ff8060",1.4]]:zone.id==="academy"?[[4.7,4.8,"#75c0c8",.3],[10.5,6.2,"#e6b45f",1.7],[5.3,7.4,"#ad75a6",2.5]]:[[4.7,6.2,"#ff8060",.8],[9.2,4.7,"#75c0c8",1.9],[11.8,7.2,"#bce65f",2.7]];
-  roomPeople.forEach((person,index)=>actors.push({depth:person[0]+person[1],draw:()=>drawStudent(person,t,index)}));
+  const layout=interiorLayout(zone.id),pressure=crowdPeak(run.clockMinutes,run).multiplier,baseCount=zone.id==="academy"&&storeIsOpen(run,"cafe")?4:zone.id==="hub"&&storeIsOpen(run,"merch")?4:3,visible=Math.min(layout.activities.length,baseCount+(pressure>1.5?2:pressure>1?1:0));layout.activities.slice(0,visible).forEach((activity,index)=>actors.push({depth:activity.x+activity.y+.03,draw:()=>drawInteriorActivity(activity,t,index)}));
   return actors;
 }
+
+function drawInteriorActivity(activity,t,index){const color=crowdColors[(index+currentZone.length)%crowdColors.length],moving=activity.pose==="repair";drawPersonFigure(activity.x,activity.y,t,index+140,{color,phase:index*.7,moving,facing:activity.facing,pose:activity.pose,role:activity.role});if(Math.hypot(run.player.x-activity.x,run.player.y-activity.y)<2.15){const p=isoPoint(activity.x,activity.y,67);roundedRect(p.x-31,p.y-6,62,12,5,"rgba(12,39,47,.9)");ctx.fillStyle=activity.role?"#f5c95e":"#dff4ef";ctx.textAlign="center";ctx.font="800 4.7px DM Mono";ctx.fillText(activity.label.toUpperCase(),p.x,p.y+1.5);}}
 
 function drawRoomShell(zone){
   drawSoftShadow(zone.width*.55,1.4,150,20,.2);drawBlock(0,0,zone.width,1,105,WORLD_MATERIALS.chalk,"#a7b5b0","#c7cdc8");
@@ -1194,7 +1205,6 @@ function drawPersonFigure(x,y,t,index,options={}){
   ctx.restore();
 }
 
-function drawStudent(s,t,i){drawPersonFigure(s[0],s[1],t,i,{color:s[2],phase:s[3],moving:s[4],facing:{x:s[5]||((i%5)===0?-1:1),y:0},pose:i%4===0?"chat":"idle"});}
 function drawGuestGroupAccessory(guest,t){const p=isoPoint(guest.x,guest.y,30),color=guest.color;ctx.save();ctx.translate(p.x,p.y);ctx.strokeStyle="#173743";ctx.fillStyle=color;ctx.lineWidth=1.5;
   if(guest.groupId==="surfer"){ctx.rotate(-.55);roundedRect(-3,-31,6,53,3,"#e8dfc8");ctx.fillStyle="#479fb5";ctx.fillRect(-2,-13,4,15);}
   else if(guest.groupId==="tourist"){roundedRect(-9,-24,18,11,3,"#173743");ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.arc(0,-18.5,4,0,Math.PI*2);ctx.fill();ctx.strokeRect(-5,-29,10,5);}
@@ -1322,6 +1332,8 @@ function drawServicePoint(id,loc){
   }
 }
 
+function drawIndoorServiceStatus(id,loc){const isStore=STORES.some(store=>store.id===id),level=isStore?(run.venues?.[id]||0):1,open=!isStore||storeIsOpen(run,id),broken=isStore&&assetIsClosed(run,"venue",id),products=isStore?CATALOGUE.filter(product=>product.storeId===id):[],stock=products.reduce((sum,product)=>sum+(run.stock?.[product.id]||0),0),p=isoPoint(loc.x,loc.y,8),accent=broken?"#ff8060":open?loc.color:"#95a19d";ctx.save();ctx.globalAlpha=.92;ctx.strokeStyle=accent;ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,30,11,0,0,Math.PI*2);ctx.stroke();ctx.fillStyle="rgba(255,255,255,.82)";ctx.beginPath();ctx.ellipse(p.x,p.y,24,8,0,0,Math.PI*2);ctx.fill();const badge=isoPoint(loc.x,loc.y,47);roundedRect(badge.x-30,badge.y-7,60,14,6,"#173743");ctx.fillStyle=accent;ctx.textAlign="center";ctx.font="900 5px DM Mono";ctx.fillText(isStore?(broken?"REPAIR":open?`${stock} STOCK · L${level}`:"CLOSED"):id==="supplier"?"ORDER DESK":"VENTURE HQ",badge.x,badge.y+2);ctx.restore();}
+
 function drawLocation(id) {
   const loc=locations[id], near=Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65;
   if(loc.kind==="door"){
@@ -1339,16 +1351,16 @@ function drawLocation(id) {
   }else if(id==="pavilion"){
     drawEventPavilion(loc);
   }else if(isStore){
-    ctx.save();if(locked)ctx.globalAlpha=.48;drawStorePod(id,loc,level,locked);ctx.restore();
+    if(activeZone().outdoor){ctx.save();if(locked)ctx.globalAlpha=.48;drawStorePod(id,loc,level,locked);ctx.restore();}else drawIndoorServiceStatus(id,loc);
   }else if(id==="supplier"||id==="board"){
-    drawServicePoint(id,loc);
+    activeZone().outdoor?drawServicePoint(id,loc):drawIndoorServiceStatus(id,loc);
   }else{
     drawBlock(loc.x-size/2,loc.y-size*.42,size,size*.84,48+Math.max(1,level)*8,"#f4ead4","#b7ad99","#cbc2ad");
     drawBlock(loc.x-size*.62,loc.y-size*.5,size*1.24,.32,64+Math.max(1,level)*9,venueColor,"#a64f43","#bf6152");
   }
   if(level>1)drawWindFlag(loc.x+.5,loc.y-.45,86+level*8,loc.color,lastTime,environmentalProfile());
   if(near){const q=isoPoint(loc.x,loc.y,3);ctx.strokeStyle="#ffd454";ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,55+Math.sin(lastTime*.004)*2,20,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
-  if(near){const tag=isoPoint(loc.x,loc.y,isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96),project=isStore?activeVenueProject(run,id):null,storeState=project?" · BUILDING":isStore&&!locked&&!storeIsOpen(run,id)?" · CLOSED":"";roundedRect(tag.x-50,tag.y-11,100,22,4,"rgba(10,37,46,.92)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level+storeState:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);}
+  if(near){const tagHeight=activeZone().outdoor?(isStore?108+Math.max(1,level)*7:id==="pavilion"?112:96):76,tag=isoPoint(loc.x,loc.y,tagHeight),project=isStore?activeVenueProject(run,id):null,storeState=project?" · BUILDING":isStore&&!locked&&!storeIsOpen(run,id)?" · CLOSED":"";roundedRect(tag.x-50,tag.y-11,100,22,4,"rgba(10,37,46,.92)");ctx.fillStyle=venueColor;ctx.beginPath();ctx.arc(tag.x-39,tag.y,3,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 7px DM Mono";ctx.fillText(`${loc.title}${isStore?locked?" · PLOT":" · LV "+level+storeState:id==="pavilion"&&!run.eventVenue?" · BUILD":""}`,tag.x+5,tag.y+3);}
 }
 
 function drawPlayer(t) {
@@ -1398,8 +1410,10 @@ function showSaleFeed(product,units){if(!product)return;const feed=$("#saleFeed"
 function updateProximity() {
   const near = zoneLocations().find(([,loc]) => Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65);
   $("#interactionHint").classList.toggle("hidden", !near);
-  if(near) $("#interactionName").textContent=near[1].label;
+  if(near) $("#interactionName").textContent=interactionDescription(near[0],near[1]);
 }
+
+function interactionDescription(id,loc){const store=STORES.find(item=>item.id===id);if(!store)return loc.label;const level=run.venues?.[id]||0;if(!level)return `${store.short} · construction plot`;if(assetIsClosed(run,"venue",id))return `${store.short} · repair required`;if(!storeIsOpen(run,id))return `${store.short} · currently closed`;const stock=CATALOGUE.filter(product=>product.storeId===id).reduce((sum,product)=>sum+(run.stock?.[product.id]||0),0);return `${store.short} · ${stock} stock · manage`;}
 
 function nearestLocation() { return zoneLocations().find(([,loc]) => Math.hypot(run.player.x-loc.x,run.player.y-loc.y)<1.65); }
 function interactWith(id){const loc=locations[id];if(loc.kind==="door")changeZone(loc.targetZone,loc.spawn);else openLocation(id);}
