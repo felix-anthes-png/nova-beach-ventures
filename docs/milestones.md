@@ -178,11 +178,19 @@ Moved venue status out of management-only screens and into the campus world. Ori
 
 The visuals are driven by live simulation state rather than a decorative loop. Service venues use availability boards while retail venues expose shelf stock. Coverage lives in `tests/venue-operational-states.test.mjs`.
 
+## 28. Business and service animations
+
+**Checkpoint:** `feature/business-service-animations`
+
+Gave eight expansion business categories their own operational motion and props. Bakeries prepare food, gyms exercise, padel courts host rallies, laundry drums rotate, restaurants serve tables, surf rentals move boards, parking receives vehicles, and conference centres present to delegates.
+
+The activity is driven by real capacity, operational condition, active guests, queues, and campaign time. Broken or depleted businesses become inactive instead of continuing a decorative loop. Coverage lives in `tests/business-service-animations.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 27:
+At the end of milestone 28:
 
-- 134 automated tests are defined, including venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 139 automated tests are defined, including business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

@@ -1,5 +1,17 @@
 # Changelog
 
+## Business and service animations — 2026-11
+
+- Added working ovens, pastry trays, preparation, and service to Gate Bakery.
+- Added treadmills, weights, and exercise activity to gym businesses.
+- Added booked padel players, ball movement, and rally animation.
+- Added rotating laundry machines, collection baskets, and attendant activity.
+- Added occupied restaurant tables, serving trays, and clearing movement.
+- Added visible surfboard removal and return activity.
+- Added occupied parking bays and moving arrival or departure vehicles.
+- Added conference presentations, seated delegates, and a live pointer.
+- Connected every animation to capacity, breakdown, guest, queue, and campaign-time state.
+
 ## Venue operational states — 2026-11
 
 - Added illuminated counters and physical open signs to operating venues.
