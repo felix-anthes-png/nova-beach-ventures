@@ -84,6 +84,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Business animation art polish | Unified miniature scale, stronger equipment depth, grounded shadows, and refined motion across district activities | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `fix/business-animation-art-polish` |
 | District operational art integration | Façade-integrated status lights, short restocking scenes, and queue equipment without floating world labels | [`specs/venue-operational-states.md`](specs/venue-operational-states.md) · `fix/district-operational-art-integration` |
 | Full-size campus bus | A solid scheduled bus with arrival, doors, passenger waves, departure, and grounded district foundations | [`specs/full-size-campus-bus.md`](specs/full-size-campus-bus.md) · `feature/full-size-campus-bus` |
+| World ground-contact pass | One shared height datum for district buildings, courts, paths, shelters, shadows, and temporary equipment | [`specs/world-ground-contact-pass.md`](specs/world-ground-contact-pass.md) · `fix/world-ground-contact-pass` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

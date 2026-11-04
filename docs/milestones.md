@@ -212,11 +212,21 @@ Enclosed expansion buildings now use a dedicated foundation plinth, stronger con
 
 Coverage lives in `tests/transit-bus-cycle.test.mjs`.
 
+## 32. World ground-contact pass
+
+**Checkpoint:** `fix/world-ground-contact-pass`
+
+Unified the vertical coordinate system used by all expansion districts. Owned parcels remain four pixels above the terrain, while foundations, building walls, paths, courts, transit facilities, canopies, columns, construction plots, and temporary operating equipment now begin from that shared surface instead of world height zero.
+
+This removes the camera-dependent floating effect without changing plot coordinates, collision footprints, business operations, or save data. Contact shadows now sit directly beneath their building footprints rather than being offset like detached objects.
+
+Coverage lives in `tests/world-ground-contact.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 31:
+At the end of milestone 32:
 
-- 143 automated tests are defined, including the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 146 automated tests are defined, including world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
