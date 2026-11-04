@@ -82,6 +82,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Venue operational states | Physical open, closed, stock, delivery, queue, repair, cleaning, and event-preparation feedback | [`specs/venue-operational-states.md`](specs/venue-operational-states.md) · `feature/venue-operational-states` |
 | Business service animations | Authored bakery, gym, padel, laundry, restaurant, surf, parking, and conference activity | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `feature/business-service-animations` |
 | Business animation art polish | Unified miniature scale, stronger equipment depth, grounded shadows, and refined motion across district activities | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `fix/business-animation-art-polish` |
+| District operational art integration | Façade-integrated status lights, short restocking scenes, and queue equipment without floating world labels | [`specs/venue-operational-states.md`](specs/venue-operational-states.md) · `fix/district-operational-art-integration` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

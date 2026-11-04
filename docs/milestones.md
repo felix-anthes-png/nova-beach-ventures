@@ -194,9 +194,17 @@ Reworked the eight service scenes so they share the architectural model’s scal
 
 The refinement does not change business simulation rules. Existing capacity, breakdown, queue, and guest-driven animation gates remain intact.
 
+## 30. District operational art integration
+
+**Checkpoint:** `fix/district-operational-art-integration`
+
+Removed the repeated interface-like graphics that visually overwhelmed expansion areas. District businesses now communicate status through small façade lamps, their authored equipment, brief retail delivery crates, and queue barriers only when guests are actually waiting.
+
+District stock purchases now persist their campaign minute, allowing restocking visuals to expire after 24 in-game minutes instead of remaining for the entire day. Original stores retain their more explicit frontage treatment; expansion venues no longer duplicate it.
+
 ## Verification baseline
 
-At the end of milestone 29:
+At the end of milestone 30:
 
 - 139 automated tests are defined, including business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.

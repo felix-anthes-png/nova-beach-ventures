@@ -1,5 +1,14 @@
 # Changelog
 
+## District operational art integration — 2026-11
+
+- Removed repeated floating `OPEN` and `BOOK` panels from expansion businesses.
+- Removed generic freestanding stock shelves and oversized restocking workers from district venues.
+- Replaced them with small façade status lamps and context-specific operational equipment.
+- Limited district restocking to two compact crates at relevant retail businesses for 24 in-game minutes.
+- Limited district queue barriers to venues with a real visible queue.
+- Added delivery-minute persistence so operational graphics disappear at the correct time.
+
 ## Business animation art polish — 2026-11
 
 - Rebuilt all eight business scenes around a consistent miniature character scale.

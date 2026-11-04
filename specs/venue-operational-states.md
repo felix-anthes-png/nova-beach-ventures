@@ -14,7 +14,9 @@ Make shop and venue conditions readable from the campus itself, without opening 
 - Breakdowns close the frontage with cones, barrier tape, a warning lamp, and inactive equipment.
 - Cleaning issues lose visible litter as work progresses and show a caretaker, broom, cone, and cleaning sparkle.
 - Scheduled DJ events add bunting, equipment cases, and a setup board before opening.
-- Service venues such as gyms and courts use availability boards instead of retail shelves.
+- Bookable services use equipment and compact status lighting instead of retail shelves.
+
+Expansion businesses integrate status into their architecture rather than repeating the original-store interface. They use small façade lamps, context-specific equipment, temporary delivery crates, and queue hardware only when a real queue exists. Floating `OPEN`, `BOOK`, stock shelf, and generic restocking-worker overlays are not used for district businesses.
 
 ## Acceptance checks
 
