@@ -28,3 +28,15 @@ test("Beachfront plots clear the legacy bar, surf shop and relocated pavilion",(
   for(const plot of layouts.east.plots.map(rect))for(const venue of legacy)assert.equal(overlaps(plot,venue),false,"Beachfront business overlaps a legacy venue");
   assert.match(source,/pavilion: \{ zone:"campus", x:42\.5, y:21\.6/);
 });
+
+test("commercial venues expose recognisable purpose-built details",()=>{
+  for(const id of ["village-market","village-laundry","village-gym","beach-surf","beach-seafood","innovation-incubator","innovation-conference","sports-fitness","sports-recovery","transit-bakery","transit-info"])assert.match(source,new RegExp(`business\\.id===\\"${id}\\"`));
+  for(const renderer of ["drawDistrictRoofMark","drawDistrictVenueDetails"])assert.match(source,new RegExp(`function ${renderer}`));
+});
+
+test("signature venues use distinct architectural masses",()=>{
+  assert.match(source,/business\.id==="beach-bar"[\s\S]*?drawCanopy/);
+  assert.match(source,/business\.id==="innovation-incubator"[\s\S]*?drawBlock/);
+  assert.match(source,/business\.id==="innovation-conference"[\s\S]*?drawBlock/);
+  assert.match(source,/business\.id==="transit-bike"[\s\S]*?drawCanopy/);
+});
