@@ -457,11 +457,15 @@ function drawWorld(t) {
   if(zone.outdoor)drawCoastalMotion(t,environment);
   if(zone.outdoor)drawCampusGroundPlan(t);
   const worldActors=zone.outdoor?[
-    {depth:18.1,draw:()=>drawLibrary()},
+    {depth:19.05,draw:()=>drawLibrary()},
     {depth:24.7,draw:()=>drawMercadoExterior()},
-    {depth:38.9,draw:()=>drawCampus(t)},
+    {depth:30.25,draw:()=>drawCampusWestWing(t)},
+    {depth:29.9,draw:()=>drawCampusBridgeAndIdentity()},
+    {depth:32.75,draw:()=>drawCampusCentreWing(t)},
+    {depth:38.95,draw:()=>drawCampusEastWing(t)},
     {depth:50.45,draw:()=>drawStudentHub()},
     {depth:46.98,draw:()=>drawBeachStage(t)},
+    ...architecturalForegroundActors(),
     ...(run.facilities||[]).filter(facility=>pendingBuild?.sourceId!==facility.id).map((facility,i)=>({depth:facility.x+facility.y,draw:()=>drawPlacedFacility(facility,t,i)})),
     ...(pendingBuild&&buildCursor?[{depth:buildCursor.x+buildCursor.y+.02,draw:()=>drawBuildGhost(t)}]:[]),
     ...campusTrees.map((tree,i)=>({depth:tree[0]+tree[1],draw:()=>drawTree(tree[0],tree[1],tree[2],t+i*170,environment)})),
@@ -684,36 +688,51 @@ function drawCanopy(x,y,w,h,z=31){
   const posts=[[x+.2,y+.2],[x+w-.2,y+.2],[x+.2,y+h-.2],[x+w-.2,y+h-.2]];ctx.strokeStyle="#31545b";ctx.lineWidth=2;posts.forEach(([px,py])=>{const a=isoPoint(px,py,0),b=isoPoint(px,py,z);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();});
 }
 
-function drawCampus(t) {
+function drawCampusWestWing(t) {
   drawCampusWing(12.2,3.1,6.2,5.7,90,{glass:"#245761",roofGarden:true,slats:true});
+  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(13.25,3.6,112,"#ed7458",t,environment,.86);
+}
+
+function drawCampusCentreWing(t) {
   drawCampusWing(18.2,3.55,5.8,5.15,70,{glass:"#2b6670",accent:"#f2c85f"});
+  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(24.8,3.5,133,"#f5c95e",t+180,environment,.86);
+}
+
+function drawCampusEastWing(t) {
   drawCampusWing(23.8,3.05,6.3,5.75,111,{glass:"#214e5b",slats:true,roofGarden:true,accent:"#ed7458"});
-  drawCanopy(12,8.25,18.3,1.15,31);drawColumnLine(12.3,9.36,17.7,11,30,"x");
-  drawLinearPlanter(13.1,8.95,4.2,.62,13);drawLinearPlanter(24.6,8.95,4.35,.62,13);
+  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(29.1,4.15,119,"#64cbc8",t+340,environment,.86);
+}
+
+function drawCampusBridgeAndIdentity() {
   const bridgeA=isoPoint(17.8,5.6,60),bridgeB=isoPoint(24.25,5.6,60);ctx.strokeStyle="#e8e8e2";ctx.lineWidth=14;ctx.beginPath();ctx.moveTo(bridgeA.x,bridgeA.y);ctx.lineTo(bridgeB.x,bridgeB.y);ctx.stroke();ctx.strokeStyle="#315c65";ctx.lineWidth=8;ctx.stroke();
-  const environment=environmentalProfile(run.clockMinutes,run.currentDay,t);drawWindFlag(13.25,3.6,112,"#ed7458",t,environment,.86);drawWindFlag(24.8,3.5,133,"#f5c95e",t+180,environment,.86);drawWindFlag(29.1,4.15,119,"#64cbc8",t+340,environment,.86);
   drawWorldLabel(21.2,8.55,127,"NOVA COAST CAMPUS","#f5c95e");
 }
 
 function drawLibrary(){
   drawCampusWing(2.2,3.25,8.4,5.15,73,{glass:"#285d67",slats:true,roofGarden:true,accent:"#64cbc8"});
-  drawCanopy(9.8,6.75,3.1,1.2,28);drawColumnLine(2.55,8.42,7.7,7,27,"x");
-  drawLinearPlanter(3.05,8.58,2.55,.55,12);
   drawWorldLabel(6.4,8.05,88,"LEARNING CENTER","#64cbc8");
 }
 
 function drawMercadoExterior(){
   drawCampusWing(3.15,8.85,8.25,4.45,58,{glass:"#2b555b",slats:true,accent:"#f5c95e"});
-  drawCanopy(10.75,10.4,2.1,1.4,26);drawColumnLine(3.45,13.27,7.55,6,25,"x");
-  drawLinearPlanter(4.05,13.36,2.35,.52,11);
   drawWorldLabel(7.3,13.15,74,"MERCADO SUPPLY","#f5c95e");
 }
 
 function drawStudentHub(){
   drawCampusWing(30.05,5.05,9.2,6.15,84,{glass:"#225762",roofGarden:true,accent:"#ff7458",slats:true});
-  drawCanopy(29.25,8.15,2.2,1.25,29);drawColumnLine(30.35,11.17,8.45,8,28,"x");
-  drawLinearPlanter(31.05,11.35,3.15,.58,12);drawLinearPlanter(36.15,11.35,2.15,.58,12);
   drawWorldLabel(34.65,10.95,100,"STUDENT HUB","#ff7458");
+}
+
+function architecturalForegroundActors(){
+  const actors=[];
+  const addCanopy=(x,y,w,h,z,maxSlice=3)=>{const slices=Math.max(1,Math.ceil(w/maxSlice)),slice=w/slices;for(let index=0;index<slices;index++){const sx=x+index*slice;actors.push({depth:sx+slice+y+h+.015,draw:()=>drawCanopy(sx,y,slice,h,z)});}};
+  const addColumns=(x,y,length,count,z,axis="x",color="#244b54")=>{for(let index=0;index<count;index++){const amount=count===1?.5:index/(count-1),px=x+(axis==="x"?length*amount:0),py=y+(axis==="y"?length*amount:0);actors.push({depth:px+py+.02,draw:()=>drawColumnLine(px,py,0,1,z,axis,color)});}};
+  const addPlanter=(x,y,w,h,z,maxSlice=1.15)=>{const slices=Math.max(1,Math.ceil(w/maxSlice)),slice=w/slices;for(let index=0;index<slices;index++){const sx=x+index*slice;actors.push({depth:sx+slice+y+h+.025,draw:()=>drawLinearPlanter(sx,y,slice,h,z)});}};
+  addCanopy(12,8.25,18.3,1.15,31,3.05);addColumns(12.3,9.36,17.7,11,30);addPlanter(13.1,8.95,4.2,.62,13);addPlanter(24.6,8.95,4.35,.62,13);
+  addCanopy(9.8,6.75,3.1,1.2,28,1.55);addColumns(2.55,8.42,7.7,7,27);addPlanter(3.05,8.58,2.55,.55,12);
+  addCanopy(10.75,10.4,2.1,1.4,26,1.05);addColumns(3.45,13.27,7.55,6,25);addPlanter(4.05,13.36,2.35,.52,11);
+  addCanopy(29.25,8.15,2.2,1.25,29,1.1);addColumns(30.35,11.17,8.45,8,28);addPlanter(31.05,11.35,3.15,.58,12);addPlanter(36.15,11.35,2.15,.58,12);
+  return actors;
 }
 
 function drawBeachStage(t){

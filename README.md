@@ -74,6 +74,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Environmental motion | Time-aware ocean, sky, vegetation, flags, fountains, and atmospheric haze | [`specs/environmental-motion.md`](specs/environmental-motion.md) · `feature/environmental-motion` |
 | Showcase editor | Separate level-ten presentation sandbox with the complete purchasable catalogue | [`specs/showcase-editor.md`](specs/showcase-editor.md) · `feature/showcase-editor` |
 | Larger district progression | Five map expansions, 25 businesses, district economies, and four unlockable guest cohorts | [`specs/larger-district-progression.md`](specs/larger-district-progression.md) · `feature/larger-district-progression` |
+| World object depth correction | Local depth layers for wide buildings, canopies, columns, and planters | [`specs/world-object-depth.md`](specs/world-object-depth.md) · `fix/world-object-depth` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

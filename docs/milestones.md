@@ -134,11 +134,17 @@ Expanded the original campus into six operating environments. Land purchases now
 
 The portfolio contains 25 separately purchasable businesses. They create daily income and upkeep, add visitor appeal, can break down, become physical guest destinations, and unlock residents, founders, athletes, and commuters. Beachfront performance also responds to deterministic coastal weather. Coverage lives in `tests/district-progression.test.mjs`.
 
+## 22. World object depth correction
+
+**Checkpoint:** `fix/world-object-depth`
+
+Corrected the painter ordering that made long façade objects appear to float over characters. The academic complex now renders as separate wings, while canopies, columns, and planter sections are sorted at their local map position. Characters can therefore pass naturally behind or in front of each architectural section. Coverage lives in `tests/world-depth-layers.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 21:
+At the end of milestone 22:
 
-- 106 automated tests pass, including district progression, campus calendar and guest groups, world physics, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 108 automated tests pass, including district progression, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
