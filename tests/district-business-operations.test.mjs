@@ -12,7 +12,7 @@ test("every district business has two configurable offers",()=>{
 
 test("stock and bookable capacity must be purchased atomically",()=>{
   const run=operatingRun(),offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id==="transit-bakery-croissant"),beforeStock=run.districtOperations[offer.businessId].stock[offer.id],next=buyDistrictOfferStock(run,offer.id,6);
-  assert.equal(next.cash,run.cash-offer.cost*6);assert.equal(next.districtOperations[offer.businessId].stock[offer.id],beforeStock+6);assert.throws(()=>buyDistrictOfferStock(run,offer.id,0));assert.throws(()=>buyDistrictOfferStock({...run,cash:offer.cost-1},offer.id,1));assert.equal(run.cash,100000);
+  assert.equal(next.cash,run.cash-offer.cost*6);assert.equal(next.districtOperations[offer.businessId].stock[offer.id],beforeStock+6);assert.equal(next.districtBusinessHistory.at(-1).minute,run.clockMinutes);assert.throws(()=>buyDistrictOfferStock(run,offer.id,0));assert.throws(()=>buyDistrictOfferStock({...run,cash:offer.cost-1},offer.id,1));assert.equal(run.cash,100000);
 });
 
 test("district offer demand follows price boundaries and need timing",()=>{

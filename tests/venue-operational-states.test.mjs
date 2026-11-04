@@ -43,5 +43,7 @@ test("scheduled deck events enter preparation during the prior campaign day",()=
 test("the world renderer contains every physical operating-state treatment",async()=>{
   const app=await readFile(new URL("../dist/app.js",import.meta.url),"utf8");
   for(const renderer of ["drawOpenCounterGlow","drawStockShelf","drawRestockBoxes","drawQueueBarriers","drawRepairClosure","drawCleaningSignal","drawEventPreparationDecor"])assert.match(app,new RegExp(`function ${renderer}\\(`));
+  for(const renderer of ["drawDistrictStatusLamp","drawDistrictRestockCrates","drawDistrictOperationalDetails"])assert.match(app,new RegExp(`function ${renderer}\\(`));
+  assert.doesNotMatch(app,/drawVenueOperationalState\(x,y,w,districtOperationalVisualState/);
   assert.match(app,/CLEANING IN PROGRESS/);
 });

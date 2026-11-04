@@ -656,7 +656,7 @@ export function districtBusinessForecast(run,businessId){
 }
 
 export function buyDistrictOfferStock(run,offerId,quantity,now=new Date().toISOString()){
-  const offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id===offerId);if(!offer)throw new Error("Unknown district offer.");if(!Number.isInteger(quantity)||quantity<=0)throw new Error("Quantity must be a positive whole number.");if(!run.districtBusinesses?.[offer.businessId])throw new Error("Open this business first.");const total=offer.cost*quantity;if(run.cash<total)throw new Error(`You need ${formatEuro(total)} for this order.`);const next=structuredClone(run);ensureDistrictOperations(next,offer.businessId);next.cash-=total;next.districtOperations[offer.businessId].stock[offer.id]+=quantity;next.districtBusinessHistory.push({at:now,day:run.currentDay,businessId:offer.businessId,offerId,cost:total,quantity,type:"stock"});return next;
+  const offer=DISTRICT_BUSINESS_OFFERS.find(item=>item.id===offerId);if(!offer)throw new Error("Unknown district offer.");if(!Number.isInteger(quantity)||quantity<=0)throw new Error("Quantity must be a positive whole number.");if(!run.districtBusinesses?.[offer.businessId])throw new Error("Open this business first.");const total=offer.cost*quantity;if(run.cash<total)throw new Error(`You need ${formatEuro(total)} for this order.`);const next=structuredClone(run);ensureDistrictOperations(next,offer.businessId);next.cash-=total;next.districtOperations[offer.businessId].stock[offer.id]+=quantity;next.districtBusinessHistory.push({at:now,day:run.currentDay,minute:run.clockMinutes,businessId:offer.businessId,offerId,cost:total,quantity,type:"stock"});return next;
 }
 
 export function setDistrictOfferPrice(run,offerId,price,now=new Date().toISOString()){
