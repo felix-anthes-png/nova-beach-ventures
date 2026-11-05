@@ -30,13 +30,19 @@ test("specialist beach arrivals are limited deterministic exceptions",()=>{
 });
 
 test("east and west routes cross the shared pedestrian spine in the correct direction",()=>{
-  const westbound=campusSpineWaypoints({x:87.2,y:14.4},{x:20.1,y:12.75});
-  const eastbound=campusSpineWaypoints({x:7.4,y:15.35},{x:77,y:20});
-  assert.equal(westbound[0].x,87);
-  assert.equal(westbound.at(-1).x,39.5);
-  assert.equal(eastbound[0].x,39.5);
-  assert.equal(eastbound.at(-1).x,69);
+  const westbound=campusSpineWaypoints({x:48,y:11},{x:20.1,y:12.75});
+  const eastbound=campusSpineWaypoints({x:7.4,y:15.35},{x:48,y:11});
+  assert.equal(westbound[0].x,40.2);
+  assert.equal(westbound.at(-1).x,35.5);
+  assert.equal(eastbound[0].x,35.5);
+  assert.equal(eastbound.at(-1).x,40.2);
   assert.deepEqual(campusSpineWaypoints({x:20,y:12},{x:35,y:20}),[]);
+});
+
+test("west, south and southeast districts connect through the central campus",()=>{
+  assert.deepEqual(campusSpineWaypoints({x:-13,y:13},{x:20,y:12}).map(point=>point.x),[-1,7.4]);
+  assert.deepEqual(campusSpineWaypoints({x:20,y:12},{x:24,y:30}).map(point=>point.y),[21.35,23.7,24.9]);
+  assert.deepEqual(campusSpineWaypoints({x:49,y:29},{x:20,y:12}).map(point=>point.x),[40.2,35.5]);
 });
 
 test("mature campuses can render a larger but bounded crowd",()=>{

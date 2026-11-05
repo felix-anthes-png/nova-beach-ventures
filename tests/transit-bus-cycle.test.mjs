@@ -17,7 +17,7 @@ test("the bus opens its doors and releases a substantial passenger group",()=>{
 
 test("vehicle position reaches the real stop before departing",()=>{
   const arriving=transitBusPosition(transitBusCycle(486)),stopped=transitBusPosition(transitBusCycle(498)),departing=transitBusPosition(transitBusCycle(520));
-  assert.ok(arriving.x>stopped.x);assert.equal(stopped.x,83.1);assert.ok(departing.x>stopped.x);assert.equal(stopped.y,8.55);
+  assert.ok(arriving.x<stopped.x);assert.equal(stopped.x,-7.8);assert.ok(departing.x<stopped.x);assert.equal(stopped.y,10.05);
 });
 
 test("the world renders a full-size solid bus and grounded district foundations",async()=>{

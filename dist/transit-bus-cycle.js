@@ -6,7 +6,7 @@ export function transitBusCycle(clockMinutes,{cycleMinutes=120,arrivalMinutes=12
   return {phase:"away",visible:false,doorsOpen:false,routeProgress:0,passengerProgress:0,passengers:0};
 }
 
-export function transitBusPosition(state,{startX=89.2,stopX=83.1,y=8.55}={}){
+export function transitBusPosition(state,{startX=-23.2,stopX=-7.8,y=10.05}={}){
   const x=state.phase==="arriving"?startX-(startX-stopX)*state.routeProgress:state.phase==="departing"?startX-(startX-stopX)*state.routeProgress:stopX;
   return {x,y};
 }

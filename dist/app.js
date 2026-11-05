@@ -15,7 +15,7 @@ const modal = $("#modal");
 const modalCard = $("#modalCard");
 const keys = new Set();
 const ZONES = {
-  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:90, height:30, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:23, outdoor:true, spawn:{x:21,y:18} },
+  campus: { id:"campus", name:"Nova Coast Campus", sub:"CARCAVELOS OVERWORLD", width:40, height:18.2, minX:1, maxX:41, minY:7.5, maxY:25.7, shore:32, outdoor:true, spawn:{x:21,y:18} },
   mercado: { id:"mercado", name:"Mercado Supply Hall", sub:"LOGISTICS INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d8c79f", accent:"#f5c95e" },
   academy: { id:"academy", name:"Academic Wing", sub:"COURTYARD INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#d7dad3", accent:"#ff7b5b" },
   hub: { id:"hub", name:"Student Hub", sub:"VENTURE INTERIOR", width:15, height:12, minX:1.2, maxX:13.8, minY:1.2, maxY:10.3, outdoor:false, spawn:{x:7.5,y:8.8}, floor:"#cddbd5", accent:"#64cbc8" }
@@ -94,9 +94,9 @@ const RESERVED_BUILD_AREAS = [
   {kind:"rect",x:13.2,y:9.25,w:14.6,h:5.2,label:"Academic Courtyard"},
   {kind:"rect",x:2.2,y:17.1,w:12.2,h:2.25,label:"Service lane"},
   {kind:"circle",x:20.5,y:22.35,r:3.25,label:"Sunset Forum"},
-  {kind:"rect",x:43.3,y:18.7,w:5.8,h:4.2,label:"Beach Bar plot"},
-  {kind:"rect",x:50.2,y:13.6,w:5.4,h:4.8,label:"Surf Shack plot"},
-  {kind:"circle",x:42.5,y:21.6,r:2.2,label:"Coastline Pavilion"}
+  {kind:"rect",x:12.3,y:29.6,w:3,h:2,label:"Beach Bar plot"},
+  {kind:"rect",x:33.15,y:27.5,w:3,h:2,label:"Surf Shack plot"},
+  {kind:"circle",x:34.2,y:31.8,r:2.2,label:"Coastline Pavilion"}
 ];
 
 const locations = {
@@ -104,14 +104,14 @@ const locations = {
   academyDoor: { zone:"campus", x:20, y:12.2, kind:"door", label:"Enter the Academic Wing", targetZone:"academy", color:"#ff7b5b", title:"ACADEMIC WING", sub:"ENTER" },
   hubDoor: { zone:"campus", x:34.5, y:14.2, kind:"door", label:"Enter the Student Hub", targetZone:"hub", color:"#64cbc8", title:"STUDENT HUB", sub:"ENTER" },
   snack: { zone:"campus", x:28, y:21.5, label:"Manage Beach Fuel Bar", panel:()=>openStore("snack"), color:"#afd864", title:"BEACH FUEL", sub:"BOARDWALK" },
-  villageGate: { zone:"campus", x:40.2, y:12.2, label:"Review Student Village expansion", panel:()=>openDistrictPanel("village"), color:"#d58b68", title:"STUDENT VILLAGE", sub:"LAND" },
-  eastGate: { zone:"campus", x:40.2, y:19.2, label:"Review Beachfront expansion", panel:()=>openDistrictPanel("east"), color:"#f2b94b", title:"BEACHFRONT", sub:"LAND" },
-  beach: { zone:"campus", x:45.9, y:20.6, label:"Manage Maré Beach Bar", panel:()=>openStore("beach"), color:"#f2b94b", title:"MARÉ BEACH BAR", sub:"EAST PROMENADE" },
-  pavilion: { zone:"campus", x:42.5, y:21.6, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"BEACH EVENT LAWN" },
-  surf: { zone:"campus", x:53.1, y:16.1, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
-  innovationGate: { zone:"campus", x:53.6, y:10.5, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"LAND" },
-  sportsGate: { zone:"campus", x:61, y:19.1, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"LAND" },
-  transitGate: { zone:"campus", x:69.6, y:11.6, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"LAND" },
+  villageGate: { zone:"campus", x:1.2, y:8.4, label:"Review Student Village expansion", panel:()=>openDistrictPanel("village"), color:"#d58b68", title:"STUDENT VILLAGE", sub:"NORTHWEST LAND" },
+  eastGate: { zone:"campus", x:20.5, y:24.9, label:"Review Beachfront expansion", panel:()=>openDistrictPanel("east"), color:"#f2b94b", title:"BEACHFRONT", sub:"SOUTH LAND" },
+  beach: { zone:"campus", x:13.8, y:30.4, label:"Manage Maré Beach Bar", panel:()=>openStore("beach"), color:"#f2b94b", title:"MARÉ BEACH BAR", sub:"SOUTH PROMENADE" },
+  pavilion: { zone:"campus", x:34.2, y:31.8, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"BEACH EVENT LAWN" },
+  surf: { zone:"campus", x:34.65, y:28.2, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
+  innovationGate: { zone:"campus", x:40.2, y:12.2, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"EAST LAND" },
+  sportsGate: { zone:"campus", x:40.2, y:23.8, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"SOUTHEAST LAND" },
+  transitGate: { zone:"campus", x:1.1, y:14.2, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"WEST LAND" },
   supplier: { zone:"mercado", x:7.5, y:4.2, label:"Open wholesale inventory", panel:()=>openSupplier(currentSupplierStore), color:"#f5c95e", title:"SUPPLY DESK", sub:"WHOLESALE" },
   marketExit: { zone:"mercado", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:7,y:16.8}, color:"#f5c95e", title:"CAMPUS", sub:"EXIT" },
   cafe: { zone:"academy", x:7.25, y:3.72, label:"Manage Atlantic Café", panel:()=>openStore("cafe"), color:"#ff7b5b", title:"ATLANTIC CAFÉ", sub:"SERVICE COUNTER" },
@@ -124,7 +124,7 @@ const locations = {
 const locationAvailable=id=>!(["beach","pavilion","surf"].includes(id)&&!run.districts?.east)&&!(id==="innovationGate"&&!run.districts?.village)&&!(id==="sportsGate"&&!run.districts?.east)&&!(id==="transitGate"&&!run.districts?.innovation);
 const zoneLocations = () => Object.entries(locations).filter(([id,location]) => location.zone === currentZone&&locationAvailable(id));
 const activeZone = () => ZONES[currentZone];
-function syncCampusBounds(){ZONES.campus.maxX=run.districts?.transit?89:run.districts?.sports?79:run.districts?.innovation?69:run.districts?.east?60:run.districts?.village?53:41;}
+function syncCampusBounds(){const zone=ZONES.campus;zone.minX=run.districts?.transit?-23.5:run.districts?.village?-14.5:1;zone.maxX=run.districts?.sports?59.5:run.districts?.innovation?57:41;zone.minY=run.districts?.village?0:7.5;zone.maxY=run.districts?.east||run.districts?.sports?34.8:25.7;zone.width=zone.maxX-zone.minX;zone.height=zone.maxY-zone.minY;}
 
 function facilityCollider(facility){
   if(facility.type==="path")return null;const size=facilityFootprint(facility.type,facility.rotation||0),padding=facility.type==="bench"?.04:.1;
@@ -153,7 +153,7 @@ function campusColliders(){
   for(const [id,[halfW,halfH]] of Object.entries(storeFootprints)){if((run.venues?.[id]||0)>0){const loc=locations[id];fixed.push(rectCollider(`store-${id}`,loc.x-halfW,loc.y-halfH,halfW*2,halfH*2,{label:STORES.find(store=>store.id===id)?.name||"Store",kind:"store"}));}}
   for(const district of DISTRICT_CATALOGUE){const layout=DISTRICT_WORLD_LAYOUTS[district.id];if(!layout)continue;DISTRICT_BUSINESSES.filter(business=>business.districtId===district.id&&run.districtBusinesses?.[business.id]).forEach((business,index)=>{const plot=layout.plots[index];if(plot){const width=plot[2]||1.6,height=plot[3]||1.1;fixed.push(rectCollider(`business-${business.id}`,plot[0]-width/2,plot[1]-height/2,width,height,{label:business.name,kind:"district-business"}));}});}
   if(run.districts?.transit&&run.districtBusinesses?.["transit-bus"]){const busState=transitBusCycle(run.clockMinutes);if(busState.visible){const bus=transitBusPosition(busState);fixed.push(rectCollider("campus-bus",bus.x-2.35,bus.y-.61,4.7,1.22,{label:"Nova campus bus",kind:"vehicle"}));}}
-  if(run.eventVenue)fixed.push(rectCollider("coastline-pavilion",40.85,20.65,3.3,1.9,{label:"Coastline Pavilion",kind:"venue"}));
+  if(run.eventVenue)fixed.push(rectCollider("coastline-pavilion",32.55,30.85,3.3,1.9,{label:"Coastline Pavilion",kind:"venue"}));
   return [...fixed,...(run.facilities||[]).map(facilityCollider).filter(Boolean)];
 }
 
@@ -345,14 +345,14 @@ function drawSkyMotion(t,environment,w,h){
 function drawCoastalMotion(t,environment){
   ctx.save();ctx.lineCap="round";
   for(let band=0;band<5;band++){
-    const y=25.55+band*.78,amplitude=2.2+band*.7+environment.sea*2,alpha=.18+band*.07;ctx.strokeStyle=`rgba(229,251,247,${alpha})`;ctx.lineWidth=1.2+band*.3;ctx.beginPath();
-    for(let x=-1;x<=58;x+=.35){const phase=x*.55-(reducedMotion?0:t*.0011*(.65+environment.sea))+band*.9,p=isoPoint(x,y+Math.sin(phase)*.075*environment.sea,5+Math.sin(phase)*amplitude);if(x===-1)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
+    const y=34.55+band*.78,amplitude=2.2+band*.7+environment.sea*2,alpha=.18+band*.07;ctx.strokeStyle=`rgba(229,251,247,${alpha})`;ctx.lineWidth=1.2+band*.3;ctx.beginPath();
+    for(let x=-24;x<=60;x+=.35){const phase=x*.55-(reducedMotion?0:t*.0011*(.65+environment.sea))+band*.9,p=isoPoint(x,y+Math.sin(phase)*.075*environment.sea,5+Math.sin(phase)*amplitude);if(x===-24)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
   }
   for(let ribbon=0;ribbon<3;ribbon++){
     ctx.strokeStyle=`rgba(255,255,245,${.34-ribbon*.07})`;ctx.lineWidth=2.4-ribbon*.35;ctx.beginPath();
-    for(let x=0;x<=58;x+=.3){const phase=x*.48-(reducedMotion?0:t*.0015*(.8+environment.sea))+ribbon*1.7,p=isoPoint(x,25.1+ribbon*.16+Math.sin(phase)*.09,7);if(x===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
+    for(let x=-24;x<=60;x+=.3){const phase=x*.48-(reducedMotion?0:t*.0015*(.8+environment.sea))+ribbon*1.7,p=isoPoint(x,34.1+ribbon*.16+Math.sin(phase)*.09,7);if(x===-24)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);}ctx.stroke();
   }
-  for(let i=0;i<11;i++){const progress=reducedMotion?i/11:((t*.000035*(.8+environment.wind)+i/11)%1),p=isoPoint(2+i*5.1,25.25+progress*3.9,8);ctx.fillStyle=`rgba(240,255,250,${.3*(1-progress)})`;ctx.beginPath();ctx.ellipse(p.x,p.y,7+progress*5,1.4,0,0,Math.PI*2);ctx.fill();}
+  for(let i=0;i<14;i++){const progress=reducedMotion?i/14:((t*.000035*(.8+environment.wind)+i/14)%1),p=isoPoint(-20+i*5.8,34.25+progress*3.9,8);ctx.fillStyle=`rgba(240,255,250,${.3*(1-progress)})`;ctx.beginPath();ctx.ellipse(p.x,p.y,7+progress*5,1.4,0,0,Math.PI*2);ctx.fill();}
   ctx.restore();
 }
 
@@ -396,8 +396,9 @@ function canvasWorldPoint(event){const rect=canvas.getBoundingClientRect(),cp=is
 function validateBuildPoint(x,y,build=pendingBuild){
   if(!build||currentZone!=="campus")return {valid:false,reason:"Return to the outdoor campus"};
   const footprint=footprintRect(build.type,x,y,build.rotation||0),zone=ZONES.campus;
-  if(footprint.x<zone.minX||footprint.x+footprint.w>zone.maxX||footprint.y<zone.minY||footprint.y+footprint.h>22.5)return {valid:false,reason:"Outside the construction boundary"};
+  if(footprint.x<zone.minX||footprint.x+footprint.w>zone.maxX||footprint.y<zone.minY||footprint.y+footprint.h>zone.maxY-.35)return {valid:false,reason:"Outside the construction boundary"};
   for(const area of RESERVED_BUILD_AREAS){if(area.kind==="rect"&&rectsOverlap(footprint,area,0))return {valid:false,reason:`Reserved: ${area.label}`};if(area.kind==="circle"&&rectTouchesCircle(footprint,area,.1))return {valid:false,reason:`Reserved: ${area.label}`};}
+  for(const district of DISTRICT_CATALOGUE.filter(item=>run.districts?.[item.id])){const layout=DISTRICT_WORLD_LAYOUTS[district.id];for(const plot of layout?.plots||[]){const reserved={x:plot[0]-plot[2]/2-.2,y:plot[1]-plot[3]/2-.2,w:plot[2]+.4,h:plot[3]+.4};if(rectsOverlap(footprint,reserved,0))return {valid:false,reason:`Reserved: ${district.name} business plot`};}}
   for(const facility of run.facilities||[]){if(build.sourceId===facility.id)continue;const occupied=footprintRect(facility.type,facility.x,facility.y,facility.rotation||0);if(rectsOverlap(footprint,occupied,.1))return {valid:false,reason:`Blocked by ${facility.name}`};}
   for(const tree of campusTrees){if(rectTouchesCircle(footprint,{x:tree[0],y:tree[1],r:.55*tree[2]},.05))return {valid:false,reason:"A palm occupies this tile"};}
   if(build.type!=="path")for(const location of Object.values(locations).filter(item=>item.zone==="campus")){if(rectTouchesCircle(footprint,{x:location.x,y:location.y,r:location.kind==="door"?1.15:1.35},.05))return {valid:false,reason:`Keep access clear: ${location.title}`};}
@@ -428,14 +429,14 @@ function overlayDistrict(x,y,w,h,color,alpha=.16){
   const points=[isoPoint(x,y,10),isoPoint(x+w,y,10),isoPoint(x+w,y+h,10),isoPoint(x,y+h,10)];ctx.save();ctx.fillStyle=color;ctx.globalAlpha=alpha;ctx.beginPath();points.forEach((point,index)=>index?ctx.lineTo(point.x,point.y):ctx.moveTo(point.x,point.y));ctx.closePath();ctx.fill();ctx.globalAlpha=.72;ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([8,6]);ctx.stroke();ctx.restore();
 }
 
-function storeOverlayPoint(storeId){return {cafe:{x:20,y:12.9},snack:{x:28,y:21.4},merch:{x:34.5,y:14.8},beach:{x:45.9,y:20.5},surf:{x:53.1,y:16.1}}[storeId];}
+function storeOverlayPoint(storeId){return {cafe:{x:20,y:12.9},snack:{x:28,y:21.4},merch:{x:34.5,y:14.8},beach:{x:13.8,y:30.4},surf:{x:34.65,y:28.2}}[storeId];}
 
 function operationsIssuePoint(issue){
   if(Number.isFinite(issue.x)&&Number.isFinite(issue.y))return issue;
   if(issue.targetKind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===issue.targetId);if(facility)return facility;}
   if(issue.targetKind==="store")return storeOverlayPoint(issue.targetId);
   if(issue.targetId==="pavilion")return locations.pavilion;
-  return {village:{x:45,y:11},east:{x:48,y:20},innovation:{x:57,y:11},sports:{x:64,y:20},transit:{x:73,y:11},pier:{x:53,y:17}}[issue.districtId]||{x:24,y:17};
+  return {village:{x:-7,y:4},east:{x:24,y:30},innovation:{x:48,y:11},sports:{x:49,y:29},transit:{x:-13,y:13},pier:{x:34,y:28}}[issue.districtId]||{x:24,y:17};
 }
 
 function drawManagementOverlay(t){
@@ -503,18 +504,19 @@ function drawWorld(t) {
 
 function drawTerrain(t) {
   const zone=activeZone(),tiles=[],center=isoPoint(camera.x,camera.y),viewX=canvas.clientWidth/(2*camera.zoom)+TILE_W*2,viewY=canvas.clientHeight/(2*camera.zoom)+TILE_H*3;
-  for(let y=0;y<zone.height;y++)for(let x=0;x<zone.width;x++){const point=isoPoint(x,y);if(Math.abs(point.x-center.x)<=viewX&&Math.abs(point.y-center.y)<=viewY)tiles.push({x,y,d:x+y});}
+  const minX=zone.outdoor?Math.floor(zone.minX)-2:0,maxX=zone.outdoor?Math.ceil(zone.maxX)+2:Math.ceil(zone.width),minY=zone.outdoor?0:0,maxY=zone.outdoor?40:Math.ceil(zone.height);
+  for(let y=minY;y<maxY;y++)for(let x=minX;x<maxX;x++){const point=isoPoint(x,y);if(Math.abs(point.x-center.x)<=viewX&&Math.abs(point.y-center.y)<=viewY)tiles.push({x,y,d:x+y});}
   tiles.sort((a,b)=>a.d-b.d);
   tiles.forEach(({x,y})=>{
     let color=zone.floor||"#79aa67",depth=4;
     if(zone.outdoor){
-      if(y>=26){color=(x%5===0)?"#448fa0":"#3f899b";depth=0;}
-      else if(y>=23)color=(x%4===0)?"#e4c986":"#dec27e";
+      if(y>=35){color=(x%5===0)?"#448fa0":"#3f899b";depth=0;}
+      else if(y>=32)color=(x%4===0)?"#e4c986":"#dec27e";
       else if((y>=8&&y<18&&x>=2&&x<=39)||y>=18)color=((Math.floor(x/3)+Math.floor(y/3))%2)?"#d0d0c7":"#ccccc3";
       else color=((Math.floor(x/4)+Math.floor(y/4))%2)?"#7ca66b":"#78a267";
     } else color=(x+y)%2?zone.floor:mixColor(zone.floor,"#ffffff",.07);
     drawTile(x,y,color,depth);
-    if(zone.outdoor&&y===25){const p=isoPoint(x+.5,y+.5,5);ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x-24,p.y+Math.sin(t*.002+x)*2);ctx.lineTo(p.x+24,p.y+Math.sin(t*.002+x+1)*2);ctx.stroke();}
+    if(zone.outdoor&&y===34){const p=isoPoint(x+.5,y+.5,5);ctx.strokeStyle="rgba(255,255,255,.55)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x-24,p.y+Math.sin(t*.002+x)*2);ctx.lineTo(p.x+24,p.y+Math.sin(t*.002+x+1)*2);ctx.stroke();}
   });
 }
 
@@ -649,11 +651,11 @@ function drawCampusGroundPlan(t){
 }
 
 const DISTRICT_WORLD_LAYOUTS=Object.freeze({
-  village:{x:40.4,y:7.5,w:12,h:8.2,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[42.15,9.65,2.25,1.4],[46,9.55,1.85,1.3],[50.15,9.85,2.15,1.3],[43,13.45,2.55,1.5],[49.35,14.25,2.3,1.2]]},
-  east:{x:40.4,y:16.6,w:19.2,h:8,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[49.6,18.45,2.7,1.45],[56.7,18.75,2.2,1.35],[52.9,19.1,1.25,1],[49.8,22.45,3,1.55],[55.8,22.55,3.2,1.8]]},
-  innovation:{x:53.4,y:7.5,w:15.2,h:8.2,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[55.7,9.75,2.3,1.35],[59.8,9.65,2.35,1.35],[64.5,10.05,2.75,1.55],[60.9,13.55,3.4,1.7]]},
-  sports:{x:60.8,y:16.6,w:18,h:8,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[63.35,18.55,2.8,1.55],[67.7,18.3,1.65,1.05],[72.25,18.55,2.25,1.3],[64.3,22.35,3.25,1.75],[72,22.35,2.45,1.4]]},
-  transit:{x:69.4,y:7.5,w:19,h:8.2,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[72.25,9.75,3.7,1.7],[77.4,9.55,2.2,1.15],[83.1,9.75,3,1.15],[72.9,13.35,2.15,1.2],[77.6,13.3,2.2,1.2],[83,13.35,1.6,1.15]]}
+  village:{x:-13.5,y:.2,w:13,h:7.8,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[-11.75,2.35,2.25,1.4],[-7.9,2.25,1.85,1.3],[-3.75,2.55,2.15,1.3],[-10.9,6.15,2.55,1.5],[-4.55,6.95,2.3,1.2]]},
+  east:{x:10.4,y:25.8,w:29,h:8.7,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[19.6,27.65,2.7,1.45],[26.7,27.95,2.2,1.35],[22.9,28.3,1.25,1],[19.8,31.65,3,1.55],[25.8,31.75,3.2,1.8]]},
+  innovation:{x:41,y:7.5,w:15.2,h:8.2,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[43.3,9.75,2.3,1.35],[47.4,9.65,2.35,1.35],[52.1,10.05,2.75,1.55],[48.5,13.55,3.4,1.7]]},
+  sports:{x:41,y:25.4,w:18,h:9.1,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[43.55,27.35,2.8,1.55],[47.9,27.1,1.65,1.05],[52.45,27.35,2.25,1.3],[44.5,31.15,3.25,1.75],[52.2,31.15,2.45,1.4]]},
+  transit:{x:-22.5,y:9,w:21,h:8.2,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[-18.65,11.25,3.7,1.7],[-13.5,11.05,2.2,1.15],[-7.8,11.25,3,1.15],[-18,14.85,2.15,1.2],[-13.3,14.8,2.2,1.2],[-7.9,14.85,1.6,1.15]]}
 });
 
 const districtPalette=id=>({village:{top:"#f5eee2",right:"#9eaaa5",left:"#c8c8bc",glass:"#315d62",accent:"#d58b68"},east:{top:"#f7f0df",right:"#967e62",left:"#c7aa79",glass:"#2f6870",accent:"#f2b94b"},innovation:{top:"#f3f1ed",right:"#82969a",left:"#b3c0be",glass:"#285765",accent:"#a58bd0"},sports:{top:"#eef1e7",right:"#7d9180",left:"#aebdab",glass:"#285a59",accent:"#70b979"},transit:{top:"#ecece7",right:"#7d8c90",left:"#aeb8b8",glass:"#294e5b",accent:"#779eb8"}}[id]);
@@ -962,7 +964,7 @@ function drawBlock(x,y,w,h,z,top,right,left){const a=isoPoint(x,y,z),b=isoPoint(
 const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,.76],[29,19,.88],[32,9,.83],[39,12,.92],[37,19,.8],[6,21,.75],[24,22,.72],[40,21,.86]];
 const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
 const GUEST_PREFERENCE_LABELS={food:"Foodie",drinks:"Drinks",shopping:"Shopping",social:"Social",excitement:"Thrill seeker",calm:"Quiet spaces"};
-const guestTargetPoints={cafe:{x:17.55,y:14.45},snack:{x:28.15,y:20.55},merch:{x:34.15,y:15.25},beach:{x:45.55,y:20.2},surf:{x:52.7,y:16.5},academy:{x:20.1,y:12.75},hub:{x:35.3,y:18.65},forum:{x:20.5,y:21.35},pavilion:{x:42.5,y:22.55}};
+const guestTargetPoints={cafe:{x:17.55,y:14.45},snack:{x:28.15,y:20.55},merch:{x:34.15,y:15.25},beach:{x:13.45,y:30.75},surf:{x:34.3,y:28.6},academy:{x:20.1,y:12.75},hub:{x:35.3,y:18.65},forum:{x:20.5,y:21.35},pavilion:{x:34.2,y:32.75}};
 const AGENDA_TARGETS=Object.freeze({
   arrival:{id:"arrival",label:"Arrival Plaza",type:"social",...CAMPUS_SPACES.arrival},
   academy:{id:"academy",label:"Academic Wing",type:"calm",...guestTargetPoints.academy},
@@ -990,10 +992,10 @@ function liveQueueCounts(){const queues={};for(const guest of guestAgents.filter
 
 function targetPointFor(option){if(option.kind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===option.id);if(!facility)return null;return {x:facility.x+.38,y:facility.y+.42};}if(option.kind==="district-business"){const business=DISTRICT_BUSINESSES.find(item=>item.id===option.id),layout=business&&DISTRICT_WORLD_LAYOUTS[business.districtId],index=business?DISTRICT_BUSINESSES.filter(item=>item.districtId===business.districtId).findIndex(item=>item.id===business.id):-1,plot=layout?.plots[index];return plot?{x:plot[0],y:plot[1]+.75}:null;}if(option.kind==="event"){if(option.deckId==="pavilion")return guestTargetPoints.pavilion;const facility=(run.facilities||[]).find(item=>item.id===option.deckId);return facility?{x:facility.x+.35,y:facility.y+.75}:null;}return guestTargetPoints[option.id]||null;}
 function guestRoute(start,target){
-  const points=[];if(start.x<12)points.push(CAMPUS_SPACES.arrival);
+  const points=[];if(start.x>=0&&start.x<12)points.push(CAMPUS_SPACES.arrival);
   points.push(...campusSpineWaypoints(start,target));
-  if(start.x>39&&target.x<=41)points.push(CAMPUS_SPACES.lawn);
-  if(target.y>=20.8)points.push(CAMPUS_SPACES.promenade);
+  if(target.x<0||target.x>40&&target.y>23||target.y>25.5){/* district connectors already provide the local approach */}
+  else if(target.y>=20.8)points.push(CAMPUS_SPACES.promenade);
   else if(target.y>=17&&target.x<15)points.push(CAMPUS_SPACES.service);
   else if(target.y>=17&&target.x<32.5)points.push(CAMPUS_SPACES.foodCourt);
   else if(target.y>=17)points.push(CAMPUS_SPACES.lawn);
@@ -1494,7 +1496,7 @@ function loop(t) {
   if(cameraSequence&&performance.now()>cameraSequence.until)cameraSequence=null;const cameraTarget=cameraSequence&&zone.outdoor?cameraSequence:run.player;
   camera.x+=(cameraTarget.x-camera.x)*Math.min(1,dt*(cameraSequence?2.2:4.8));camera.y+=(cameraTarget.y-camera.y)*Math.min(1,dt*(cameraSequence?2.2:4.8));
   const desiredZoom=cameraSequence&&zone.outdoor?1.13:zone.outdoor?Math.max(.72,Math.min(1.08,canvas.clientWidth/1080)):Math.max(.94,Math.min(1.24,canvas.clientWidth/850));camera.zoom+=(desiredZoom-camera.zoom)*Math.min(1,dt*3.5);
-  const mini=$(".mini-player");if(mini){mini.style.left=`${run.player.x/zone.width*100}%`;mini.style.top=`${run.player.y/zone.height*100}%`;}
+  const mini=$(".mini-player");if(mini){mini.style.left=`${(run.player.x-zone.minX)/(zone.maxX-zone.minX)*100}%`;mini.style.top=`${(run.player.y-zone.minY)/(zone.maxY-zone.minY)*100}%`;}
   updateProximity(); drawWorld(t); requestAnimationFrame(loop);
 }
 

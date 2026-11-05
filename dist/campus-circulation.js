@@ -1,17 +1,24 @@
 export const CAMPUS_ARRIVAL_GATES = Object.freeze({
   main: Object.freeze({ id:"main", label:"Main campus entrance", x:2.2, y:14.8 }),
   beach: Object.freeze({ id:"beach", label:"Beach promenade entrance", x:8, y:21.4 }),
-  transit: Object.freeze({ id:"transit", label:"Transit arrival", x:87.2, y:14.4 })
+  transit: Object.freeze({ id:"transit", label:"Transit arrival", x:-6.8, y:15.8 })
 });
 
 export const CAMPUS_ROUTE_SPINE = Object.freeze([
-  Object.freeze({x:39.5,y:16.05}),
-  Object.freeze({x:49,y:16.05}),
-  Object.freeze({x:59.5,y:16.05}),
-  Object.freeze({x:69,y:16.05}),
-  Object.freeze({x:78.5,y:16.05}),
-  Object.freeze({x:87,y:16.05})
+  Object.freeze({x:-1,y:15.1}),
+  Object.freeze({x:7.4,y:15.35}),
+  Object.freeze({x:20.5,y:16.05}),
+  Object.freeze({x:35.5,y:16.05}),
+  Object.freeze({x:40.2,y:15.3})
 ]);
+
+export const CAMPUS_DISTRICT_CONNECTORS = Object.freeze({
+  northwest:Object.freeze([Object.freeze({x:-.7,y:7.8}),Object.freeze({x:2.2,y:12.1}),Object.freeze({x:7.4,y:15.35})]),
+  west:Object.freeze([Object.freeze({x:-1,y:15.1}),Object.freeze({x:7.4,y:15.35})]),
+  east:Object.freeze([Object.freeze({x:40.2,y:15.3}),Object.freeze({x:35.5,y:16.05})]),
+  south:Object.freeze([Object.freeze({x:20.5,y:24.9}),Object.freeze({x:20.5,y:23.7}),Object.freeze({x:20.5,y:21.35})]),
+  southeast:Object.freeze([Object.freeze({x:40.2,y:23.8}),Object.freeze({x:35.5,y:19.9})])
+});
 
 const CORE_STOPS = new Set(["arrival","academy","courtyard","terrace","foodCourt","hub","eventSquare"]);
 
@@ -46,10 +53,12 @@ export function agendaStopsForGuest({groupId,clockMinutes,seed=0,activeEvent=fal
 export function isCentralAgendaStop(stopId){return CORE_STOPS.has(stopId);}
 
 export function campusSpineWaypoints(start,target){
-  const fromEast=start.x>41,toEast=target.x>41;
-  if(fromEast===toEast)return [];
-  const usable=CAMPUS_ROUTE_SPINE.filter(point=>point.x<=Math.max(start.x,target.x)+.4);
-  return fromEast?[...usable].reverse():usable;
+  const region=point=>point.x<0?(point.y<8.5?"northwest":"west"):point.x>40?(point.y>23?"southeast":"east"):point.y>25.5?"south":"core",from=region(start),to=region(target);
+  if(from===to)return [];
+  const exits={northwest:CAMPUS_DISTRICT_CONNECTORS.northwest,west:CAMPUS_DISTRICT_CONNECTORS.west,east:CAMPUS_DISTRICT_CONNECTORS.east,south:CAMPUS_DISTRICT_CONNECTORS.south,southeast:CAMPUS_DISTRICT_CONNECTORS.southeast,core:[]},points=[];
+  if(from!=="core")points.push(...exits[from]);
+  if(to!=="core")points.push(...[...exits[to]].reverse());
+  return points;
 }
 
 export function visibleGuestLimit(companyLevel=1){
