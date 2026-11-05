@@ -83,6 +83,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Business service animations | Authored bakery, gym, padel, laundry, restaurant, surf, parking, and conference activity | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `feature/business-service-animations` |
 | Business animation art polish | Unified miniature scale, stronger equipment depth, grounded shadows, and refined motion across district activities | [`specs/business-service-animations.md`](specs/business-service-animations.md) · `fix/business-animation-art-polish` |
 | District operational art integration | Façade-integrated status lights, short restocking scenes, and queue equipment without floating world labels | [`specs/venue-operational-states.md`](specs/venue-operational-states.md) · `fix/district-operational-art-integration` |
+| Full-size campus bus | A solid scheduled bus with arrival, doors, passenger waves, departure, and grounded district foundations | [`specs/full-size-campus-bus.md`](specs/full-size-campus-bus.md) · `feature/full-size-campus-bus` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

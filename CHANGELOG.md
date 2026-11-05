@@ -1,5 +1,13 @@
 # Changelog
 
+## Full-size campus bus and grounded buildings — 2026-11
+
+- Replaced the symbolic Transit shelter vehicle with a full-size Nova campus bus.
+- Added deterministic approach, braking, door opening, dwell, door closing, and departure phases.
+- Added staggered waves of up to ten full-size passengers leaving the bus.
+- Added bus glazing, body panels, route display, stripe, wheels, lights, and a physical collision footprint.
+- Added foundation plinths, stronger contact shadows, and darker base faces to enclosed district buildings.
+
 ## District operational art integration — 2026-11
 
 - Removed repeated floating `OPEN` and `BOOK` panels from expansion businesses.

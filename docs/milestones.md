@@ -202,11 +202,21 @@ Removed the repeated interface-like graphics that visually overwhelmed expansion
 
 District stock purchases now persist their campaign minute, allowing restocking visuals to expire after 24 in-game minutes instead of remaining for the entire day. Original stores retain their more explicit frontage treatment; expansion venues no longer duplicate it.
 
+## 31. Full-size campus bus and grounded buildings
+
+**Checkpoint:** `feature/full-size-campus-bus`
+
+Replaced the Transit bus symbol with a real scheduled vehicle. The bus now approaches along the arrival lane, stops, opens its passenger door, releases up to ten full-size passengers in waves, closes, and departs. It participates in world depth and collision like other large objects.
+
+Enclosed expansion buildings now use a dedicated foundation plinth, stronger contact shadow, darker base material, and a front contact edge. This removes the suspended appearance visible around the Innovation buildings without changing their footprints.
+
+Coverage lives in `tests/transit-bus-cycle.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 30:
+At the end of milestone 31:
 
-- 139 automated tests are defined, including business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 143 automated tests are defined, including the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
