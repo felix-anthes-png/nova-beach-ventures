@@ -1,5 +1,11 @@
 # Changelog
 
+## District land-sale markers — 2026-11
+
+- Restored visible acquisition gates for all five unowned expansion districts.
+- Kept future districts discoverable even when their level or prerequisite district is not yet available.
+- Added district names to the physical `LAND FOR SALE` signs while preserving progression checks in the acquisition panel.
+
 ## Central campus recomposition — 2026-11
 
 - Replaced the single eastward expansion strip with a campus-centred district composition.

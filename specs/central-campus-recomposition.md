@@ -19,6 +19,7 @@ Turn the expanded campus from a long eastward strip into a connected tycoon map 
 - The shoreline now runs beneath the southern Beachfront and Sports parcels.
 - Transit buses approach from the western road and unload beside the central-campus connection.
 - District gates sit on the edge of the Academic Core and preview the direction of each expansion.
+- All five unowned districts keep a visible, named `LAND FOR SALE` gate on the edge of their future parcel from the beginning of a campaign; level and ownership prerequisites are enforced inside the acquisition panel rather than by hiding the land.
 - Guest routes use west, northwest, east, south and southeast connectors through the central campus.
 - Existing stores, district businesses, operational overlays, collisions and issue markers follow their relocated parcels.
 - The construction boundary expands with owned land while preserving future business plots.
