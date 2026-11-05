@@ -20,8 +20,10 @@ test("lecture timetable agendas send academic guests into the main building",()=
 
 test("the Academic Wing contains a walkable lecture hall",()=>{
   const layout=INTERIOR_LAYOUTS.academy,journey=venueJourneyForTarget({kind:"landmark",id:"academy"}),route=interiorRouteForJourney(journey,1);
-  assert.ok(layout.zones.some(zone=>zone.id==="lecture"));
-  assert.equal(layout.colliders.filter(item=>item.id.startsWith("lecture-row")).length,3);
+  const auditorium=layout.zones.find(zone=>zone.id==="lecture");
+  assert.ok(auditorium.w>=6&&auditorium.h>=8);
+  assert.equal(layout.colliders.filter(item=>item.id.startsWith("lecture-row")).length,10);
+  assert.ok(layout.colliders.some(item=>item.id==="lecture-stage"));
   assert.ok(layout.activities.some(item=>item.role==="lecturer"&&item.pose==="present"));
   assert.ok(layout.activities.filter(item=>item.pose==="study").length>=3);
   for(const point of route)assert.equal(layout.colliders.some(fixture=>pointInsideInteriorFixture(point,fixture,.01)),false);

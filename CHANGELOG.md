@@ -2,7 +2,8 @@
 
 ## Lecture hall attendance — 2026-11
 
-- Added a tiered lecture hall, presentation screen and lectern inside the Academic Wing.
+- Added a large auditorium with a raised stage, wide presentation wall, five split seating tiers and three circulation aisles inside the Academic Wing.
+- Rebalanced the Academic Wing so the café and study commons support the auditorium instead of dominating the room.
 - Routed timetable-driven students and professors through the main building entrance.
 - Added live seated study, note-taking and lecturer presentation poses.
 - Made guests remain for a complete class before exiting to the Academic Courtyard.
