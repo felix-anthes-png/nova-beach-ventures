@@ -238,9 +238,17 @@ Rebuilt the expansion topology around the Academic Core. Transit & Arrival now f
 
 The move includes walkable bounds, shoreline rendering, district gates, guest connectors, the scheduled bus, store locations, collisions, overlays, issue markers, construction reservations and map indicators. District ownership and business IDs remain unchanged, preserving existing campaign data. Coverage lives in the updated district, circulation, transit and art-direction suites.
 
+## 35. Beachfront and Sports composition
+
+**Checkpoint:** `fix/beachfront-sports-composition`
+
+Separated the two districts that previously competed for the southern coast. Sports Campus now forms an inland athletics cluster immediately west of Student Village, while the Beachfront owns one continuous timber promenade, sand field and shoreline edge.
+
+The batch relocates sports businesses, staff patrols, litter points, the acquisition gate, guest routing and walkable bounds without changing ownership or business IDs. Beachfront stores, events and operations remain intact inside a clearer coastal ground plan. Coverage lives in the district visual and campus circulation suites.
+
 ## Verification baseline
 
-At the end of milestone 34:
+At the end of milestone 35:
 
 - 154 automated tests are defined, including central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.

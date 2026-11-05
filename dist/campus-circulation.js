@@ -14,6 +14,7 @@ export const CAMPUS_ROUTE_SPINE = Object.freeze([
 
 export const CAMPUS_DISTRICT_CONNECTORS = Object.freeze({
   northwest:Object.freeze([Object.freeze({x:-.7,y:7.8}),Object.freeze({x:2.2,y:12.1}),Object.freeze({x:7.4,y:15.35})]),
+  sports:Object.freeze([Object.freeze({x:-14.05,y:7.8}),Object.freeze({x:-.7,y:7.8}),Object.freeze({x:2.2,y:12.1}),Object.freeze({x:7.4,y:15.35})]),
   west:Object.freeze([Object.freeze({x:-1,y:15.1}),Object.freeze({x:7.4,y:15.35})]),
   east:Object.freeze([Object.freeze({x:40.2,y:15.3}),Object.freeze({x:35.5,y:16.05})]),
   south:Object.freeze([Object.freeze({x:20.5,y:24.9}),Object.freeze({x:20.5,y:23.7}),Object.freeze({x:20.5,y:21.35})]),
@@ -53,9 +54,9 @@ export function agendaStopsForGuest({groupId,clockMinutes,seed=0,activeEvent=fal
 export function isCentralAgendaStop(stopId){return CORE_STOPS.has(stopId);}
 
 export function campusSpineWaypoints(start,target){
-  const region=point=>point.x<0?(point.y<8.5?"northwest":"west"):point.x>40?(point.y>23?"southeast":"east"):point.y>25.5?"south":"core",from=region(start),to=region(target);
+  const region=point=>point.x<-14&&point.y<9?"sports":point.x<0?(point.y<8.5?"northwest":"west"):point.x>40?(point.y>23?"southeast":"east"):point.y>25.5?"south":"core",from=region(start),to=region(target);
   if(from===to)return [];
-  const exits={northwest:CAMPUS_DISTRICT_CONNECTORS.northwest,west:CAMPUS_DISTRICT_CONNECTORS.west,east:CAMPUS_DISTRICT_CONNECTORS.east,south:CAMPUS_DISTRICT_CONNECTORS.south,southeast:CAMPUS_DISTRICT_CONNECTORS.southeast,core:[]},points=[];
+  const exits={northwest:CAMPUS_DISTRICT_CONNECTORS.northwest,sports:CAMPUS_DISTRICT_CONNECTORS.sports,west:CAMPUS_DISTRICT_CONNECTORS.west,east:CAMPUS_DISTRICT_CONNECTORS.east,south:CAMPUS_DISTRICT_CONNECTORS.south,southeast:CAMPUS_DISTRICT_CONNECTORS.southeast,core:[]},points=[];
   if(from!=="core")points.push(...exits[from]);
   if(to!=="core")points.push(...[...exits[to]].reverse());
   return points;

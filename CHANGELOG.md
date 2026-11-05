@@ -1,5 +1,12 @@
 # Changelog
 
+## Beachfront and Sports composition — 2026-11
+
+- Moved Sports Campus inland beside Student Village so it no longer competes with the shoreline.
+- Expanded the Beachfront into one continuous promenade, sand field and coastal leisure zone.
+- Added a dedicated far-northwest guest connector, relocated sports staff patrols, and updated campus bounds.
+- Kept district ownership, businesses, operations and existing save identifiers unchanged.
+
 ## District land-sale markers — 2026-11
 
 - Restored visible acquisition gates for all five unowned expansion districts.

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const source=await readFile(new URL("../dist/app.js",import.meta.url),"utf8");
+const coreSource=await readFile(new URL("../dist/core.js",import.meta.url),"utf8");
 const layoutMatch=source.match(/const DISTRICT_WORLD_LAYOUTS=Object\.freeze\((\{[\s\S]*?\})\);\n\nconst districtPalette/);
 assert.ok(layoutMatch,"district layout data remains readable for spatial checks");
 const layouts=Function(`"use strict";return (${layoutMatch[1]});`)();
@@ -24,10 +25,10 @@ test("district plots stay inside their land and do not overlap",()=>{
 });
 
 test("district parcels and venue rows retain generous circulation gaps",()=>{
-  assert.ok(layouts.innovation.x-(layouts.village.x+layouts.village.w)>=.8);
-  assert.ok(layouts.sports.x-(layouts.east.x+layouts.east.w)>=1.2);
+  assert.ok(layouts.innovation.x>=40);
+  assert.ok(layouts.village.x-(layouts.sports.x+layouts.sports.w)>=.8);
   assert.ok(layouts.east.y-(layouts.village.y+layouts.village.h)>=.8);
-  assert.ok(layouts.sports.y-(layouts.innovation.y+layouts.innovation.h)>=.8);
+  assert.ok(layouts.transit.y-(layouts.sports.y+layouts.sports.h)>=.45);
   for(const id of ["village","east","innovation","sports","transit"]){
     const plots=layouts[id].plots.map(rect);
     for(let i=0;i<plots.length;i++)for(let j=i+1;j<plots.length;j++)assert.equal(overlaps(plots[i],plots[j],.45),false,`${layouts[id].label} plots ${i+1} and ${j+1} need more circulation space`);
@@ -37,9 +38,18 @@ test("district parcels and venue rows retain generous circulation gaps",()=>{
 test("the Academic Core is the geographical centre of the expanded campus",()=>{
   assert.ok(layouts.transit.x+layouts.transit.w<=0,"Transit belongs west of the core");
   assert.ok(layouts.village.x+layouts.village.w<=0,"Student Village belongs northwest of the core");
-  assert.ok(layouts.east.y>=25.7&&layouts.east.x>0&&layouts.east.x+layouts.east.w<40,"Beachfront belongs south of the core");
+  assert.ok(layouts.east.y>=24.5&&layouts.east.x>0&&layouts.east.x+layouts.east.w<40,"Beachfront belongs south of the core");
   assert.ok(layouts.innovation.x>=40,"Innovation belongs east of the core");
-  assert.ok(layouts.sports.x>=40&&layouts.sports.y>=25,"Sports Campus belongs southeast of the core");
+  assert.ok(layouts.sports.x+layouts.sports.w<layouts.village.x,"Sports Campus belongs inland beside Student Village");
+  assert.ok(layouts.sports.y+layouts.sports.h<9,"Sports Campus stays clear of the shoreline");
+});
+
+test("the Beachfront owns the southern coast without a competing district parcel",()=>{
+  assert.ok(layouts.east.y<25&&layouts.east.y+layouts.east.h>=34.5,"Beachfront connects the promenade to the waterline");
+  assert.ok(layouts.sports.y+layouts.sports.h<layouts.east.y,"Sports Campus no longer overlaps the coastal composition");
+  assert.match(source,/const boardwalkY=layout\.y\+\.35,boardwalkH=2\.05/);
+  assert.match(source,/WEST ATHLETICS LAND/);
+  assert.match(coreSource,/sports:\[\{x:-30,y:4\},\{x:-25,y:6\.8\},\{x:-18,y:3\.2\}\]/);
 });
 
 test("Beachfront plots clear the legacy bar, surf shop and relocated pavilion",()=>{

@@ -870,12 +870,12 @@ function ensureTycoonState(run){
 
 const LITTER_POINTS=Object.freeze({
   coast:[{x:12.5,y:18.8},{x:25.4,y:19.7},{x:34.7,y:17.3},{x:18.2,y:22.1}],
-  village:[{x:43,y:12},{x:47,y:9.8},{x:49,y:14.2}],
-  east:[{x:42.6,y:18.5},{x:46.4,y:16.5},{x:47.1,y:21.5}],
-  innovation:[{x:54,y:11},{x:59,y:9.5},{x:62,y:13.8}],
-  sports:[{x:59,y:19},{x:64,y:17.4},{x:68,y:21.2}],
-  transit:[{x:69,y:11.2},{x:74,y:14.3},{x:78,y:9.8}],
-  pier:[{x:50.4,y:18.2},{x:53.8,y:19.6},{x:55.1,y:15.2}]
+  village:[{x:-11,y:4},{x:-7,y:2.8},{x:-3,y:6.2}],
+  east:[{x:14,y:27},{x:24,y:30},{x:35.5,y:32}],
+  innovation:[{x:44,y:11},{x:49,y:9.5},{x:53,y:13}],
+  sports:[{x:-30,y:4},{x:-25,y:6.8},{x:-18,y:3.2}],
+  transit:[{x:-19,y:12},{x:-13,y:15},{x:-7,y:11}],
+  pier:[{x:32.5,y:31.2},{x:34.5,y:32.4},{x:36,y:29.5}]
 });
 
 function unlockedDistricts(run){return OPERATIONS_DISTRICTS.filter(district=>run.districts?.[district.id]);}
