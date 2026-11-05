@@ -246,11 +246,19 @@ Separated the two districts that previously competed for the southern coast. Spo
 
 The batch relocates sports businesses, staff patrols, litter points, the acquisition gate, guest routing and walkable bounds without changing ownership or business IDs. Beachfront stores, events and operations remain intact inside a clearer coastal ground plan. Coverage lives in the district visual and campus circulation suites.
 
+## 36. Campus district spacing polish
+
+**Checkpoint:** `fix/campus-district-spacing-polish`
+
+Compacted the northwest Sports parcel into the space beside Student Village and above Transit & Arrival, putting its acquisition marker on the real district entrance and removing the long empty camera span. Innovation now uses its southern land as a prototype courtyard and second venue row.
+
+The Beachfront no longer uses repeated crossing strips through its stores and event equipment. One northern boardwalk connects to Event Square, while an unobstructed shoreline walk frames the sand. Spatial assertions cover the compact plots, real gate position and absence of the retired crossing pattern.
+
 ## Verification baseline
 
-At the end of milestone 35:
+At the end of milestone 36:
 
-- 154 automated tests are defined, including central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 157 automated tests are defined, including central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

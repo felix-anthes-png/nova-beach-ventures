@@ -434,7 +434,7 @@ export function attractionStats(moduleIds=[]) {
   };
 }
 
-export function districtForPosition(x=0,y=0){if(x>=69.4)return "transit";if(x>=60.8&&y>=16)return "sports";if(x>=53.4&&y<16)return "innovation";if(x>=40&&y<16)return "village";if(x>=40)return "east";return "coast";}
+export function districtForPosition(x=0,y=0){if(x<-14&&y<9)return "sports";if(x<0&&y<9)return "village";if(x<0)return "transit";if(x>=40&&y<22)return "innovation";if(x>=9.5&&x<40&&y>=23.5)return "east";return "coast";}
 export function districtForStore(storeId){return ["surf","beach"].includes(storeId)?"east":"coast";}
 
 function shiftFor(worker){return STAFF_SHIFTS.find(item=>item.id===worker?.shiftId)||STAFF_SHIFTS[1];}
@@ -872,8 +872,8 @@ const LITTER_POINTS=Object.freeze({
   coast:[{x:12.5,y:18.8},{x:25.4,y:19.7},{x:34.7,y:17.3},{x:18.2,y:22.1}],
   village:[{x:-11,y:4},{x:-7,y:2.8},{x:-3,y:6.2}],
   east:[{x:14,y:27},{x:24,y:30},{x:35.5,y:32}],
-  innovation:[{x:44,y:11},{x:49,y:9.5},{x:53,y:13}],
-  sports:[{x:-30,y:4},{x:-25,y:6.8},{x:-18,y:3.2}],
+  innovation:[{x:44,y:11},{x:49,y:15.5},{x:53,y:18.5}],
+  sports:[{x:-20.5,y:2.8},{x:-18.5,y:6.8},{x:-15.6,y:3.2}],
   transit:[{x:-19,y:12},{x:-13,y:15},{x:-7,y:11}],
   pier:[{x:32.5,y:31.2},{x:34.5,y:32.4},{x:36,y:29.5}]
 });

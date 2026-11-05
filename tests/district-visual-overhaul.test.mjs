@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { districtForPosition } from "../dist/core.js";
 
 const source=await readFile(new URL("../dist/app.js",import.meta.url),"utf8");
 const coreSource=await readFile(new URL("../dist/core.js",import.meta.url),"utf8");
@@ -38,18 +39,30 @@ test("district parcels and venue rows retain generous circulation gaps",()=>{
 test("the Academic Core is the geographical centre of the expanded campus",()=>{
   assert.ok(layouts.transit.x+layouts.transit.w<=0,"Transit belongs west of the core");
   assert.ok(layouts.village.x+layouts.village.w<=0,"Student Village belongs northwest of the core");
-  assert.ok(layouts.east.y>=24.5&&layouts.east.x>0&&layouts.east.x+layouts.east.w<40,"Beachfront belongs south of the core");
+  assert.ok(layouts.east.y>=23.5&&layouts.east.x>0&&layouts.east.x+layouts.east.w<40,"Beachfront belongs south of the core");
   assert.ok(layouts.innovation.x>=40,"Innovation belongs east of the core");
   assert.ok(layouts.sports.x+layouts.sports.w<layouts.village.x,"Sports Campus belongs inland beside Student Village");
   assert.ok(layouts.sports.y+layouts.sports.h<9,"Sports Campus stays clear of the shoreline");
 });
 
 test("the Beachfront owns the southern coast without a competing district parcel",()=>{
-  assert.ok(layouts.east.y<25&&layouts.east.y+layouts.east.h>=34.5,"Beachfront connects the promenade to the waterline");
+  assert.ok(layouts.east.y<24&&layouts.east.y+layouts.east.h>=34.5,"Beachfront connects the promenade to the waterline");
   assert.ok(layouts.sports.y+layouts.sports.h<layouts.east.y,"Sports Campus no longer overlaps the coastal composition");
   assert.match(source,/const boardwalkY=layout\.y\+\.35,boardwalkH=2\.05/);
-  assert.match(source,/WEST ATHLETICS LAND/);
-  assert.match(coreSource,/sports:\[\{x:-30,y:4\},\{x:-25,y:6\.8\},\{x:-18,y:3\.2\}\]/);
+  assert.match(source,/ATHLETICS ENTRANCE/);
+  assert.match(coreSource,/sports:\[\{x:-20\.5,y:2\.8\},\{x:-18\.5,y:6\.8\},\{x:-15\.6,y:3\.2\}\]/);
+  assert.match(source,/sportsGate: \{ zone:"campus", x:-14\.05, y:7\.8/);
+  assert.doesNotMatch(source,/for\(const x of \[12\.4,18\.1,24\.3,30\.5,36\.2\]\)/);
+  assert.match(source,/Prototype Court/);
+});
+
+test("simulation district ownership follows the recomposed world coordinates",()=>{
+  assert.equal(districtForPosition(-18,4),"sports");
+  assert.equal(districtForPosition(-7,4),"village");
+  assert.equal(districtForPosition(-12,13),"transit");
+  assert.equal(districtForPosition(48,17),"innovation");
+  assert.equal(districtForPosition(24,30),"east");
+  assert.equal(districtForPosition(21,18),"coast");
 });
 
 test("Beachfront plots clear the legacy bar, surf shop and relocated pavilion",()=>{

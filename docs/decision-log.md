@@ -157,3 +157,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Keep the Beachfront as the campus's only shoreline parcel and place Sports Campus inland beside Student Village.
 
 **Reason:** Two independently designed districts sharing one narrow coast produced competing ground edges, crowded silhouettes, and no clear beach identity. A continuous promenade and sand field now make the coast read as one destination, while the inland sports parcel creates a more believable athletics cluster and a distinct cross-campus journey.
+
+## D027 — Compact expansions around real entrances
+
+**Decision:** Place each district gate on its physical parcel edge and use the land between commercial buildings as an authored public space.
+
+**Reason:** A remote sign and large areas of generic terrain make a district feel disconnected even when its buildings do not overlap. Compact parcels shorten camera travel, make progression legible, and turn necessary circulation clearance into boardwalks, courtyards, and shared campus routes rather than visual emptiness.
