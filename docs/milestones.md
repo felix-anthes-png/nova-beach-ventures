@@ -222,11 +222,19 @@ This removes the camera-dependent floating effect without changing plot coordina
 
 Coverage lives in `tests/world-ground-contact.test.mjs`.
 
+## 33. Campus circulation and guest agendas
+
+**Checkpoint:** `feature/campus-circulation-agendas`
+
+Reconnected the expanded campus through guest behaviour. Visitors now arrive from a small set of credible gates, receive agendas based on the live university timetable, and use a shared pedestrian spine when moving between the original campus and eastern districts. Most groups complete an Academic Core stop before making a free commercial choice, while a limited number of surfers and tourists retain direct beach visits.
+
+The batch changes movement and destination sequencing without replacing the existing needs, queue, pricing, sales, or persistence systems. Coverage lives in `tests/campus-circulation-agendas.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 32:
+At the end of milestone 33:
 
-- 146 automated tests are defined, including world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 152 automated tests are defined, including campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
