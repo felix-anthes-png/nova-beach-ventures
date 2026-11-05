@@ -39,10 +39,11 @@ test("east and west routes cross the shared pedestrian spine in the correct dire
   assert.deepEqual(campusSpineWaypoints({x:20,y:12},{x:35,y:20}),[]);
 });
 
-test("west, south and southeast districts connect through the central campus",()=>{
+test("west, south, southeast and inland sports districts connect through the central campus",()=>{
   assert.deepEqual(campusSpineWaypoints({x:-13,y:13},{x:20,y:12}).map(point=>point.x),[-1,7.4]);
   assert.deepEqual(campusSpineWaypoints({x:20,y:12},{x:24,y:30}).map(point=>point.y),[21.35,23.7,24.9]);
   assert.deepEqual(campusSpineWaypoints({x:49,y:29},{x:20,y:12}).map(point=>point.x),[40.2,35.5]);
+  assert.deepEqual(campusSpineWaypoints({x:-25,y:4},{x:20,y:12}).map(point=>point.x),[-14.05,-.7,2.2,7.4]);
 });
 
 test("mature campuses can render a larger but bounded crowd",()=>{

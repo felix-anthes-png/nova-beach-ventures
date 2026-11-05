@@ -86,7 +86,8 @@ Every major system was developed as an isolated feature batch. The specification
 | Full-size campus bus | A solid scheduled bus with arrival, doors, passenger waves, departure, and grounded district foundations | [`specs/full-size-campus-bus.md`](specs/full-size-campus-bus.md) · `feature/full-size-campus-bus` |
 | World ground-contact pass | One shared height datum for district buildings, courts, paths, shelters, shadows, and temporary equipment | [`specs/world-ground-contact-pass.md`](specs/world-ground-contact-pass.md) · `fix/world-ground-contact-pass` |
 | Campus circulation and guest agendas | Timetable-led cross-campus journeys, consolidated arrivals, and a shared east-west pedestrian spine | [`specs/campus-circulation-agendas.md`](specs/campus-circulation-agendas.md) · `feature/campus-circulation-agendas` |
-| Central campus recomposition | Academic Core-centred geography with west, northwest, south, east, and southeast expansion directions | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `feature/central-campus-recomposition` |
+| Central campus recomposition | Academic Core-centred geography with directional expansion land around the established campus | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `feature/central-campus-recomposition` |
+| Beachfront and Sports composition | One continuous southern beach plus an inland Sports Campus beside Student Village | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `fix/beachfront-sports-composition` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

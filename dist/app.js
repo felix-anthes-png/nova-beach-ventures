@@ -110,7 +110,7 @@ const locations = {
   pavilion: { zone:"campus", x:34.2, y:31.8, label:"Manage Coastline Pavilion", panel:openEventVenue, color:"#e47768", title:"COASTLINE PAVILION", sub:"BEACH EVENT LAWN" },
   surf: { zone:"campus", x:34.65, y:28.2, label:"Manage Carcavelos Surf Shack", panel:()=>openStore("surf"), color:"#479fb5", title:"SURF SHACK", sub:"OCEAN PIER" },
   innovationGate: { zone:"campus", x:40.8, y:12.2, label:"Review Innovation District expansion", panel:()=>openDistrictPanel("innovation"), color:"#a58bd0", title:"INNOVATION", sub:"EAST LAND" },
-  sportsGate: { zone:"campus", x:40.8, y:25.2, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"SOUTHEAST LAND" },
+  sportsGate: { zone:"campus", x:-.25, y:20.35, label:"Review Sports Campus expansion", panel:()=>openDistrictPanel("sports"), color:"#70b979", title:"SPORTS CAMPUS", sub:"WEST ATHLETICS LAND" },
   transitGate: { zone:"campus", x:-.25, y:14.2, label:"Review Transit & Arrival expansion", panel:()=>openDistrictPanel("transit"), color:"#779eb8", title:"TRANSIT & ARRIVAL", sub:"WEST LAND" },
   supplier: { zone:"mercado", x:7.5, y:4.2, label:"Open wholesale inventory", panel:()=>openSupplier(currentSupplierStore), color:"#f5c95e", title:"SUPPLY DESK", sub:"WHOLESALE" },
   marketExit: { zone:"mercado", x:7.5, y:9.8, kind:"door", label:"Return to the coast campus", targetZone:"campus", spawn:{x:7,y:16.8}, color:"#f5c95e", title:"CAMPUS", sub:"EXIT" },
@@ -124,7 +124,7 @@ const locations = {
 const locationAvailable=id=>!(["beach","pavilion","surf"].includes(id)&&!run.districts?.east);
 const zoneLocations = () => Object.entries(locations).filter(([id,location]) => location.zone === currentZone&&locationAvailable(id));
 const activeZone = () => ZONES[currentZone];
-function syncCampusBounds(){const zone=ZONES.campus;zone.minX=run.districts?.transit?-23.5:run.districts?.village?-14.5:1;zone.maxX=run.districts?.sports?59.5:run.districts?.innovation?57:41;zone.minY=run.districts?.village?0:7.5;zone.maxY=run.districts?.east||run.districts?.sports?34.8:25.7;zone.width=zone.maxX-zone.minX;zone.height=zone.maxY-zone.minY;}
+function syncCampusBounds(){const zone=ZONES.campus;zone.minX=run.districts?.sports?-33.5:run.districts?.transit?-23.5:run.districts?.village?-14.5:1;zone.maxX=run.districts?.innovation?57:41;zone.minY=run.districts?.village||run.districts?.sports?0:7.5;zone.maxY=run.districts?.east?34.8:25.7;zone.width=zone.maxX-zone.minX;zone.height=zone.maxY-zone.minY;}
 
 function facilityCollider(facility){
   if(facility.type==="path")return null;const size=facilityFootprint(facility.type,facility.rotation||0),padding=facility.type==="bench"?.04:.1;
@@ -436,7 +436,7 @@ function operationsIssuePoint(issue){
   if(issue.targetKind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===issue.targetId);if(facility)return facility;}
   if(issue.targetKind==="store")return storeOverlayPoint(issue.targetId);
   if(issue.targetId==="pavilion")return locations.pavilion;
-  return {village:{x:-7,y:4},east:{x:24,y:30},innovation:{x:48,y:11},sports:{x:49,y:29},transit:{x:-13,y:13},pier:{x:34,y:28}}[issue.districtId]||{x:24,y:17};
+  return {village:{x:-7,y:4},east:{x:24,y:30},innovation:{x:48,y:11},sports:{x:-24,y:4.8},transit:{x:-13,y:13},pier:{x:34,y:28}}[issue.districtId]||{x:24,y:17};
 }
 
 function drawManagementOverlay(t){
@@ -652,9 +652,9 @@ function drawCampusGroundPlan(t){
 
 const DISTRICT_WORLD_LAYOUTS=Object.freeze({
   village:{x:-13.5,y:.2,w:13,h:7.8,label:"STUDENT VILLAGE",color:"#d58b68",ground:"#ddd4c8",plots:[[-11.75,2.35,2.25,1.4],[-7.9,2.25,1.85,1.3],[-3.75,2.55,2.15,1.3],[-10.9,6.15,2.55,1.5],[-4.55,6.95,2.3,1.2]]},
-  east:{x:10.4,y:25.8,w:29,h:8.7,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[19.6,27.65,2.7,1.45],[26.7,27.95,2.2,1.35],[22.9,28.3,1.25,1],[19.8,31.65,3,1.55],[25.8,31.75,3.2,1.8]]},
+  east:{x:9.4,y:24.7,w:30,h:9.8,label:"BEACHFRONT",color:"#f2b94b",ground:"#dec783",plots:[[19.6,27.65,2.7,1.45],[26.7,27.95,2.2,1.35],[22.9,28.3,1.25,1],[19.8,31.65,3,1.55],[25.8,31.75,3.2,1.8]]},
   innovation:{x:41,y:7.5,w:15.2,h:8.2,label:"INNOVATION DISTRICT",color:"#a58bd0",ground:"#d5d6d2",plots:[[43.3,9.75,2.3,1.35],[47.4,9.65,2.35,1.35],[52.1,10.05,2.75,1.55],[48.5,13.55,3.4,1.7]]},
-  sports:{x:41,y:25.4,w:18,h:9.1,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[43.55,27.35,2.8,1.55],[47.9,27.1,1.65,1.05],[52.45,27.35,2.25,1.3],[44.5,31.15,3.25,1.75],[52.2,31.15,2.45,1.4]]},
+  sports:{x:-32.5,y:.25,w:18,h:8.25,label:"SPORTS CAMPUS",color:"#70b979",ground:"#a9bf9b",plots:[[-29.7,2.25,2.8,1.55],[-25.3,2.15,1.65,1.05],[-20.2,2.35,2.25,1.3],[-28.8,6.15,3.25,1.75],[-20.8,6.15,2.45,1.4]]},
   transit:{x:-22.5,y:9,w:21,h:8.2,label:"TRANSIT & ARRIVAL",color:"#779eb8",ground:"#c5c9c7",plots:[[-18.65,11.25,3.7,1.7],[-13.5,11.05,2.2,1.15],[-7.8,11.25,3,1.15],[-18,14.85,2.15,1.2],[-13.3,14.8,2.2,1.2],[-7.9,14.85,1.6,1.15]]}
 });
 
@@ -754,7 +754,14 @@ function transitBusWorldActors(t){if(!run.districts?.transit||!run.districtBusin
 
 function drawDistrictGroundDetails(district,layout,t){
   if(district.id==="village"){drawGroundSlabAt(layout.x+.45,layout.y+3.35,layout.w-.9,1.05,4,"#efe8dc",2);drawGroundSlabAt(layout.x+4.45,layout.y+.4,1.1,layout.h-.8,4,"#e7ded2",2);for(let i=0;i<5;i++)drawLinearPlanter(layout.x+.8+i*(layout.w-2)/4,layout.y+3.48,1.15,.34,8);}
-  if(district.id==="east"){drawGroundSlabAt(layout.x+.2,layout.y+.25,layout.w-.4,2.15,4,"#d4aa6b",2);const seams=Math.floor(layout.w/.95);for(let i=0;i<seams;i++){const a=isoPoint(layout.x+.45+i*(layout.w-.9)/(seams-1),layout.y+.4,7),b=isoPoint(layout.x+.45+i*(layout.w-.9)/(seams-1),layout.y+2.15,7);ctx.strokeStyle="rgba(92,61,37,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}for(let i=0;i<9;i++){const p=isoPoint(layout.x+1+i*(layout.w-2)/8,layout.y+layout.h-.35,8);ctx.fillStyle=i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.arc(p.x,p.y+Math.sin(t*.003+i),2.5,0,Math.PI*2);ctx.fill();}}
+  if(district.id==="east"){
+    const boardwalkY=layout.y+.35,boardwalkH=2.05;
+    drawGroundSlabAt(layout.x+.18,boardwalkY,layout.w-.36,boardwalkH,4,"#c99d63",2);
+    const seams=Math.floor(layout.w/.82);for(let i=0;i<seams;i++){const x=layout.x+.42+i*(layout.w-.84)/(seams-1),a=isoPoint(x,boardwalkY+.08,7),b=isoPoint(x,boardwalkY+boardwalkH-.08,7);ctx.strokeStyle="rgba(79,52,31,.24)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+    drawGroundSlabAt(layout.x+.55,layout.y+2.75,layout.w-1.1,.7,4,"#ead9aa",1);
+    for(const x of [12.4,18.1,24.3,30.5,36.2]){drawGroundSlabAt(x,layout.y+2.15,.9,layout.h-2.5,4,"#d3ac70",1);const flag=isoPoint(x+.45,layout.y+2.55,11);ctx.fillStyle="#f5eee0";ctx.beginPath();ctx.arc(flag.x,flag.y,2.2,0,Math.PI*2);ctx.fill();}
+    for(let i=0;i<10;i++){const x=layout.x+.8+i*(layout.w-1.6)/9,p=isoPoint(x,layout.y+layout.h-.32,8);ctx.fillStyle=i%3===0?"#5f8b68":i%2?"#f5c95e":"#64cbc8";ctx.beginPath();ctx.ellipse(p.x,p.y+Math.sin(t*.003+i),i%3===0?5:2.5,i%3===0?2:2.5,0,0,Math.PI*2);ctx.fill();}
+  }
   if(district.id==="innovation"){drawGroundSlabAt(layout.x+.35,layout.y+3.4,layout.w-.7,.95,4,"#ece9e1",2);const a=isoPoint(layout.x+.7,layout.y+3.9,7),b=isoPoint(layout.x+layout.w-.7,layout.y+3.9,7);ctx.strokeStyle="#a58bd0";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();for(let i=0;i<5;i++)drawLinearPlanter(layout.x+1+i*(layout.w-2)/4,layout.y+3.45,1.2,.32,8);}
   if(district.id==="sports"){drawGroundSlabAt(layout.x+.3,layout.y+.3,layout.w-.6,layout.h-.6,4,"#91ae83",1);const a=isoPoint(layout.x+.6,layout.y+3.65,6),b=isoPoint(layout.x+layout.w-.6,layout.y+3.65,6);ctx.strokeStyle="rgba(245,248,232,.8)";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
   if(district.id==="transit"){drawGroundSlabAt(layout.x+.3,layout.y+.35,layout.w-.6,2.5,4,"#778589",2);for(let i=0;i<8;i++){const a=isoPoint(layout.x+.8+i*(layout.w-1.6)/7,layout.y+.55,7),b=isoPoint(layout.x+.8+i*(layout.w-1.6)/7,layout.y+2.5,7);ctx.strokeStyle="rgba(245,238,207,.72)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}drawGroundSlabAt(layout.x+.3,layout.y+3.45,layout.w-.6,1.05,4,"#e6e4dc",2);}
@@ -1067,7 +1074,7 @@ function liveCrowd(t){
   return actors;
 }
 
-const STAFF_PATROLS={coast:[{x:10.5,y:18.4},{x:25.2,y:19.4},{x:35.5,y:17.2}],village:[{x:42,y:12},{x:46,y:10},{x:49,y:13}],east:[{x:42.7,y:18.6},{x:48,y:21},{x:54,y:19}],innovation:[{x:53,y:11},{x:58,y:9.5},{x:62,y:13}],sports:[{x:59,y:19},{x:64,y:21},{x:69,y:18}],transit:[{x:68,y:11},{x:73,y:13},{x:78,y:10}],pier:[{x:50.4,y:18.2},{x:53.4,y:19.2},{x:54.6,y:15.2}]};
+const STAFF_PATROLS={coast:[{x:10.5,y:18.4},{x:25.2,y:19.4},{x:35.5,y:17.2}],village:[{x:-11,y:4},{x:-7,y:2.8},{x:-3,y:6.2}],east:[{x:14,y:27},{x:24,y:29.5},{x:35.5,y:32}],innovation:[{x:44,y:11},{x:49,y:9.5},{x:53,y:13}],sports:[{x:-30,y:4},{x:-25,y:6.8},{x:-18,y:3.2}],transit:[{x:-19,y:12},{x:-13,y:15},{x:-7,y:11}],pier:[{x:32.5,y:31.2},{x:34.5,y:32.4},{x:36,y:29.5}]};
 function issueWorldPoint(issue){if(Number.isFinite(issue.x)&&Number.isFinite(issue.y))return {x:issue.x,y:issue.y};if(issue.targetKind==="store")return guestTargetPoints[issue.targetId]||null;if(issue.targetKind==="venue"&&issue.targetId==="pavilion")return guestTargetPoints.pavilion;if(issue.targetKind==="district-business"){const business=DISTRICT_BUSINESSES.find(item=>item.id===issue.targetId),layout=business&&DISTRICT_WORLD_LAYOUTS[business.districtId],index=business?DISTRICT_BUSINESSES.filter(item=>item.districtId===business.districtId).findIndex(item=>item.id===business.id):-1,plot=layout?.plots[index];if(plot)return {x:plot[0],y:plot[1]};}const facility=(run.facilities||[]).find(item=>item.id===issue.targetId);return facility?{x:facility.x,y:facility.y}:null;}
 function assignedIssue(worker){const type=worker.roleId==="caretaker"?"litter":worker.roleId==="technician"?"breakdown":null;if(!type)return null;return (run.operations?.issues||[]).find(issue=>issue.type===type&&issue.districtId===worker.districtId)||null;}
 function staffWorldPoint(worker,index,t){const issue=assignedIssue(worker),target=issueWorldPoint(issue);if(target)return {x:target.x+.48+(index%2)*.18,y:target.y+.38+(index%3)*.12,working:true,issue};const route=STAFF_PATROLS[worker.districtId]||STAFF_PATROLS.coast,a=route[index%route.length],b=route[(index+1)%route.length],wave=(Math.sin(t*.00035+index*1.7)+1)/2;return {x:a.x+(b.x-a.x)*wave,y:a.y+(b.y-a.y)*wave,working:false,issue:null};}

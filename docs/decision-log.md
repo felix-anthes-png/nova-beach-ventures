@@ -151,3 +151,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Give every expansion its own ground plan, circulation system, architectural family, and verified plot geometry.
 
 **Reason:** Recolouring identical buildings does not create district identity, and placing them independently produces overlaps with paths and established venues. Authored layouts make each expansion readable at a glance while shared materials keep the full campus coherent.
+
+## D026 — Give the coastline to one district
+
+**Decision:** Keep the Beachfront as the campus's only shoreline parcel and place Sports Campus inland beside Student Village.
+
+**Reason:** Two independently designed districts sharing one narrow coast produced competing ground edges, crowded silhouettes, and no clear beach identity. A continuous promenade and sand field now make the coast read as one destination, while the inland sports parcel creates a more believable athletics cluster and a distinct cross-campus journey.
