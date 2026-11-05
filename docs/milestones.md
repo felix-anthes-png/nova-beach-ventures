@@ -230,11 +230,19 @@ Reconnected the expanded campus through guest behaviour. Visitors now arrive fro
 
 The batch changes movement and destination sequencing without replacing the existing needs, queue, pricing, sales, or persistence systems. Coverage lives in `tests/campus-circulation-agendas.test.mjs`.
 
+## 34. Central campus recomposition
+
+**Checkpoint:** `feature/central-campus-recomposition`
+
+Rebuilt the expansion topology around the Academic Core. Transit & Arrival now forms the western gateway, Student Village occupies the northwest, Beachfront extends south to the shoreline, Innovation anchors the east, and Sports Campus occupies the southeast. The central plaza, teaching buildings and Student Hub now connect most cross-campus journeys instead of beginning a long one-directional strip.
+
+The move includes walkable bounds, shoreline rendering, district gates, guest connectors, the scheduled bus, store locations, collisions, overlays, issue markers, construction reservations and map indicators. District ownership and business IDs remain unchanged, preserving existing campaign data. Coverage lives in the updated district, circulation, transit and art-direction suites.
+
 ## Verification baseline
 
-At the end of milestone 33:
+At the end of milestone 34:
 
-- 152 automated tests are defined, including campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 154 automated tests are defined, including central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

@@ -34,10 +34,18 @@ test("district parcels and venue rows retain generous circulation gaps",()=>{
   }
 });
 
+test("the Academic Core is the geographical centre of the expanded campus",()=>{
+  assert.ok(layouts.transit.x+layouts.transit.w<=0,"Transit belongs west of the core");
+  assert.ok(layouts.village.x+layouts.village.w<=0,"Student Village belongs northwest of the core");
+  assert.ok(layouts.east.y>=25.7&&layouts.east.x>0&&layouts.east.x+layouts.east.w<40,"Beachfront belongs south of the core");
+  assert.ok(layouts.innovation.x>=40,"Innovation belongs east of the core");
+  assert.ok(layouts.sports.x>=40&&layouts.sports.y>=25,"Sports Campus belongs southeast of the core");
+});
+
 test("Beachfront plots clear the legacy bar, surf shop and relocated pavilion",()=>{
-  const legacy=[{x:44.72,y:19.82,w:2.36,h:1.56},{x:52.02,y:15.4,w:2.16,h:1.4},{x:40.85,y:20.65,w:3.3,h:1.9}];
+  const legacy=[{x:12.62,y:29.62,w:2.36,h:1.56},{x:33.57,y:27.5,w:2.16,h:1.4},{x:32.55,y:30.85,w:3.3,h:1.9}];
   for(const plot of layouts.east.plots.map(rect))for(const venue of legacy)assert.equal(overlaps(plot,venue),false,"Beachfront business overlaps a legacy venue");
-  assert.match(source,/pavilion: \{ zone:"campus", x:42\.5, y:21\.6/);
+  assert.match(source,/pavilion: \{ zone:"campus", x:34\.2, y:31\.8/);
 });
 
 test("commercial venues expose recognisable purpose-built details",()=>{

@@ -1,5 +1,16 @@
 # Changelog
 
+## Central campus recomposition — 2026-11
+
+- Replaced the single eastward expansion strip with a campus-centred district composition.
+- Moved Transit & Arrival west and Student Village northwest of the Academic Core.
+- Moved Beachfront south, Innovation east, and Sports Campus southeast.
+- Extended the southern shoreline beneath the leisure and sports districts.
+- Relocated the Beach Bar, Surf Shack, Coastline Pavilion, district gates, issue markers, and store overlays.
+- Added directional guest connectors through the Academic Core.
+- Moved the full-size campus bus to the western arrival road.
+- Expanded player, camera, construction, minimap, and collision bounds in every owned direction.
+
 ## Campus circulation and guest agendas — 2026-11
 
 - Consolidated guest spawning into main, beach, and unlocked Transit arrival gates.
