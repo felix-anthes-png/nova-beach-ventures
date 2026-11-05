@@ -88,6 +88,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Campus circulation and guest agendas | Timetable-led cross-campus journeys, consolidated arrivals, and a shared east-west pedestrian spine | [`specs/campus-circulation-agendas.md`](specs/campus-circulation-agendas.md) · `feature/campus-circulation-agendas` |
 | Central campus recomposition | Academic Core-centred geography with directional expansion land around the established campus | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `feature/central-campus-recomposition` |
 | Beachfront and Sports composition | One continuous southern beach plus an inland Sports Campus beside Student Village | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `fix/beachfront-sports-composition` |
+| Campus district spacing polish | Compact west-campus cluster, usable Innovation courtyard, and collision-free beach circulation | [`specs/central-campus-recomposition.md`](specs/central-campus-recomposition.md) · `fix/campus-district-spacing-polish` |
 
 See [`docs/milestones.md`](docs/milestones.md) for the full feature narrative and acceptance evidence.
 

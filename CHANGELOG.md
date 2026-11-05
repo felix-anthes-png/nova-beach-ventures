@@ -1,5 +1,14 @@
 # Changelog
 
+## Campus district spacing polish — 2026-11
+
+- Compacted Sports Campus directly beside Student Village and above Transit & Arrival.
+- Moved the Sports acquisition marker onto the district's real entrance.
+- Converted unused Innovation land into a connected prototype courtyard and second venue row.
+- Removed the Beachfront crossing strips that intersected stores, event equipment, and activity spaces.
+- Joined the Event Square to a single northern boardwalk and added an unobstructed shoreline walk.
+- Updated facility, maintenance, and specialization district assignment to the recomposed map coordinates.
+
 ## Beachfront and Sports composition — 2026-11
 
 - Moved Sports Campus inland beside Student Village so it no longer competes with the shoreline.

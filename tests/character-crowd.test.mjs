@@ -25,7 +25,8 @@ test("crowds arrive in cohorts and queue without stacking",async()=>{
   assert.match(app,/cohortId=Math\.floor\(\(id-1\)\/3\)/);
   assert.match(app,/const QUEUE_VECTORS=/);
   assert.match(app,/function queuePosition\(guest,index\)/);
-  assert.match(app,/Math\.min\(48,Math\.max\(8/);
+  assert.match(app,/visibleGuestLimit\(run\.companyLevel\)/);
+  assert.match(app,/Math\.max\(8,Math\.round\(metrics\.guests/);
 });
 
 test("staff and event crowds have role-specific animation",async()=>{
