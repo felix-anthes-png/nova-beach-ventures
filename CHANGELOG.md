@@ -1,5 +1,13 @@
 # Changelog
 
+## World ground-contact pass — 2026-11
+
+- Aligned every expansion building with the raised surface of its district parcel.
+- Replaced walls that extended below the district platform with base-aware architectural blocks.
+- Anchored courts, paths, parking, bike facilities, bus shelters, canopies, columns, and construction plots to the same ground datum.
+- Replaced offset building shadows with footprint contact shadows.
+- Raised queue barriers, repair equipment, delivery crates, and activity characters onto their supporting surface.
+
 ## Full-size campus bus and grounded buildings — 2026-11
 
 - Replaced the symbolic Transit shelter vehicle with a full-size Nova campus bus.
