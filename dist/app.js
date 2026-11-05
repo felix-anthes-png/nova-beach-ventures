@@ -4,6 +4,7 @@ import { interiorLayout } from "./interior-layouts.js?v=45-interior-interaction"
 import { venueVisualState, eventPreparationState } from "./venue-visual-states.js?v=46-venue-operational-states";
 import { businessActivityState } from "./business-activity.js?v=47-business-service-animations";
 import { transitBusCycle, transitBusPosition } from "./transit-bus-cycle.js?v=50-full-size-campus-bus";
+import { CAMPUS_ARRIVAL_GATES, agendaStopsForGuest, arrivalGateForGuest, campusSpineWaypoints, visibleGuestLimit } from "./campus-circulation.js?v=52-campus-circulation";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -56,7 +57,7 @@ const WALK_SPEED = 3.5;
 const PLAYER_RADIUS = .28;
 const GUEST_SPEED = 1.45;
 const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-const GUEST_ENTRIES = [{x:2.2,y:14.8},{x:39.5,y:14.8},{x:8,y:21.4},{x:35.8,y:20.3},{x:51.2,y:23.7},{x:58.4,y:17.2},{x:66.8,y:14.8},{x:77.2,y:23.4},{x:87.2,y:14.4}];
+const GUEST_ENTRIES = Object.values(CAMPUS_ARRIVAL_GATES);
 const GUEST_NAMES = ["Inês","Tomás","Maya","Luca","Beatriz","Rafael","Sofia","Noah","Leonor","Mateo","Clara","Tiago","Amélia","Hugo","Nina","Martim"];
 const GUEST_ICONS = {cafe:"☕",snack:"◉",merch:"◆",beach:"☀",surf:"≈",bench:"▰",water:"◒",restroom:"WC",foodGarden:"✦",experience:"★",scenery:"♧",academy:"A",hub:"H",forum:"☀",pavilion:"♫",exit:"↗"};
 const CAMPUS_SPACES = Object.freeze({
@@ -962,14 +963,24 @@ const campusTrees=[[2,8,.9],[5,14,.8],[11,19,.82],[14,22,.9],[18,10,.72],[25,12,
 const crowdColors=["#f5c95e","#ff8060","#64cbc8","#9a7bc1","#bce65f","#f0e9dc","#e6a769"];
 const GUEST_PREFERENCE_LABELS={food:"Foodie",drinks:"Drinks",shopping:"Shopping",social:"Social",excitement:"Thrill seeker",calm:"Quiet spaces"};
 const guestTargetPoints={cafe:{x:17.55,y:14.45},snack:{x:28.15,y:20.55},merch:{x:34.15,y:15.25},beach:{x:45.55,y:20.2},surf:{x:52.7,y:16.5},academy:{x:20.1,y:12.75},hub:{x:35.3,y:18.65},forum:{x:20.5,y:21.35},pavilion:{x:42.5,y:22.55}};
+const AGENDA_TARGETS=Object.freeze({
+  arrival:{id:"arrival",label:"Arrival Plaza",type:"social",...CAMPUS_SPACES.arrival},
+  academy:{id:"academy",label:"Academic Wing",type:"calm",...guestTargetPoints.academy},
+  courtyard:{id:"courtyard",label:"Academic Courtyard",type:"social",...CAMPUS_SPACES.courtyard},
+  terrace:{id:"terrace",label:"Café Terrace",type:"energy",...CAMPUS_SPACES.terrace},
+  foodCourt:{id:"foodCourt",label:"Central Food Court",type:"food",...CAMPUS_SPACES.foodCourt},
+  hub:{id:"hub",label:"Student Hub",type:"social",...guestTargetPoints.hub},
+  promenade:{id:"promenade",label:"Beach Promenade",type:"mood",...CAMPUS_SPACES.promenade},
+  eventSquare:{id:"eventSquare",label:"Sunset Forum",type:"excitement",...CAMPUS_SPACES.eventSquare}
+});
 
 function guestRandom(seed,offset=0){const value=Math.sin((seed+1)*91.733+offset*37.119)*43758.5453;return value-Math.floor(value);}
 function guestGroupRow(groupId){if(!run.today.guestGroups)run.today.guestGroups={};if(!run.today.guestGroups[groupId])run.today.guestGroups[groupId]={arrivals:0,visits:0,purchases:0,spend:0,walkaways:0};return run.today.guestGroups[groupId];}
 function groupPreference(group,key,id,offset){const base=Number(group.preferences[key]??.5),variation=(guestRandom(id,offset)-.5)*.28;return key==="intensity"?Math.max(5,Math.min(95,base+(guestRandom(id,offset)-.5)*18)):Math.max(.05,Math.min(1,base+variation));}
 function createGuestAgent(){
-  const id=++guestSequence,group=selectGuestGroup(run,id,run.clockMinutes),entries=GUEST_ENTRIES.filter(point=>point.x<=ZONES.campus.maxX),cohortId=Math.floor((id-1)/3),groupSlot=(id-1)%3,preferredIndex={resident:4,surfer:5,tourist:5,founder:6,athlete:7,commuter:8}[group.id],preferredEntry=Number.isInteger(preferredIndex)&&entries[preferredIndex]?entries[preferredIndex]:group.id==="family"?entries[(cohortId+2)%entries.length]:entries[cohortId%entries.length],entry=preferredEntry||entries[0],preferences={food:groupPreference(group,"food",id,7),drinks:groupPreference(group,"drinks",id,8),shopping:groupPreference(group,"shopping",id,9),social:groupPreference(group,"social",id,10),excitement:groupPreference(group,"excitement",id,11),calm:groupPreference(group,"calm",id,12),intensity:groupPreference(group,"intensity",id,13)},budget=group.budget[0]+Math.round(guestRandom(id,14)*(group.budget[1]-group.budget[0])),queuePatience=group.patience[0]+Math.round(guestRandom(id,15)*(group.patience[1]-group.patience[0])),needBias={student:{energy:14},professor:{energy:5},staff:{hunger:8},tourist:{mood:8},surfer:{thirst:15,energy:10},corporate:{mood:-5},local:{hunger:5},family:{bladder:14,hunger:8},resident:{hunger:7},founder:{energy:8},athlete:{thirst:16,energy:12},commuter:{energy:10}}[group.id]||{},needs={hunger:28+Math.round(guestRandom(id,2)*58),thirst:24+Math.round(guestRandom(id,3)*62),bladder:12+Math.round(guestRandom(id,4)*60),energy:20+Math.round(guestRandom(id,5)*58),mood:18+Math.round(guestRandom(id,6)*56)};
+  const id=++guestSequence,group=selectGuestGroup(run,id,run.clockMinutes),cohortId=Math.floor((id-1)/3),groupSlot=(id-1)%3,entry=arrivalGateForGuest({groupId:group.id,cohortId,transitUnlocked:Boolean(run.districts?.transit)}),agenda=agendaStopsForGuest({groupId:group.id,clockMinutes:run.clockMinutes,seed:cohortId,activeEvent:Boolean(run.activeEvent||run.scheduledEvent)}),preferences={food:groupPreference(group,"food",id,7),drinks:groupPreference(group,"drinks",id,8),shopping:groupPreference(group,"shopping",id,9),social:groupPreference(group,"social",id,10),excitement:groupPreference(group,"excitement",id,11),calm:groupPreference(group,"calm",id,12),intensity:groupPreference(group,"intensity",id,13)},budget=group.budget[0]+Math.round(guestRandom(id,14)*(group.budget[1]-group.budget[0])),queuePatience=group.patience[0]+Math.round(guestRandom(id,15)*(group.patience[1]-group.patience[0])),needBias={student:{energy:14},professor:{energy:5},staff:{hunger:8},tourist:{mood:8},surfer:{thirst:15,energy:10},corporate:{mood:-5},local:{hunger:5},family:{bladder:14,hunger:8},resident:{hunger:7},founder:{energy:8},athlete:{thirst:16,energy:12},commuter:{energy:10}}[group.id]||{},needs={hunger:28+Math.round(guestRandom(id,2)*58),thirst:24+Math.round(guestRandom(id,3)*62),bladder:12+Math.round(guestRandom(id,4)*60),energy:20+Math.round(guestRandom(id,5)*58),mood:18+Math.round(guestRandom(id,6)*56)};
   Object.entries(needBias).forEach(([key,value])=>needs[key]=Math.max(0,Math.min(100,needs[key]+value)));
-  const guest={id,name:GUEST_NAMES[id%GUEST_NAMES.length],groupId:group.id,groupName:group.short,groupIcon:group.icon,priceTolerance:group.priceTolerance,x:entry.x+(groupSlot-1)*.22,y:entry.y+groupSlot*.16,color:group.color,phase:guestRandom(id,1)*6,direction:1,facing:{x:0,y:1},cohortId,groupSlot,state:"arriving",activity:`${group.short} arriving on campus`,thought:`Today’s ${calendarDay(run).name.toLowerCase()} should shape where I go.`,age:0,visits:0,route:[],routeIndex:0,target:null,remove:false,budget,spent:0,queuePatience,preferences,needs};
+  const guest={id,name:GUEST_NAMES[id%GUEST_NAMES.length],groupId:group.id,groupName:group.short,groupIcon:group.icon,priceTolerance:group.priceTolerance,x:entry.x+(groupSlot-1)*.22,y:entry.y+groupSlot*.16,color:group.color,phase:guestRandom(id,1)*6,direction:1,facing:{x:0,y:1},cohortId,groupSlot,state:"arriving",activity:`${group.short} arriving via ${entry.label}`,thought:`${agenda.label} shapes my route across campus.`,age:0,visits:0,route:[],routeIndex:0,target:null,remove:false,budget,spent:0,queuePatience,preferences,needs,arrivalGate:entry.id,agendaPhase:agenda.phase,agendaLabel:agenda.label,agendaStops:agenda.stops,agendaIndex:0};
   guestGroupRow(group.id).arrivals+=1;
   sendGuestToNextActivity(guest);return guest;
 }
@@ -979,7 +990,9 @@ function liveQueueCounts(){const queues={};for(const guest of guestAgents.filter
 
 function targetPointFor(option){if(option.kind==="facility"){const facility=(run.facilities||[]).find(item=>item.id===option.id);if(!facility)return null;return {x:facility.x+.38,y:facility.y+.42};}if(option.kind==="district-business"){const business=DISTRICT_BUSINESSES.find(item=>item.id===option.id),layout=business&&DISTRICT_WORLD_LAYOUTS[business.districtId],index=business?DISTRICT_BUSINESSES.filter(item=>item.districtId===business.districtId).findIndex(item=>item.id===business.id):-1,plot=layout?.plots[index];return plot?{x:plot[0],y:plot[1]+.75}:null;}if(option.kind==="event"){if(option.deckId==="pavilion")return guestTargetPoints.pavilion;const facility=(run.facilities||[]).find(item=>item.id===option.deckId);return facility?{x:facility.x+.35,y:facility.y+.75}:null;}return guestTargetPoints[option.id]||null;}
 function guestRoute(start,target){
-  const points=[];if(start.x<12)points.push(CAMPUS_SPACES.arrival);else if(start.x>39)points.push(CAMPUS_SPACES.lawn);
+  const points=[];if(start.x<12)points.push(CAMPUS_SPACES.arrival);
+  points.push(...campusSpineWaypoints(start,target));
+  if(start.x>39&&target.x<=41)points.push(CAMPUS_SPACES.lawn);
   if(target.y>=20.8)points.push(CAMPUS_SPACES.promenade);
   else if(target.y>=17&&target.x<15)points.push(CAMPUS_SPACES.service);
   else if(target.y>=17&&target.x<32.5)points.push(CAMPUS_SPACES.foodCourt);
@@ -988,12 +1001,13 @@ function guestRoute(start,target){
   else points.push({x:target.x,y:14.75});
   points.push(target);return points.map(point=>({x:point.x,y:point.y})).filter((point,index)=>index===0||Math.hypot(point.x-points[index-1].x,point.y-points[index-1].y)>.12);
 }
+function agendaPointForGuest(target,guest){const angle=(guest.cohortId%8)*Math.PI/4+guest.groupSlot*.48,radius=.28+(guest.id%3)*.12;return {...target,x:target.x+Math.cos(angle)*radius,y:target.y+Math.sin(angle)*radius};}
 function sendGuestToNextActivity(guest){
-  const context={queues:liveQueueCounts(),campusQuality:campusMetrics(run).rating},options=guestDestinationOptions(run,guest,guest.id+guest.visits*7,context).filter(option=>!guest.lastTarget||option.id!==guest.lastTarget||option.kind!==guest.lastKind),pick=options[0]||{kind:"landmark",id:"forum",label:"Sunset Forum",score:0,reason:"free public space"},point=targetPointFor(pick);
+  const agendaId=guest.agendaStops?.[guest.agendaIndex],agendaTarget=AGENDA_TARGETS[agendaId],agendaPoint=agendaTarget?agendaPointForGuest(agendaTarget,guest):null,context={queues:liveQueueCounts(),campusQuality:campusMetrics(run).rating},options=guestDestinationOptions(run,guest,guest.id+guest.visits*7,context).filter(option=>!guest.lastTarget||option.id!==guest.lastTarget||option.kind!==guest.lastKind),pick=agendaTarget?{kind:"landmark",...agendaTarget,score:100,reason:`scheduled ${guest.agendaLabel.toLowerCase()}`,agendaStop:true}:options[0]||{kind:"landmark",id:"forum",label:"Sunset Forum",score:0,reason:"free public space"},point=agendaPoint||targetPointFor(pick);
   if(!point){sendGuestHome(guest);return;}
   guest.target={...pick,x:point.x,y:point.y};guest.lastDecision={label:pick.label,score:Math.round(pick.score||0),reason:pick.reason||"best available option"};guest.route=guestRoute(guest,point);guest.routeIndex=0;guest.state="walking";guest.activity=`Walking to ${pick.label}`;guest.thought=guestThoughtForTarget(pick,guest.needs);
 }
-function sendGuestHome(guest){const exit=GUEST_ENTRIES.filter(point=>point.x<=ZONES.campus.maxX).sort((a,b)=>Math.hypot(guest.x-a.x,guest.y-a.y)-Math.hypot(guest.x-b.x,guest.y-b.y))[0];guest.target={kind:"exit",id:"exit",label:"Campus exit",x:exit.x,y:exit.y};guest.route=guestRoute(guest,exit);guest.routeIndex=0;guest.state="leaving";guest.activity="Heading home";guest.thought="Time to head out.";}
+function sendGuestHome(guest){const exits=GUEST_ENTRIES.filter(point=>point.id!=="transit"||run.districts?.transit),exit=exits.sort((a,b)=>Math.hypot(guest.x-a.x,guest.y-a.y)-Math.hypot(guest.x-b.x,guest.y-b.y))[0];guest.target={kind:"exit",id:"exit",label:"Campus exit",x:exit.x,y:exit.y};guest.route=guestRoute(guest,exit);guest.routeIndex=0;guest.state="leaving";guest.activity="Heading home";guest.thought="Time to head out.";}
 function guestThoughtForTarget(target,needs){if(target.id==="water")return `I really need a drink — and this one is free.`;if(target.id==="restroom")return `This is more urgent than anything else.`;if(target.id==="bench")return `A short break is worth the walk.`;if(target.id==="foodGarden")return `Food and a social space fit what I need.`;if(target.kind==="store"||target.kind==="district-business")return `${target.productName} for ${formatEuro(target.price)} feels like my best option.`;if(target.kind==="event")return `${target.label} feels worth the ${formatEuro(target.price)} ticket.`;if(target.id==="experience")return `That attraction matches the intensity I enjoy.`;return `${target.label} wins: ${target.reason||"it fits my plans"}.`;}
 
 function beginGuestActivity(guest){
@@ -1018,9 +1032,9 @@ function completeGuestActivity(guest){
     run=recordGuestActivity(run,guest.target);
     if(guest.target.kind==="event"&&Number.isFinite(guest.target.price)&&guest.target.price<=guest.budget){guest.budget-=guest.target.price;guest.spent+=guest.target.price;const groupRow=guestGroupRow(guest.groupId);groupRow.purchases+=1;groupRow.spend+=guest.target.price;isPurchase=true;guest.thought=`That ${formatEuro(guest.target.price)} ticket was worth it.`;}
   }
-  guest.needs=applyGuestNeedRelief(guest.needs,type);guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.visits+=1;guestGroupRow(guest.groupId).visits+=1;activityPulse={x:guest.x,y:guest.y,text:isPurchase?(guest.target.kind==="event"?`${guest.name} joined the set`:`${guest.name} bought ${guest.target.productName}`):`${guest.name} used ${guest.target.label}`,until:performance.now()+1700};
+  guest.needs=applyGuestNeedRelief(guest.needs,type);guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;if(guest.target.agendaStop)guest.agendaIndex+=1;guest.visits+=1;guestGroupRow(guest.groupId).visits+=1;activityPulse={x:guest.x,y:guest.y,text:isPurchase?(guest.target.kind==="event"?`${guest.name} joined the set`:`${guest.name} bought ${guest.target.productName}`):`${guest.name} used ${guest.target.label}`,until:performance.now()+1700};
   Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+7+Math.round(guestRandom(guest.id,guest.visits*3)*8)));
-  if(guest.visits>=3||guest.age>62||guestRandom(guest.id,guest.visits+20)>.82)sendGuestHome(guest);else sendGuestToNextActivity(guest);
+  const agendaComplete=guest.agendaIndex>=(guest.agendaStops?.length||0);if(agendaComplete&&(guest.visits>=4||guest.age>72||guestRandom(guest.id,guest.visits+20)>.86))sendGuestHome(guest);else sendGuestToNextActivity(guest);
 }
 
 function moveGuestToward(guest,point,step){const dx=point.x-guest.x,dy=point.y-guest.y,distance=Math.hypot(dx,dy);if(distance>.025){guest.facing={x:dx/distance,y:dy/distance};guest.direction=dx-dy>=0?1:-1;}if(distance<=step){guest.x=point.x;guest.y=point.y;return true;}guest.x+=dx/distance*step;guest.y+=dy/distance*step;return false;}
@@ -1029,7 +1043,7 @@ const QUEUE_VECTORS={cafe:{x:-.43,y:.43},snack:{x:-.52,y:.12},merch:{x:-.35,y:.4
 function queuePosition(guest,index){const vector=QUEUE_VECTORS[guest.target.id]||{x:-.42,y:.34},stagger=index%2?.035:-.035;return {x:guest.target.x+vector.x*index+vector.y*stagger,y:guest.target.y+vector.y*index-vector.x*stagger};}
 
 function updateCampusGuests(dt){
-  const speed=Math.max(0,run.speed||0);if(!speed)return;const peak=crowdPeak(run.clockMinutes,run),metrics=campusMetrics(run),desired=Math.min(48,Math.max(8,Math.round(metrics.guests*(.3+peak.multiplier*.24))));guestSpawnAccumulator+=dt*speed;
+  const speed=Math.max(0,run.speed||0);if(!speed)return;const peak=crowdPeak(run.clockMinutes,run),metrics=campusMetrics(run),desired=Math.min(visibleGuestLimit(run.companyLevel),Math.max(8,Math.round(metrics.guests*(.3+peak.multiplier*.24))));guestSpawnAccumulator+=dt*speed;
   while(guestAgents.length<desired&&guestSpawnAccumulator>.34){guestAgents.push(createGuestAgent());guestSpawnAccumulator-=.34;}
   if(guestAgents.length>desired){guestAgents.filter(guest=>guest.state!=="leaving").sort((a,b)=>b.age-a.age).slice(0,guestAgents.length-desired).forEach(sendGuestHome);}
   for(const guest of guestAgents){

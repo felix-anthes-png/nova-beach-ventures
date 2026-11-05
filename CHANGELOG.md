@@ -1,5 +1,14 @@
 # Changelog
 
+## Campus circulation and guest agendas — 2026-11
+
+- Consolidated guest spawning into main, beach, and unlocked Transit arrival gates.
+- Added timetable-driven agendas for arrival, lecture, lunch, afternoon, sunset, and evening periods.
+- Required most guest groups to visit the Academic Core before choosing a commercial destination.
+- Added a shared east-west pedestrian spine so expansion traffic crosses the established campus.
+- Retained limited direct beach arrivals for surfers and tourists.
+- Raised the mature-campus visible crowd ceiling from 48 to 72 guests.
+
 ## World ground-contact pass — 2026-11
 
 - Aligned every expansion building with the raised surface of its district parcel.
