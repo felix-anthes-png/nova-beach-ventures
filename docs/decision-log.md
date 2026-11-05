@@ -163,3 +163,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Place each district gate on its physical parcel edge and use the land between commercial buildings as an authored public space.
 
 **Reason:** A remote sign and large areas of generic terrain make a district feel disconnected even when its buildings do not overlap. Compact parcels shorten camera travel, make progression legible, and turn necessary circulation clearance into boardwalks, courtyards, and shared campus routes rather than visual emptiness.
+
+## D028 — Preserve guest identity across building thresholds
+
+**Decision:** A guest entering an interior remains the same simulation actor, with one budget, one destination, one transaction and one visit record.
+
+**Reason:** Replacing visitors with decorative indoor figures makes transport, queues and purchases feel unrelated. Moving the live actor between outdoor and indoor coordinate spaces creates a continuous journey while preserving the deterministic economy and avoiding duplicate sales.

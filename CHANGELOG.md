@@ -1,5 +1,13 @@
 # Changelog
 
+## Guest journeys and venue interiors — 2026-11
+
+- Added walking, bicycle, and scheduled campus-bus arrival modes.
+- Connected café and Merch Lab queues to their real building entrances.
+- Let live guests cross into the Academic Wing and Student Hub, follow indoor routes, use the venue, and return outdoors.
+- Added visible coffee cups and shopping bags plus post-purchase terrace and lawn activities.
+- Reused each simulated guest inside and outside instead of substituting decorative interior crowds.
+
 ## Campus district spacing polish — 2026-11
 
 - Compacted Sports Campus directly beside Student Village and above Transit & Arrival.

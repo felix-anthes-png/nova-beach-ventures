@@ -254,11 +254,21 @@ Compacted the northwest Sports parcel into the space beside Student Village and 
 
 The Beachfront no longer uses repeated crossing strips through its stores and event equipment. One northern boardwalk connects to Event Square, while an unobstructed shoreline walk frames the sand. Spatial assertions cover the compact plots, real gate position and absence of the retired crossing pattern.
 
+## 37. Guest journeys and venue interiors
+
+**Checkpoint:** `feature/guest-journeys-interiors`
+
+Connected transport, campus routes, queues and interiors into one continuous guest lifecycle. Commuters now wait for the scheduled bus boarding phase, selected campus groups arrive by bicycle, and other visitors enter on foot.
+
+Atlantic Café and Merch Lab customers queue at their real building doors, move through the matching interior, use the business, return outdoors with a visible purchase and continue to a terrace or lawn activity. The same live guest actor crosses the threshold, so budgets, needs, stock, sales and visit history remain atomic.
+
+Coverage lives in `tests/guest-journeys-interiors.test.mjs`.
+
 ## Verification baseline
 
 At the end of milestone 36:
 
-- 157 automated tests are defined, including central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 160 automated tests are defined, including guest journeys and venue thresholds, central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
