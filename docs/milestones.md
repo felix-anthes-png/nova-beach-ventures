@@ -268,7 +268,7 @@ Coverage lives in `tests/guest-journeys-interiors.test.mjs`.
 
 **Checkpoint:** `feature/lecture-hall-attendance`
 
-Recomposed the Academic Wing around a full auditorium with a raised stage, a wide presentation wall, five split seating tiers, a central aisle and two illuminated side aisles. The café and study commons now occupy secondary support zones. Academic timetable stops bring the same live students and professors through the main entrance and into a longer class activity.
+Recomposed the Academic Wing around a full auditorium with a raised stage, a wide presentation wall, five split seating tiers, a central aisle and two illuminated side aisles. A framed glass partition and signed double-door vestibule now separate the teaching venue from the café and study commons. Academic timetable stops bring the same live students and professors through the main entrance, through the auditorium doors and into a longer class activity.
 
 Students visibly sit and take notes, professors present, and completed classes return guests to the Academic Courtyard without creating a commercial transaction. Coverage lives in `tests/lecture-hall-attendance.test.mjs`.
 

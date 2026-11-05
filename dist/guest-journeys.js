@@ -7,7 +7,7 @@ export const ARRIVAL_MODES=Object.freeze({
 export const VENUE_JOURNEYS=Object.freeze({
   academy:Object.freeze({
     id:"academy",zone:"academy",entrance:Object.freeze({x:20,y:12.2}),indoorEntry:Object.freeze({x:7.5,y:8.8}),
-    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:7.5,y:8.45}),Object.freeze({x:10.55,y:8.45}),Object.freeze({x:10.55,y:6.35}),Object.freeze({x:10.35,y:5.4})]),
+    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:7.5,y:8.45}),Object.freeze({x:10.75,y:8.45}),Object.freeze({x:10.75,y:6.35}),Object.freeze({x:10.55,y:5.4})]),
     activity:"Attending a lecture",pose:"study",carry:null,followUp:Object.freeze({x:20.1,y:12.75,label:"Academic courtyard",activity:"Leaving class for the courtyard"})
   }),
   cafe:Object.freeze({
