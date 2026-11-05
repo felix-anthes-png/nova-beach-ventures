@@ -62,6 +62,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Living campus time | Day phases, lighting, opening hours, deliveries, daily reports | [`specs/time-system.md`](specs/time-system.md) · `codex/living-campus-time` |
 | Guest-driven sales | Visible counter service is the source of shop transactions | [`specs/guest-driven-sales.md`](specs/guest-driven-sales.md) · `feature/guest-driven-sales` |
 | Guest journeys and interiors | Arrival modes, real entrances, indoor activity, purchases, and post-visit behaviour | [`specs/guest-journeys-interiors.md`](specs/guest-journeys-interiors.md) · `feature/guest-journeys-interiors` |
+| Lecture hall attendance | Timetable-driven classes, seated students, presenting professors, and Academic Wing circulation | [`specs/lecture-hall-attendance.md`](specs/lecture-hall-attendance.md) · `feature/lecture-hall-attendance` |
 | Staff operations | Shifts, payroll, district coverage, cleaning, failures, and repairs | [`specs/staff-operations.md`](specs/staff-operations.md) · `feature/staff-operations` |
 | Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
 | Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |

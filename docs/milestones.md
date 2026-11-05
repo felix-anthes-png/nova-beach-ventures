@@ -264,11 +264,19 @@ Atlantic Café and Merch Lab customers queue at their real building doors, move 
 
 Coverage lives in `tests/guest-journeys-interiors.test.mjs`.
 
+## 38. Lecture hall attendance
+
+**Checkpoint:** `feature/lecture-hall-attendance`
+
+Converted part of the Academic Wing into a tiered lecture hall with a presentation screen, lectern and three seating rows. Academic timetable stops now bring the same live students and professors through the main entrance, down a clear aisle and into a longer class activity.
+
+Students visibly sit and take notes, professors present, and completed classes return guests to the Academic Courtyard without creating a commercial transaction. Coverage lives in `tests/lecture-hall-attendance.test.mjs`.
+
 ## Verification baseline
 
 At the end of milestone 36:
 
-- 160 automated tests are defined, including guest journeys and venue thresholds, central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 163 automated tests are defined, including lecture hall attendance, guest journeys and venue thresholds, central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.

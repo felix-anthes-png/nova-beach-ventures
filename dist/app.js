@@ -5,7 +5,7 @@ import { venueVisualState, eventPreparationState } from "./venue-visual-states.j
 import { businessActivityState } from "./business-activity.js?v=47-business-service-animations";
 import { transitBusCycle, transitBusPosition } from "./transit-bus-cycle.js?v=50-full-size-campus-bus";
 import { CAMPUS_ARRIVAL_GATES, agendaStopsForGuest, arrivalGateForGuest, campusSpineWaypoints, visibleGuestLimit } from "./campus-circulation.js?v=52-campus-circulation";
-import { arrivalModeForGuest, venueJourneyForTarget, interiorRouteForJourney, journeyCarryForTarget } from "./guest-journeys.js?v=54-guest-journeys";
+import { arrivalModeForGuest, venueJourneyForTarget, interiorRouteForJourney, journeyCarryForTarget } from "./guest-journeys.js?v=55-lecture-hall";
 
 const $ = selector => document.querySelector(selector);
 const canvas = $("#world");
@@ -905,6 +905,12 @@ function drawCafeWorkshop(){
   const menu=isoPoint(6.2,1.12,68);ctx.save();ctx.translate(menu.x,menu.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-46,-19,92,38,3,"#173743");ctx.fillStyle="#f5c95e";ctx.font="900 6px DM Mono";ctx.fillText("ATLANTIC CAFÉ",-37,-7);ctx.fillStyle="#e5efeb";for(let i=0;i<3;i++){ctx.fillRect(-36,2+i*7,34+i*7,2);}ctx.restore();
 }
 
+function drawLectureHall(t){
+  drawGroundSlab(8.7,2.05,4.45,4.75,"#c7d8d4",6);const screen=isoPoint(10.75,2.25,54);ctx.save();ctx.translate(screen.x,screen.y);ctx.rotate(Math.atan2(TILE_H/2,TILE_W/2));roundedRect(-63,-35,126,70,4,"#eef2ea");ctx.strokeStyle="#31545b";ctx.lineWidth=2;ctx.strokeRect(-63,-35,126,70);ctx.fillStyle="#173743";ctx.font="900 8px DM Mono";ctx.fillText("NOVA SBE · LIVE LECTURE",-52,-18);ctx.fillStyle="#64cbc8";ctx.fillRect(-51,-9,73,5);ctx.fillStyle="#a58bd0";ctx.fillRect(-51,2,96,5);ctx.fillStyle="#f5c95e";ctx.fillRect(-51,13,56,5);ctx.fillStyle="#587078";ctx.font="700 5px DM Mono";ctx.fillText(campusPhase(run.clockMinutes).id.includes("lecture")?"CLASS IN PROGRESS":"NEXT CLASS PREPARING",-51,27);ctx.restore();
+  [3.8,4.75,5.7].forEach((y,row)=>{drawRaisedSlab(9.05,y,3.55,.42,18+row*4,5,row%2?"#b98d5d":"#caa36d","#70543d","#8f6d4c");for(let seat=0;seat<4;seat++){const x=9.42+seat*.85,p=isoPoint(x,y+.52,13+row*4);ctx.fillStyle="#31545b";ctx.beginPath();ctx.ellipse(p.x,p.y,8,3.2,0,0,Math.PI*2);ctx.fill();}});
+  drawRaisedSlab(11.85,2.78,.7,.62,31,6,"#d5b271","#745d42","#95754e");const lectern=isoPoint(12.2,3.1,45);roundedRect(lectern.x-11,lectern.y-16,22,20,3,"#173743");ctx.fillStyle="#64cbc8";ctx.fillRect(lectern.x-6,lectern.y-11,12,3);const light=isoPoint(10.75,2.4,77);ctx.fillStyle=`rgba(245,201,94,${.32+Math.sin(t*.002)*.05})`;ctx.beginPath();ctx.ellipse(light.x,light.y,76,17,0,0,Math.PI*2);ctx.fill();
+}
+
 function drawMercadoShelf(x,y,w=3.1){
   drawBlock(x,y,w,.62,58,"#f1efe7","#8e9996","#b8bfba");
   for(let z=15;z<55;z+=17){drawFacadeBandY(x+.15,y+.63,w-.3,z,z+6,"#31545b",Math.max(3,Math.round(w)));}
@@ -939,7 +945,7 @@ function drawVentureWall(){
 function drawRoomActors(t){
   const zone=activeZone(),actors=[{depth:.1,draw:()=>drawInteriorFloor(zone)},{depth:1,draw:()=>drawRoomShell(zone)}];
   if(zone.id==="academy"){
-    actors.push({depth:4.7,draw:drawCafeWorkshop},{depth:8.1,draw:()=>drawCommunalTable(2.1,5.65,3.5,"#d2a66c")},{depth:14.1,draw:()=>drawCommunalTable(9.9,4.2,3,"#d2a66c")},{depth:10.5,draw:()=>drawLounge(2.2,7.25,"#608a8b")},{depth:12.9,draw:()=>drawIndoorPlant(11.8,7.2,1.2)});
+    actors.push({depth:4.7,draw:drawCafeWorkshop},{depth:8.1,draw:()=>drawCommunalTable(2.1,5.65,3.5,"#d2a66c")},{depth:10.8,draw:()=>drawLectureHall(t)},{depth:10.5,draw:()=>drawLounge(2.2,7.25,"#608a8b")},{depth:13.2,draw:()=>drawIndoorPlant(12.65,7.35,1.2)});
   }else if(zone.id==="mercado"){
     actors.push({depth:5.1,draw:()=>drawMercadoShelf(2.05,2.45,4)},{depth:9.3,draw:()=>drawMercadoShelf(2.1,6.55,3.6)},{depth:12,draw:drawColdRoom},{depth:8.9,draw:drawMercadoDispatch},{depth:16.2,draw:()=>drawMercadoShelf(10.1,6.1,2.8)},{depth:10,draw:()=>drawIndoorPlant(7.6,7.7,.9)});
   }else{
@@ -1022,6 +1028,7 @@ function guestThoughtForTarget(target,needs){if(target.id==="water")return `I re
 
 function beginGuestActivity(guest){
   if(guest.target.kind==="exit"){guest.remove=true;return;}
+  const scheduledJourney=venueJourneyForTarget(guest.target);if(scheduledJourney&&guest.target.kind!=="store"){beginInteriorJourney(guest,scheduledJourney,guest.target.type||guest.target.id,false);return;}
   if(guest.target.kind==="store"||guest.target.kind==="district-business"){
     const line=guestAgents.filter(item=>item!==guest&&item.state==="queueing"&&item.target?.id===guest.target.id).length,limit=1+Math.floor(guest.queuePatience/22);
     if(line>=limit){guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;guest.needs.mood=Math.min(100,guest.needs.mood+12);run.guestEconomy.walkaways+=1;run.today.walkaways=(run.today.walkaways||0)+1;guestGroupRow(guest.groupId).walkaways+=1;guest.thought=`That line is too long for me — I’ll choose somewhere else.`;sendGuestToNextActivity(guest);return;}
@@ -1031,23 +1038,23 @@ function beginGuestActivity(guest){
 }
 
 function beginInteriorJourney(guest,journey,type,isPurchase){
-  guest.journey={journey,type,isPurchase,target:{...guest.target},route:interiorRouteForJourney(journey,guest.groupSlot),routeIndex:0};guest.worldZone=journey.zone;guest.x=journey.indoorEntry.x+(guest.groupSlot-1)*.14;guest.y=journey.indoorEntry.y;guest.route=guest.journey.route;guest.routeIndex=0;guest.state="inside-walking";guest.activity=`Entering ${guest.target.label}`;guest.thought=`I made it through the entrance. Now I can actually use ${guest.target.label}.`;guest.facing={x:0,y:-1};
+  guest.journey={journey,type,isPurchase,recordOnExit:guest.target.kind!=="store",target:{...guest.target},route:interiorRouteForJourney(journey,guest.groupSlot),routeIndex:0};guest.worldZone=journey.zone;guest.x=journey.indoorEntry.x+(guest.groupSlot-1)*.14;guest.y=journey.indoorEntry.y;guest.route=guest.journey.route;guest.routeIndex=0;guest.state="inside-walking";guest.activity=`Entering ${guest.target.label}`;guest.thought=journey.id==="academy"?"My lecture is starting inside the Academic Wing.":`I made it through the entrance. Now I can actually use ${guest.target.label}.`;guest.facing={x:0,y:-1};
 }
 
 function finishGuestActivity(guest,type,isPurchase,followUp=null){
   guest.needs=applyGuestNeedRelief(guest.needs,type);guest.lastTarget=guest.target.id;guest.lastKind=guest.target.kind;if(guest.target.agendaStop)guest.agendaIndex+=1;guest.visits+=1;guestGroupRow(guest.groupId).visits+=1;activityPulse={x:guest.x,y:guest.y,text:isPurchase?(guest.target.kind==="event"?`${guest.name} joined the set`:`${guest.name} bought ${guest.target.productName}`):`${guest.name} used ${guest.target.label}`,until:performance.now()+1700};if(guest.carry&&guest.visits>(guest.carryUntilVisit||guest.visits))guest.carry=null;
   Object.keys(guest.needs).forEach(key=>guest.needs[key]=Math.min(100,guest.needs[key]+7+Math.round(guestRandom(guest.id,guest.visits*3)*8)));
-  if(followUp){guest.target={kind:"landmark",id:`post-${guest.lastTarget}`,label:followUp.label,type:guest.lastTarget,x:followUp.x,y:followUp.y,postVisit:true};guest.route=guestRoute(guest,followUp);guest.routeIndex=0;guest.state="walking";guest.activity=`Walking to ${followUp.label} with ${guest.carry==="coffee"?"a coffee":"a purchase"}`;guest.thought=guest.carry==="coffee"?"I’ll sit down and enjoy this.":"I’ll take a moment before continuing through campus.";return;}
+  if(followUp){guest.target={kind:"landmark",id:`post-${guest.lastTarget}`,label:followUp.label,type:guest.lastTarget,x:followUp.x,y:followUp.y,postVisit:true};guest.route=guestRoute(guest,followUp);guest.routeIndex=0;guest.state="walking";guest.activity=followUp.activity||`Walking to ${followUp.label}${guest.carry?` with ${guest.carry==="coffee"?"a coffee":"a purchase"}`:""}`;guest.thought=guest.carry==="coffee"?"I’ll sit down and enjoy this.":guest.carry?"I’ll take a moment before continuing through campus.":"Class is finished, so I’m returning to campus life.";return;}
   const agendaComplete=guest.agendaIndex>=(guest.agendaStops?.length||0);if(agendaComplete&&(guest.visits>=4||guest.age>72||guestRandom(guest.id,guest.visits+20)>.86))sendGuestHome(guest);else sendGuestToNextActivity(guest);
 }
 
 function updateInteriorJourney(guest,dt,speed){
   const journeyState=guest.journey;if(!journeyState){guest.worldZone="campus";sendGuestToNextActivity(guest);return;}
   if(guest.state==="inside-walking"||guest.state==="inside-exiting"){
-    const point=guest.route[guest.routeIndex];if(!point){if(guest.state==="inside-walking"){guest.state="inside-using";guest.timer=3.2+guestRandom(guest.id,guest.visits+31)*2.2;guest.activity=journeyState.journey.activity;guest.thought=`I can see the service happening around me.`;}else{const outside=journeyState.journey.entrance;guest.worldZone="campus";guest.x=outside.x;guest.y=outside.y+.28;guest.carry=journeyCarryForTarget(journeyState.target);guest.carryUntilVisit=guest.visits+1;guest.target=journeyState.target;guest.journey=null;finishGuestActivity(guest,journeyState.type,journeyState.isPurchase,journeyState.journey.followUp);}return;}
+    const point=guest.route[guest.routeIndex];if(!point){if(guest.state==="inside-walking"){guest.state="inside-using";guest.timer=(journeyState.journey.id==="academy"?6.4:3.2)+guestRandom(guest.id,guest.visits+31)*2.2;guest.activity=journeyState.journey.activity;guest.thought=journeyState.journey.id==="academy"?"I’m following the lecture and taking notes.":`I can see the service happening around me.`;}else{const outside=journeyState.journey.entrance;guest.worldZone="campus";guest.x=outside.x;guest.y=outside.y+.28;guest.carry=journeyCarryForTarget(journeyState.target);guest.carryUntilVisit=guest.visits+1;guest.target=journeyState.target;if(journeyState.recordOnExit)run=recordGuestActivity(run,journeyState.target);guest.journey=null;finishGuestActivity(guest,journeyState.type,journeyState.isPurchase,journeyState.journey.followUp);}return;}
     if(moveGuestToward(guest,point,GUEST_SPEED*dt*Math.min(1.8,Math.sqrt(speed)))){guest.routeIndex+=1;}return;
   }
-  if(guest.state==="inside-using"){guest.timer-=dt*speed;if(guest.timer<=0){guest.carry=journeyCarryForTarget(journeyState.target);guest.route=interiorRouteForJourney(journeyState.journey,guest.groupSlot,true);guest.routeIndex=1;guest.state="inside-exiting";guest.activity=`Leaving ${journeyState.target.label} with a purchase`;guest.thought=`I’m taking this back into the campus.`;}}
+  if(guest.state==="inside-using"){guest.timer-=dt*speed;if(guest.timer<=0){guest.carry=journeyCarryForTarget(journeyState.target);guest.route=interiorRouteForJourney(journeyState.journey,guest.groupSlot,true);guest.routeIndex=1;guest.state="inside-exiting";guest.activity=journeyState.journey.id==="academy"?"Leaving the lecture hall":`Leaving ${journeyState.target.label} with a purchase`;guest.thought=journeyState.journey.id==="academy"?"The lecture is over; time to cross the courtyard.":`I’m taking this back into the campus.`;}}
 }
 
 function completeGuestActivity(guest){
@@ -1253,7 +1260,7 @@ const personStyles=[
 
 function characterView(facing={x:0,y:1}){const sx=(facing.x||0)-(facing.y||0),sy=((facing.x||0)+(facing.y||0))*.55,side=Math.abs(sx)>.48;return {side,back:!side&&sy<-.08,flip:sx<0?-1:1};}
 function guestCharacterPose(guest,index){
-  if(guest.state==="inside-using")return guest.journey?.journey?.pose||"idle";
+  if(guest.state==="inside-using")return guest.journey?.journey?.id==="academy"&&guest.groupId==="professor"?"present":guest.journey?.journey?.pose||"idle";
   if(guest.state==="walking"||guest.state==="leaving"||guest.state==="inside-walking"||guest.state==="inside-exiting")return "walk";
   if(guest.state==="queueing")return index%3===0?"phone":index%3===1?"chat":"idle";
   const type=guest.target?.type||guest.target?.id;if(["cafe","snack","beach","foodGarden"].includes(type))return "eat";if(["bench","academy","hub"].includes(type))return "sit";if(["experience","pavilion","dj-event","forum"].includes(type))return "dance";if(type==="water")return "drink";if(type==="merch")return "browse";return "idle";
@@ -1271,6 +1278,8 @@ function drawCharacterProp(pose,style,frame,role){
   if(pose==="phone"){roundedRect(5,-29,4,7,1,"#173743");ctx.fillStyle="#bce65f";ctx.fillRect(6,-28,2,3);}
   if(pose==="eat"||pose==="drink"){ctx.fillStyle=pose==="drink"?"#64cbc8":"#f5c95e";ctx.beginPath();ctx.arc(7,-29,3.3,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#173743";ctx.lineWidth=1;ctx.stroke();}
   if(pose==="browse"){roundedRect(4,-31,7,10,1,style.bag);ctx.strokeStyle="#173743";ctx.lineWidth=1;ctx.strokeRect(5,-30,5,7);}
+  if(pose==="study"){ctx.fillStyle="#f2ead7";ctx.beginPath();ctx.moveTo(-9,-19);ctx.lineTo(1,-23);ctx.lineTo(10,-19);ctx.lineTo(0,-15);ctx.closePath();ctx.fill();ctx.strokeStyle="#31545b";ctx.lineWidth=1;ctx.stroke();ctx.fillStyle="#64cbc8";ctx.fillRect(-1,-21,2,5);}
+  if(pose==="present"||role==="lecturer"){ctx.fillStyle="#173743";ctx.fillRect(7,-25,2,17);ctx.fillStyle="#f5c95e";ctx.beginPath();ctx.moveTo(8,-26);ctx.lineTo(15,-22);ctx.lineTo(8,-18);ctx.closePath();ctx.fill();}
   if(role==="caretaker"){ctx.strokeStyle="#8c6845";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(8,-34);ctx.lineTo(-3,2);ctx.stroke();ctx.fillStyle="#64cbc8";ctx.beginPath();ctx.moveTo(-9,1);ctx.lineTo(2,-2);ctx.lineTo(5,3);ctx.closePath();ctx.fill();}
   if(role==="technician"){roundedRect(5,-22,10,7,2,"#f5c95e");ctx.strokeStyle="#173743";ctx.lineWidth=1;ctx.strokeRect(7,-24,6,3);}
   if(role==="service"){ctx.fillStyle="#e8e3d8";ctx.beginPath();ctx.ellipse(9,-25,8,3,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ff8060";ctx.beginPath();ctx.arc(9,-29,2.5,0,Math.PI*2);ctx.fill();}
@@ -1278,7 +1287,7 @@ function drawCharacterProp(pose,style,frame,role){
 }
 
 function drawPersonFigure(x,y,t,index,options={}){
-  const style=personStyles[Math.abs(index)%personStyles.length],moving=Boolean(options.moving),pose=options.pose|| (moving?"walk":"idle"),phase=(options.phase||0)+index*.73,frame=moving?Math.floor((t+phase*120)/130)%6:Math.floor((t+phase*90)/420)%4,walkSteps=[-3,-1,2,3,1,-2],step=moving?walkSteps[frame]:0,dance=pose==="dance"?Math.sin(t*.009+phase)*3:0,bob=moving?(frame%3===1?1.4:0):pose==="dance"?Math.abs(Math.sin(t*.009+phase))*2:Math.sin(t*.002+phase)*.35,view=characterView(options.facing||{x:options.direction||1,y:0}),p=isoPoint(x,y,4+bob),scale=(options.player?1.2:1.02)*(style.build||1),shirt=options.player?WORLD_MATERIALS.lime:options.color||"#64cbc8",sit=pose==="sit",flip=view.side?view.flip:1;
+  const style=personStyles[Math.abs(index)%personStyles.length],moving=Boolean(options.moving),pose=options.pose|| (moving?"walk":"idle"),phase=(options.phase||0)+index*.73,frame=moving?Math.floor((t+phase*120)/130)%6:Math.floor((t+phase*90)/420)%4,walkSteps=[-3,-1,2,3,1,-2],step=moving?walkSteps[frame]:0,dance=pose==="dance"?Math.sin(t*.009+phase)*3:0,bob=moving?(frame%3===1?1.4:0):pose==="dance"?Math.abs(Math.sin(t*.009+phase))*2:Math.sin(t*.002+phase)*.35,view=characterView(options.facing||{x:options.direction||1,y:0}),p=isoPoint(x,y,4+bob),scale=(options.player?1.2:1.02)*(style.build||1),shirt=options.player?WORLD_MATERIALS.lime:options.color||"#64cbc8",sit=pose==="sit"||pose==="study",flip=view.side?view.flip:1;
   ctx.save();ctx.translate(p.x,p.y);ctx.scale(flip*scale,scale);ctx.lineJoin="round";ctx.lineCap="round";
   ctx.fillStyle="rgba(6,31,36,.2)";ctx.beginPath();ctx.ellipse(2*flip,4,sit?15:13.5,sit?5.5:4.7,0,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle="#183740";ctx.lineWidth=1.15;ctx.fillStyle=style.pants;
@@ -1290,6 +1299,8 @@ function drawPersonFigure(x,y,t,index,options={}){
   if(pose==="phone"||pose==="eat"||pose==="drink"||pose==="browse"){ctx.moveTo(-6,-32);ctx.lineTo(-2,-25);ctx.lineTo(5,-28);ctx.moveTo(6,-32);ctx.lineTo(8,-27);}
   else if(pose==="clean"||pose==="repair"){ctx.moveTo(-6,-32);ctx.lineTo(-2,-23);ctx.lineTo(6,-20);ctx.moveTo(6,-32);ctx.lineTo(9,-23);}
   else if(pose==="dance"){ctx.moveTo(-6,-32);ctx.lineTo(-11,-40-dance);ctx.moveTo(6,-32);ctx.lineTo(12,-35+dance);}
+  else if(pose==="study"){ctx.moveTo(-6,-32);ctx.lineTo(-3,-22);ctx.lineTo(0,-19);ctx.moveTo(6,-32);ctx.lineTo(4,-22);ctx.lineTo(0,-19);}
+  else if(pose==="present"){ctx.moveTo(-6,-32);ctx.lineTo(-12,-25);ctx.moveTo(6,-32);ctx.lineTo(14,-39);}
   else if(pose==="chat"){ctx.moveTo(-6,-32);ctx.lineTo(-10,-24);ctx.moveTo(6,-32);ctx.lineTo(11,-36);}
   else{ctx.moveTo(-6,-32);ctx.lineTo(-9-armSwing,-20);ctx.moveTo(6,-32);ctx.lineTo(9+armSwing,-21);}ctx.stroke();
   if((moving||pose==="phone")&&!options.role&&!view.back){ctx.fillStyle=style.bag;ctx.beginPath();ctx.roundRect(-10,-34,5.5,15,2);ctx.fill();ctx.strokeStyle="#173743";ctx.lineWidth=1;ctx.stroke();}

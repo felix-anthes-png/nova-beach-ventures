@@ -1,5 +1,13 @@
 # Changelog
 
+## Lecture hall attendance — 2026-11
+
+- Added a tiered lecture hall, presentation screen and lectern inside the Academic Wing.
+- Routed timetable-driven students and professors through the main building entrance.
+- Added live seated study, note-taking and lecturer presentation poses.
+- Made guests remain for a complete class before exiting to the Academic Courtyard.
+- Kept lecture attendance non-commercial and recorded exactly once.
+
 ## Guest journeys and venue interiors — 2026-11
 
 - Added walking, bicycle, and scheduled campus-bus arrival modes.
