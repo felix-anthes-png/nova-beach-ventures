@@ -89,3 +89,11 @@ test("the browser exposes the district portfolio and business construction flow"
   const [app,html,css]=await Promise.all([readFile(new URL("../dist/app.js",import.meta.url),"utf8"),readFile(new URL("../dist/index.html",import.meta.url),"utf8"),readFile(new URL("../dist/district-progression.css",import.meta.url),"utf8")]);
   assert.match(app,/Six economies, six operating problems/);assert.match(app,/data-buy-business/);assert.match(app,/data-operate-business/);assert.match(app,/DISTRICT_WORLD_LAYOUTS/);assert.match(html,/district-progression\.css\?v=44-district-business-operations/);assert.match(css,/district-business-grid/);
 });
+
+test("all five land-sale gates remain visible before their prerequisites are met",async()=>{
+  const app=await readFile(new URL("../dist/app.js",import.meta.url),"utf8"),availability=app.match(/const locationAvailable=.*;/)?.[0]||"";
+  for(const gate of ["villageGate","eastGate","innovationGate","sportsGate","transitGate"])assert.match(app,new RegExp(`${gate}: \\{ zone:\"campus\"`));
+  assert.doesNotMatch(availability,/Gate/);
+  assert.match(app,/fillText\("LAND FOR SALE"/);
+  assert.match(app,/fillText\(loc\.title/);
+});
