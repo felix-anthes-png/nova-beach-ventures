@@ -11,6 +11,7 @@ export const INTERIOR_LAYOUTS=Object.freeze({
       {id:"pastry-display",x:1.65,y:2.9,w:1.2,h:.6,label:"Pastry display",kind:"counter"},
       {id:"academy-table-west",x:1.75,y:5.55,w:4.5,h:.72,label:"Communal table",kind:"furniture"},
       {id:"academy-lounge",x:1.75,y:7.35,w:3.05,h:1.55,label:"Study lounge",kind:"furniture"},
+      {id:"academy-commons-divider-west",x:1.35,y:4.78,w:3.8,h:.16,label:"Commons divider",kind:"wall"},
       {id:"auditorium-partition-north",x:7.85,y:1.4,w:.18,h:6.55,label:"Auditorium partition wall",kind:"wall"},
       {id:"auditorium-partition-south",x:7.85,y:9.05,w:.18,h:.6,label:"Auditorium partition wall",kind:"wall"},
       {id:"lecture-screen",x:8.25,y:1.65,w:5.05,h:.3,label:"Auditorium presentation wall",kind:"fixture"},
@@ -28,7 +29,7 @@ export const INTERIOR_LAYOUTS=Object.freeze({
       {id:"lecture-row-5-right",x:11.15,y:7.55,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
       {id:"academy-plant",type:"circle",x:5.85,y:8.55,r:.38,label:"Planter",kind:"prop"}
     ],
-    route:[{x:7.5,y:9.75},{x:7.1,y:9.35},{x:7.1,y:8.45},{x:6.95,y:6.8},{x:6.95,y:4.25}],
+    route:[{x:7.5,y:9.75},{x:7.1,y:9.35},{x:7.1,y:8.45},{x:6.65,y:6.8},{x:6.65,y:4.25}],
     activities:[
       {x:3.4,y:3.35,pose:"service",role:"service",facing:{x:0,y:-1},label:"Serving coffee"},
       {x:3.55,y:4.15,pose:"phone",facing:{x:0,y:-1},label:"Ordering"},
@@ -76,10 +77,16 @@ export const INTERIOR_LAYOUTS=Object.freeze({
     ],
     colliders:[
       {id:"merch-display",x:2.05,y:2.15,w:3.5,h:.65,label:"Merch display",kind:"furniture"},
+      {id:"merch-island-west",x:2.15,y:4.15,w:1.45,h:.65,label:"Merchandise island",kind:"furniture"},
+      {id:"merch-island-east",x:4.25,y:4.15,w:1.45,h:.65,label:"Merchandise island",kind:"furniture"},
       {id:"merch-counter",x:4.35,y:3.55,w:1.9,h:1.25,label:"Merch Lab counter",kind:"counter"},
       {id:"venture-desk",x:9.55,y:4.78,w:1.9,h:.82,label:"Venture desk",kind:"counter"},
+      {id:"venture-collaboration-table",x:9.45,y:3.15,w:2.7,h:.62,label:"Venture collaboration table",kind:"furniture"},
+      {id:"venture-partition-north",x:8.15,y:2.05,w:.16,h:1.7,label:"Venture Studio partition",kind:"wall"},
+      {id:"venture-partition-south",x:8.15,y:4.85,w:.16,h:1.05,label:"Venture Studio partition",kind:"wall"},
       {id:"hub-lounge-west",x:2.15,y:7,w:2.5,h:1.85,label:"Student lounge",kind:"furniture"},
       {id:"hub-lounge-east",x:9.8,y:6.1,w:2.5,h:1.85,label:"Student lounge",kind:"furniture"},
+      {id:"hub-coffee-table",type:"circle",x:5.65,y:8.15,r:.36,label:"Lounge coffee table",kind:"furniture"},
       {id:"hub-plant",type:"circle",x:7.8,y:6.9,r:.38,label:"Planter",kind:"prop"}
     ],
     route:[{x:7.5,y:8.8},{x:6.8,y:8.25},{x:6.55,y:6.7},{x:6.65,y:5.65}],

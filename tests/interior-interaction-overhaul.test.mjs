@@ -29,7 +29,7 @@ test("interior service workers and customers use purposeful poses",()=>{
 
 test("the browser uses layout collision, indoor service markers and contextual interaction text",async()=>{
   const app=await readFile(new URL("../dist/app.js",import.meta.url),"utf8");
-  assert.match(app,/interior-layouts\.js\?v=57-auditorium-entrance/);
+  assert.match(app,/interior-layouts\.js\?v=58-interior-architecture/);
   assert.match(app,/layout\.colliders\.map/);
   assert.match(app,/drawIndoorServiceStatus/);
   assert.match(app,/interactionDescription/);
