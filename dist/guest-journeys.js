@@ -12,7 +12,7 @@ export const VENUE_JOURNEYS=Object.freeze({
   }),
   cafe:Object.freeze({
     id:"cafe",zone:"academy",entrance:Object.freeze({x:20,y:12.2}),indoorEntry:Object.freeze({x:7.5,y:8.8}),
-    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:6.7,y:8.75}),Object.freeze({x:6.35,y:6.8}),Object.freeze({x:5.55,y:5.05}),Object.freeze({x:4.25,y:4.15}),Object.freeze({x:4.25,y:6.55})]),
+    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:6.7,y:8.75}),Object.freeze({x:6.65,y:6.8}),Object.freeze({x:6.65,y:5.1}),Object.freeze({x:6.65,y:4.45}),Object.freeze({x:4.25,y:4.15}),Object.freeze({x:4.25,y:6.55})]),
     activity:"Eating at the café commons",pose:"eat",carry:"coffee",followUp:Object.freeze({x:17.55,y:14.25,label:"Café terrace"})
   }),
   merch:Object.freeze({

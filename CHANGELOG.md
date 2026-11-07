@@ -1,5 +1,14 @@
 # Changelog
 
+## Interior architectural redesign — 2026-11
+
+- Rebuilt all three accessible interiors around authored operational rooms instead of one open tiled floor.
+- Added room-specific floor materials, perimeter detailing, lighting rails, signs, partitions and controlled thresholds.
+- Turned Mercado into a recognisable logistics hall with a receiving shutter, marked stock lanes, industrial racks, dispatch desk and cold-storage room.
+- Turned the Student Hub into a retail gallery, glass-enclosed Venture Studio and furnished Student Commons.
+- Added a separately framed Study Commons while retaining the Academic Wing auditorium entrance.
+- Gave all new merchandise, collaboration and lounge fixtures solid collision footprints.
+
 ## Lecture hall attendance — 2026-11
 
 - Added a large auditorium with a raised stage, wide presentation wall, five split seating tiers and three circulation aisles inside the Academic Wing.

@@ -45,6 +45,7 @@ The design has three goals:
 - Watch directional, varied crowds queue, eat, study, browse, work, and dance instead of using one repeated walking figure.
 - See one Atlantic environment move across the whole campus through layered surf, drifting clouds, birds, fountains, wind-responsive palms, flags, and terrace canopies.
 - Open a separate level-ten Showcase Editor to demonstrate every store, district, facility, staff role, and event without altering the real campaign.
+- Enter three fully authored buildings: a partitioned Academic Wing, industrial Mercado logistics hall, and retail-and-venture Student Hub.
 
 ## Development milestones
 
@@ -63,6 +64,7 @@ Every major system was developed as an isolated feature batch. The specification
 | Guest-driven sales | Visible counter service is the source of shop transactions | [`specs/guest-driven-sales.md`](specs/guest-driven-sales.md) · `feature/guest-driven-sales` |
 | Guest journeys and interiors | Arrival modes, real entrances, indoor activity, purchases, and post-visit behaviour | [`specs/guest-journeys-interiors.md`](specs/guest-journeys-interiors.md) · `feature/guest-journeys-interiors` |
 | Lecture hall attendance | Timetable-driven classes, seated students, presenting professors, and Academic Wing circulation | [`specs/lecture-hall-attendance.md`](specs/lecture-hall-attendance.md) · `feature/lecture-hall-attendance` |
+| Interior architectural redesign | Building-specific room plans, materials, lighting, partitions, thresholds, and solid fixtures | [`specs/interior-architectural-redesign.md`](specs/interior-architectural-redesign.md) · `feature/interior-architectural-redesign` |
 | Staff operations | Shifts, payroll, district coverage, cleaning, failures, and repairs | [`specs/staff-operations.md`](specs/staff-operations.md) · `feature/staff-operations` |
 | Tycoon integration | Operating costs, momentum, management signals, and connected daily outcomes | [`specs/tycoon-integration.md`](specs/tycoon-integration.md) · `feature/tycoon-integration-pass` |
 | Management overlays | Map lenses, contextual alerts, and direct management navigation | [`specs/management-overlays.md`](specs/management-overlays.md) · `feature/management-overlays` |

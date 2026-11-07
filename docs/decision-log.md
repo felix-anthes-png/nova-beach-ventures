@@ -175,3 +175,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** Academic agenda stops move live guests into a physical lecture hall instead of treating the university building as an exterior landmark.
 
 **Reason:** Lecture blocks only feel meaningful when students and professors visibly leave the campus paths, occupy a classroom and return afterward. Reusing the existing agenda and threshold systems keeps attendance deterministic while making the main building central to campus life.
+
+## D030 — Design interiors as operational floor plans
+
+**Decision:** Give every accessible building a distinct room plan with shared campus materials, physical partitions, controlled thresholds and solid purpose-specific fixtures.
+
+**Reason:** Recolouring one open tiled room does not make a café, logistics hall and student hub feel like different buildings. Authored floor plans make each operation legible at a glance, while shared lighting, glazing and signage keep the interiors connected to the exterior campus architecture. Reusing layout geometry for collision prevents the additional visual detail from becoming non-interactive decoration.

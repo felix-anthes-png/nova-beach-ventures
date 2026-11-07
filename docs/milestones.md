@@ -272,11 +272,19 @@ Recomposed the Academic Wing around a full auditorium with a raised stage, a wid
 
 Students visibly sit and take notes, professors present, and completed classes return guests to the Academic Courtyard without creating a commercial transaction. Coverage lives in `tests/lecture-hall-attendance.test.mjs`.
 
+## 39. Interior architectural redesign
+
+**Checkpoint:** `feature/interior-architectural-redesign`
+
+Rebuilt the Academic Wing, Mercado Supply Hall and Student Hub around building-specific room plans rather than a shared open-floor template. Subtle zone flooring, lighting rails, glazing, signs and controlled thresholds give the interiors one Atlantic-modernist language while preserving their different uses.
+
+Mercado now reads as a logistics hall with a receiving bay, industrial stock racks, dispatch desk and cold storage. The Student Hub combines a merchandise gallery, enclosed Venture Studio and furnished social commons. The Academic Wing gains a separately framed Study Commons while retaining its auditorium entrance. Every new fixture participates in collision and existing guest journeys remain intact. Coverage lives in `tests/interior-architectural-redesign.test.mjs`.
+
 ## Verification baseline
 
-At the end of milestone 36:
+At the end of milestone 39:
 
-- 163 automated tests are defined, including lecture hall attendance, guest journeys and venue thresholds, central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
+- 166 automated tests are defined, including the interior architectural redesign, lecture hall attendance, guest journeys and venue thresholds, central campus composition, campus circulation and agendas, world ground-contact, the full-size transit bus, business service animations, venue operational states, interior interaction, district business operations, district progression and spacing, campus calendar and guest groups, world physics and local depth layers, showcase isolation, construction lifecycle, environmental-motion, save migration, visual-contract, and development-URL checks.
 - `dist/core.js` and `dist/app.js` pass Node syntax checks.
 - Accepted actions persist; rejected actions leave state unchanged.
 - The deployed static build runs without a paid service.
