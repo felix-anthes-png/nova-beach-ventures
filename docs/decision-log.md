@@ -169,3 +169,9 @@ This log captures product and technical choices that materially shaped the curre
 **Decision:** A guest entering an interior remains the same simulation actor, with one budget, one destination, one transaction and one visit record.
 
 **Reason:** Replacing visitors with decorative indoor figures makes transport, queues and purchases feel unrelated. Moving the live actor between outdoor and indoor coordinate spaces creates a continuous journey while preserving the deterministic economy and avoiding duplicate sales.
+
+## D029 — Let the timetable create real indoor attendance
+
+**Decision:** Academic agenda stops move live guests into a physical lecture hall instead of treating the university building as an exterior landmark.
+
+**Reason:** Lecture blocks only feel meaningful when students and professors visibly leave the campus paths, occupy a classroom and return afterward. Reusing the existing agenda and threshold systems keeps attendance deterministic while making the main building central to campus life.

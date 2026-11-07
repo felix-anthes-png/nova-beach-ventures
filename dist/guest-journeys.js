@@ -5,9 +5,14 @@ export const ARRIVAL_MODES=Object.freeze({
 });
 
 export const VENUE_JOURNEYS=Object.freeze({
+  academy:Object.freeze({
+    id:"academy",zone:"academy",entrance:Object.freeze({x:20,y:12.2}),indoorEntry:Object.freeze({x:7.5,y:8.8}),
+    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:7.5,y:8.45}),Object.freeze({x:10.75,y:8.45}),Object.freeze({x:10.75,y:6.35}),Object.freeze({x:10.55,y:5.4})]),
+    activity:"Attending a lecture",pose:"study",carry:null,followUp:Object.freeze({x:20.1,y:12.75,label:"Academic courtyard",activity:"Leaving class for the courtyard"})
+  }),
   cafe:Object.freeze({
     id:"cafe",zone:"academy",entrance:Object.freeze({x:20,y:12.2}),indoorEntry:Object.freeze({x:7.5,y:8.8}),
-    route:Object.freeze([Object.freeze({x:7.5,y:7.25}),Object.freeze({x:7.2,y:5.7}),Object.freeze({x:7.2,y:4.25}),Object.freeze({x:4.7,y:6.55})]),
+    route:Object.freeze([Object.freeze({x:7.5,y:9.35}),Object.freeze({x:6.7,y:8.75}),Object.freeze({x:6.35,y:6.8}),Object.freeze({x:5.55,y:5.05}),Object.freeze({x:4.25,y:4.15}),Object.freeze({x:4.25,y:6.55})]),
     activity:"Eating at the café commons",pose:"eat",carry:"coffee",followUp:Object.freeze({x:17.55,y:14.25,label:"Café terrace"})
   }),
   merch:Object.freeze({
@@ -24,7 +29,9 @@ export function arrivalModeForGuest({groupId,gateId,cohortId=0,transitOpen=false
 }
 
 export function venueJourneyForTarget(target){
-  if(!target||target.kind!=="store")return null;
+  if(!target)return null;
+  if(target.kind==="landmark"&&target.id==="academy")return VENUE_JOURNEYS.academy;
+  if(target.kind!=="store")return null;
   return VENUE_JOURNEYS[target.id]||null;
 }
 

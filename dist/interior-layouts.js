@@ -2,26 +2,44 @@ export const INTERIOR_LAYOUTS=Object.freeze({
   academy:{
     name:"Academic Wing",
     zones:[
-      {id:"service",label:"Atlantic Café",x:5.65,y:2.15,w:4.3,h:.85,color:"#ff7b5b"},
-      {id:"study",label:"Study Commons",x:1.7,y:5.25,w:4.4,h:3.9,color:"#d2a66c"},
-      {id:"quiet",label:"Quiet Tables",x:9.25,y:3.7,w:3.75,h:3.1,color:"#64cbc8"}
+      {id:"service",label:"Atlantic Café",x:1.35,y:1.85,w:4.55,h:2.55,color:"#ff7b5b"},
+      {id:"study",label:"Study Commons",x:1.35,y:5.1,w:5.45,h:4.25,color:"#d2a66c"},
+      {id:"lecture",label:"Nova Auditorium",x:7.85,y:1.35,w:5.85,h:8.35,color:"#64cbc8"}
     ],
     colliders:[
-      {id:"cafe-counter",x:5.65,y:2.15,w:4.3,h:.85,label:"Atlantic Café counter",kind:"counter"},
-      {id:"pastry-display",x:5.8,y:3.05,w:1.15,h:.65,label:"Pastry display",kind:"counter"},
-      {id:"academy-table-west",x:2.1,y:5.65,w:3.5,h:.75,label:"Communal table",kind:"furniture"},
-      {id:"academy-table-east",x:9.9,y:4.2,w:3,h:.75,label:"Quiet study table",kind:"furniture"},
-      {id:"academy-lounge",x:2.2,y:7.25,w:2.5,h:1.85,label:"Study lounge",kind:"furniture"},
-      {id:"academy-plant",type:"circle",x:11.8,y:7.2,r:.38,label:"Planter",kind:"prop"}
+      {id:"cafe-counter",x:1.55,y:2.1,w:3.75,h:.72,label:"Atlantic Café counter",kind:"counter"},
+      {id:"pastry-display",x:1.65,y:2.9,w:1.2,h:.6,label:"Pastry display",kind:"counter"},
+      {id:"academy-table-west",x:1.75,y:5.55,w:4.5,h:.72,label:"Communal table",kind:"furniture"},
+      {id:"academy-lounge",x:1.75,y:7.35,w:3.05,h:1.55,label:"Study lounge",kind:"furniture"},
+      {id:"auditorium-partition-north",x:7.85,y:1.4,w:.18,h:6.55,label:"Auditorium partition wall",kind:"wall"},
+      {id:"auditorium-partition-south",x:7.85,y:9.05,w:.18,h:.6,label:"Auditorium partition wall",kind:"wall"},
+      {id:"lecture-screen",x:8.25,y:1.65,w:5.05,h:.3,label:"Auditorium presentation wall",kind:"fixture"},
+      {id:"lecture-stage",x:8.25,y:2.1,w:5.05,h:1.05,label:"Auditorium stage",kind:"fixture"},
+      {id:"lecture-podium",x:12.35,y:2.38,w:.72,h:.62,label:"Lectern",kind:"furniture"},
+      {id:"lecture-row-1-left",x:8.25,y:3.75,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-1-right",x:11.15,y:3.75,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-2-left",x:8.25,y:4.7,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-2-right",x:11.15,y:4.7,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-3-left",x:8.25,y:5.65,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-3-right",x:11.15,y:5.65,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-4-left",x:8.25,y:6.6,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-4-right",x:11.15,y:6.6,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-5-left",x:8.25,y:7.55,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"lecture-row-5-right",x:11.15,y:7.55,w:2.15,h:.46,label:"Auditorium seating",kind:"furniture"},
+      {id:"academy-plant",type:"circle",x:5.85,y:8.55,r:.38,label:"Planter",kind:"prop"}
     ],
-    route:[{x:7.5,y:8.8},{x:7.5,y:7.25},{x:7.2,y:5.7},{x:7.25,y:4.15}],
+    route:[{x:7.5,y:9.75},{x:7.1,y:9.35},{x:7.1,y:8.45},{x:6.95,y:6.8},{x:6.95,y:4.25}],
     activities:[
-      {x:7.25,y:3.6,pose:"service",role:"service",facing:{x:0,y:-1},label:"Serving coffee"},
-      {x:7.2,y:4.25,pose:"phone",facing:{x:0,y:-1},label:"Ordering"},
-      {x:6.75,y:4.72,pose:"idle",facing:{x:.4,y:-1},label:"Queueing"},
-      {x:4.7,y:6.55,pose:"sit",facing:{x:1,y:-.2},label:"Eating"},
-      {x:10.65,y:5.25,pose:"sit",facing:{x:-1,y:.2},label:"Studying"},
-      {x:4.9,y:7.65,pose:"chat",facing:{x:-1,y:0},label:"Group study"}
+      {x:3.4,y:3.35,pose:"service",role:"service",facing:{x:0,y:-1},label:"Serving coffee"},
+      {x:3.55,y:4.15,pose:"phone",facing:{x:0,y:-1},label:"Ordering"},
+      {x:4.15,y:4.48,pose:"idle",facing:{x:-.4,y:-1},label:"Queueing"},
+      {x:4.25,y:6.55,pose:"sit",facing:{x:1,y:-.2},label:"Eating"},
+      {x:11.95,y:3.3,pose:"present",role:"lecturer",facing:{x:-1,y:1},label:"Teaching lecture"},
+      {x:9.35,y:4.45,pose:"study",facing:{x:1,y:-1},label:"Taking notes"},
+      {x:12.25,y:5.4,pose:"study",facing:{x:-1,y:-1},label:"Following lecture"},
+      {x:9.45,y:6.35,pose:"study",facing:{x:1,y:-1},label:"Attending class"},
+      {x:12.35,y:7.3,pose:"study",facing:{x:-1,y:-1},label:"Seminar discussion"},
+      {x:4.9,y:8.95,pose:"chat",facing:{x:-1,y:0},label:"Group study"}
     ]
   },
   mercado:{
